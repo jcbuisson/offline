@@ -164,7 +164,7 @@ form:valid .large-button:hover {
   height: 15px;
   position: absolute;
   top: 1rem;
-  right: 1rem;
+  right: 6rem;
   border-style: solid;
   border-radius: 10px;
   border-width: 0;
@@ -178,4 +178,13 @@ form:valid .large-button:hover {
 .on {
   color: white;
   background-color: #54daa0;
+}
+
+.github {
+  color: black;
+  width: 2rem /* 32px */;
+  height: 2rem /* 32px */;
+  position: absolute;
+  top: 1rem;
+  right: 1rem;
 }
