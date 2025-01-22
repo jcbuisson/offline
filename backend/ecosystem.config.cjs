@@ -5,7 +5,7 @@ module.exports = {
    apps : [
 
       {
-         name: "chatgpt",
+         name: "offline",
          script: "./src/app.js",
          watch: false,
       },
