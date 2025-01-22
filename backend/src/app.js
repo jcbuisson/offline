@@ -1,3 +1,5 @@
+import 'dotenv/config'
+
 import { expressX } from '@jcbuisson/express-x'
 // import { expressX } from './server.mjs'
 import { PrismaClient } from '@prisma/client'
