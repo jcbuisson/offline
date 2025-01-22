@@ -1,17 +1,17 @@
 <template>
 
-   <div v-if="stable">
+   <div>
       <form @submit.prevent="updateStable">
          <div class="form-group my-1">
             <label for="id">Id</label>
             <div class="input-container">
-               <input type="text" name="id" :value="formData.id" readonly>
+               <input type="text" name="id" :value="id" readonly>
             </div>
          </div>
          <div class="form-group my-1">
             <label for="name">Name</label>
             <div class="input-container">
-               <input type="text" name="name" v-model="formData.name" required>
+               <input type="text" name="name" :value="stable?.name" @change="(evt) => formData.name = evt.target.value" required>
             </div>
          </div>
          <div class="my-1">
@@ -26,15 +26,11 @@
 
 <script setup>
 import { computed, ref, onMounted } from "vue"
-import { getStable, stableFromId, deleteStable } from "/src/use/useStables"
+import { stableFromId, patchStable, deleteStable } from "/src/use/useStables"
 import router from "/src/router"
 
 const props = defineProps({
    id: String,
-})
-
-onMounted(async () => {
-   formData.value = await getStable(props.id)
 })
 
 const formData = ref({})
@@ -42,10 +38,11 @@ const formData = ref({})
 const stable = computed(() => stableFromId.value(props.id))
 
 async function updateStable() {
+   await patchStable(props.id, formData.value)
 }
 
 async function removeStable() {
-   await deleteStable(stable.value.id)
+   await deleteStable(props.id)
    router.push("/stables")
 }
 </script>

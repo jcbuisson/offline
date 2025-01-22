@@ -10,6 +10,8 @@
   },
   "dependencies": {
     "@jcbuisson/express-x-client": "^2.1.7",
+    "@vueuse/integrations": "^12.5.0",
+    "idb-keyval": "^6.2.1",
     "socket.io-client": "^4.8.1",
     "vue": "^3.5.13",
     "vue-router": "^4.5.0"

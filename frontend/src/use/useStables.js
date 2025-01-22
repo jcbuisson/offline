@@ -1,36 +1,52 @@
 import { ref, computed } from 'vue'
+import { useIDBKeyval } from '@vueuse/integrations/useIDBKeyval'
 
 import { app } from '/src/client-app.js'
 
 
-/////////////          CACHES          /////////////
-export const id2stable = ref({})
+const initialState = () => ({
+   stableCache: {},
+})
+
+/////////////          CACHE BACKED BY INDEXEDB          /////////////
+const { data: stableData } = useIDBKeyval('stable-state', initialState(), { mergeDefaults: true })
 
 
 /////////////          METHODS & COMPUTED          /////////////
 export async function fetchStables() {
    const stableList = await app.service('stable').findMany({})
    for (const stable of stableList) {
-      id2stable.value[stable.id] = stable
+      stableData.value.stableCache[stable.id] = stable
    }
+   stableData.value.dummykey = { a: 123 }
    return stableList
 }
 
-export const stableList = computed(() => Object.values(id2stable.value))
+export const id2stable = computed(() => stableData.value.id2stable)
 
-export const stableFromId = computed(() => (id) => id2stable.value[id])
+export const stableList = computed(() => {
+   return Object.values(stableData.value.stableCache)
+})
 
-export async function getStable(id) {
-   return id2stable.value[id]
-}
+export const stableFromId = computed(() => (id) => stableData.value.stableCache[id])
+
+// export async function getStable(id) {
+//    return stableData?.value.stableCache[id]
+// }
 
 export async function addStable(data) {
    const stable = await app.service('stable').create({ data })
-   id2stable.value[stable.id] = stable
+   stableData.value.stableCache[stable.id] = stable
+}
+
+export async function patchStable(id, data) {
+   const stable = await app.service('stable').update({ where: { id }, data})
+   stableData.value.stableCache[stable.id] = stable
+   return stable
 }
 
 export async function deleteStable(id) {
    await app.service('stable').delete({ where: { id }})
-   delete id2stable.value[id]
+   delete data.value.stableCache[id]
 }
 

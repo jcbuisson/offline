@@ -1,4 +1,8 @@
 <template>
+   <div class="offline" :class="{ on: isOnline, off: !isOnline }">
+      {{ isOnline ? "ON-LINE" : "OFF-LINE" }}
+   </div>
+
    <div class="panel">
 
       <div class="subpanel">
@@ -32,7 +36,11 @@
 
 <script setup>
 import { ref, onMounted } from "vue"
+import { useOnline } from '@vueuse/core'
+
 import { fetchStables, stableList, addStable, id2stable } from "/src/use/useStables"
+
+const isOnline = useOnline()
 
 const formData = ref({})
 
