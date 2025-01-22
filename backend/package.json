@@ -1,0 +1,37 @@
+{
+  "name": "offline",
+  "version": "1.0.0",
+  "description": "",
+  "type": "module",
+  "license": "AGPL-version-3.0",
+  "private": false,
+  "engines": {
+    "node": ">= 14.0.0",
+    "npm": ">= 6.0.0"
+  },
+  "homepage": "",
+  "repository": {
+    "type": "git",
+    "url": ""
+  },
+  "bugs": "",
+  "keywords": [],
+  "author": {
+    "name": "",
+    "email": "",
+    "url": ""
+  },
+  "contributors": [],
+  "scripts": {
+    "dev": "npx nodemon src/app.js",
+    "test": ""
+  },
+  "dependencies": {
+    "@jcbuisson/express-x": "^2.1.17",
+    "@prisma/client": "^6.2.1",
+    "es6": "^0.0.7"
+  },
+  "devDependencies": {
+    "prisma": "^6.2.1"
+  }
+}

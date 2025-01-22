@@ -1,0 +1,23 @@
+generator client {
+   provider = "prisma-client-js"
+}
+
+model stable {
+   id             String   @id @default(uuid())
+   name           String
+
+   horses         horse[]
+}
+
+model horse {
+   id             String   @id @default(uuid())
+   text           String
+   stable_id      String
+
+   stable         stable    @relation(fields: [stable_id], references: [id], onDelete: Cascade)
+}
+
+datasource db {
+   provider = "postgresql"
+   url = env("DATABASE_URL")
+}
