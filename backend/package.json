@@ -29,6 +29,7 @@
   "dependencies": {
     "@jcbuisson/express-x": "^2.1.18",
     "@prisma/client": "^6.2.1",
+    "dotenv": "^16.4.7",
     "es6": "^0.0.7"
   },
   "devDependencies": {
