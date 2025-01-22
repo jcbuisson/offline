@@ -27,7 +27,7 @@
     "test": ""
   },
   "dependencies": {
-    "@jcbuisson/express-x": "^2.1.17",
+    "@jcbuisson/express-x": "^2.1.18",
     "@prisma/client": "^6.2.1",
     "es6": "^0.0.7"
   },

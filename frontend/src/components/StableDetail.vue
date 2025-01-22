@@ -5,7 +5,7 @@
          <div class="form-group my-1">
             <label for="id">Id</label>
             <div class="input-container">
-               <input type="text" name="id" :value="id" readonly>
+               <input type="text" name="id" :value="id" disabled>
             </div>
          </div>
          <div class="form-group my-1">
@@ -42,7 +42,8 @@ async function updateStable() {
 }
 
 async function removeStable() {
-   await deleteStable(props.id)
+   // do not await when offline
+   /* await */ deleteStable(props.id)
    router.push("/stables")
 }
 </script>

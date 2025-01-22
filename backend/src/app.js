@@ -1,5 +1,7 @@
 import { expressX } from '@jcbuisson/express-x'
+// import { expressX } from './server.mjs'
 import { PrismaClient } from '@prisma/client'
+import channels from './channels.js'
 
 const prisma = new PrismaClient()
 
@@ -10,6 +12,12 @@ const app = expressX({
 
 app.createService('stable', prisma.stable)
 app.createService('horse', prisma.horse)
+
+app.configure(channels)
+
+app.on('connection', (socket) => {
+   app.joinChannel('anonymous', socket)
+})
 
 const PORT = process.env.PORT || 3000
 app.httpServer.listen(PORT, () => console.log(`App listening at http://localhost:${PORT}`))

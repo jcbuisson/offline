@@ -38,7 +38,7 @@
 import { ref, onMounted } from "vue"
 import { useOnline } from '@vueuse/core'
 
-import { fetchStables, stableList, addStable, id2stable } from "/src/use/useStables"
+import { fetchStables, stableList, addStable } from "/src/use/useStables"
 
 const isOnline = useOnline()
 
