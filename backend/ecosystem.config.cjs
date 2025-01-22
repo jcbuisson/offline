@@ -6,7 +6,7 @@ module.exports = {
 
       {
          name: "chatgpt",
-         script: "./src/index.js",
+         script: "./src/app.js",
          watch: false,
       },
 
