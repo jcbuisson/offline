@@ -44,6 +44,7 @@ const { offlineReady, needRefresh, updateServiceWorker } = useRegisterSW({
    background-color: #dcfce7;
    border-style: solid;
    border-radius: 0.25rem;
+   border-color: #dcfce7;
    z-index: 50;
 }
 </style>
