@@ -26,19 +26,19 @@ export default defineConfig({
             background_color: "#ffffff",
             icons: [
                {
-                  src: "icons/logo-offline-192x192.png",
+                  src: "icons/logo-world-192x192.jpg",
                   sizes: "192x192",
-                  type: "image/png",
+                  type: "image/jpeg",
                },
                {
-                  src: "icons/logo-offline-512x512.png",
+                  src: "icons/logo-world-512x512.jpg",
                   sizes: "512x512",
-                  type: "image/png",
+                  type: "image/jpeg",
                },
                {
-                  src: "icons/logo-offline-512x512.png",
+                  src: "icons/logo-world-512x512.jpg",
                   sizes: "512x512",
-                  type: "image/png",
+                  type: "image/jpeg",
                   purpose: "any maskable",
                },
             ],
