@@ -27,7 +27,6 @@ window.addEventListener('online', async () => {
 })
 
 window.addEventListener('offline', () => {
-   resetUseStable()
 })
 
 
