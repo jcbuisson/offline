@@ -1,6 +1,6 @@
 <template>
 
-  <div v-if="needRefresh" class="fixed bottom-0 right-0 m-4 p-4 bg-green-100 border-solid rounded z-50">
+  <div v-if="needRefresh" class="newversion">
       Une nouvelle version est disponible <a href="#" class="text-blue-400 hover:underline ml-2" @click="updateServiceWorker">installer</a>
    </div>
 
@@ -32,5 +32,18 @@ const { offlineReady, needRefresh, updateServiceWorker } = useRegisterSW({
       }, 20000 /* check every 20s */)
    },
 })
-
 </script>
+
+<style scoped>
+.newversion {
+   position: fixed;
+   bottom: 0px;
+   right: 0px;
+   margin: 1rem;
+   padding: 1rem;
+   background-color: #dcfce7;
+   border-style: solid;
+   border-radius: 0.25rem;
+   z-index: 50;
+}
+</style>
