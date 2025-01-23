@@ -47,14 +47,14 @@
 import { ref, onMounted } from "vue"
 import { useOnline } from '@vueuse/core'
 
-import { fetchStables, stableList, addStable } from "/src/use/useStables"
+import { fetchStables, stableList, addStable } from "/src/use/useStable"
 
 const isOnline = useOnline()
 
 const formData = ref({})
 
 onMounted(async () => {
-   await fetchStables()
+   // await fetchStables()
 })
 
 async function newStable() {

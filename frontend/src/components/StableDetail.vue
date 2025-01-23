@@ -26,7 +26,7 @@
 
 <script setup>
 import { computed, ref, onMounted } from "vue"
-import { stableFromId, patchStable, deleteStable } from "/src/use/useStables"
+import { stableFromId, patchStable, deleteStable } from "/src/use/useStable"
 import router from "/src/router"
 
 const props = defineProps({
