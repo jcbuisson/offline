@@ -53,9 +53,11 @@ export const stableFromId = computed(() => (id) => stableData.value.stableCache[
 // }
 
 export async function addStable(data) {
-   data.id = uuidv4()
+   const uuid = uuidv4()
+   console.log('create stable', uuid)
    // optimistic update
-   stableData.value.stableCache[data.id] = data
+   data.id = uuid
+   stableData.value.stableCache[uuid] = data
    // perform request on backend
    const stable = await app.service('stable').create({ data })
    console.log('stable', stable)
