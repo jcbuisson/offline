@@ -1,9 +1,50 @@
 import { defineConfig } from 'vite'
 import vue from '@vitejs/plugin-vue'
+import { VitePWA } from 'vite-plugin-pwa'
 
 // https://vite.dev/config/
 export default defineConfig({
-   plugins: [vue()],
+   plugins: [
+      vue(),
+   
+      VitePWA({
+         devOptions: {
+            enabled: false
+         },
+         mode: "development",
+         base: "/",
+         srcDir: "src",
+         filename: "sw.ts",
+         includeAssets: ["/favicon.png"],
+         strategies: "injectManifest",
+         manifest: {
+            name: "Offline",
+            short_name: "Offline",
+            theme_color: "#ffffff",
+            start_url: "/",
+            display: "standalone",
+            background_color: "#ffffff",
+            icons: [
+               {
+                  src: "icons/logo-offline-192x192.png",
+                  sizes: "192x192",
+                  type: "image/png",
+               },
+               {
+                  src: "icons/logo-offline-512x512.png",
+                  sizes: "512x512",
+                  type: "image/png",
+               },
+               {
+                  src: "icons/logo-offline-512x512.png",
+                  sizes: "512x512",
+                  type: "image/png",
+                  purpose: "any maskable",
+               },
+            ],
+         },
+      }),
+   ],
    server: {
    port: 8080,
       open: true,
@@ -16,5 +57,5 @@ export default defineConfig({
             changeOrigin: true,
          },
       }
-   }
+   },
 })

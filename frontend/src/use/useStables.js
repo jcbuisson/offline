@@ -39,7 +39,6 @@ export async function fetchStables() {
    for (const stable of stableList) {
       stableData.value.stableCache[stable.id] = stable
    }
-   stableData.value.dummykey = { a: 123 }
    return stableList
 }
 
