@@ -1,6 +1,6 @@
-import { watch, computed } from 'vue'
+import { computed } from 'vue'
 import { useIDBKeyval } from '@vueuse/integrations/useIDBKeyval'
-import { useOnline } from '@vueuse/core'
+import { v4 as uuidv4 } from 'uuid'
 
 import { app } from '/src/client-app.js'
 
@@ -54,7 +54,9 @@ export const stableFromId = computed(() => (id) => stableData.value.stableCache[
 // }
 
 export async function addStable(data) {
+   data.id = uuidv4()
    const stable = await app.service('stable').create({ data })
+   console.log('stable', stable)
    stableData.value.stableCache[stable.id] = stable
 }
 

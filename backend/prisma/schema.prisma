@@ -3,14 +3,14 @@ generator client {
 }
 
 model stable {
-   id             String   @id @default(uuid())
+   id             String    @unique
    name           String
 
    horses         horse[]
 }
 
 model horse {
-   id             String   @id @default(uuid())
+   id             String    @unique
    text           String
    stable_id      String
 
