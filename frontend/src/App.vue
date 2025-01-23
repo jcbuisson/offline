@@ -1,7 +1,7 @@
 <template>
 
   <div v-if="needRefresh" class="newversion">
-      Une nouvelle version est disponible <a href="#" class="text-blue-400 hover:underline ml-2" @click="updateServiceWorker">installer</a>
+      Une nouvelle version est disponible <a href="#" class="versiontext" @click="updateServiceWorker">installer</a>
    </div>
 
   <router-view></router-view>
@@ -46,5 +46,11 @@ const { offlineReady, needRefresh, updateServiceWorker } = useRegisterSW({
    border-radius: 0.25rem;
    border-color: #dcfce7;
    z-index: 50;
+}
+
+.versiontext {
+   color: #60a5fa;
+   text-decoration-line: underline;
+   margin-left: 0.5rem;
 }
 </style>
