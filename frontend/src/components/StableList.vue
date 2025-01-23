@@ -58,8 +58,9 @@ onMounted(async () => {
 })
 
 async function newStable() {
-   await addStable(formData.value)
+   const dataCopy = Object.assign({}, formData.value)
    formData.value = {}
+   /*await*/ addStable(dataCopy)
 }
 
 </script>

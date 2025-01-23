@@ -87,7 +87,7 @@ export default function expressXClient(socket, options={}) {
       } else {
          // stack request - will be executed when online
          if (options.debug) console.log('(PUSH) client-request', uid, name, action, args)
-         requestStack.push({ uid, name, action, args })
+         requestQueue.push({ uid, name, action, args })
       }
       return promise
    }
@@ -117,7 +117,7 @@ export default function expressXClient(socket, options={}) {
 
    ///////////////         OFFLINE         /////////////////
 
-   const requestStack = []
+   const requestQueue = []
    let isOnline = navigator.onLine
    
 
@@ -125,10 +125,12 @@ export default function expressXClient(socket, options={}) {
       if (options.debug) console.log('online...')
       isOnline = true
       // execute stacked requests
-      while (requestStack.length > 0 && navigator.onLine) {
-         const {uid, name, action, args } = requestStack.pop()
+      while (requestQueue.length > 0 && navigator.onLine) {
+         const {uid, name, action, args } = requestQueue.shift()
          if (options.debug) console.log('(POP) client-request', uid, name, action, args)
          socket.emit('client-request', { uid, name, action, args })
+         await waitingPromisesByUid[uid]
+         delete waitingPromisesByUid[uid]
       }
    })
 
