@@ -26,7 +26,7 @@ const { offlineReady, needRefresh, updateServiceWorker } = useRegisterSW({
          console.log('needRefresh', needRefresh.value)
          if (needRefresh.value) {
             // update app
-            console.log('updating app..!')
+            console.log('updating app...!')
             updateServiceWorker()
          }
       }, 20000 /* check every 20s */)
