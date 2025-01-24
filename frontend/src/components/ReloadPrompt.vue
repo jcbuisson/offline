@@ -45,7 +45,7 @@ const { offlineReady, needRefresh, updateServiceWorker, } = useRegisterSW({
 </template>
 
 <style>
-.pwa-toast {
+/* .pwa-toast {
    position: fixed;
    right: 0;
    bottom: 0;
@@ -67,7 +67,7 @@ const { offlineReady, needRefresh, updateServiceWorker, } = useRegisterSW({
    margin-right: 5px;
    border-radius: 2px;
    padding: 3px 10px;
-}
+} */
 
 .pwatoast {
    position: fixed;
@@ -78,6 +78,7 @@ const { offlineReady, needRefresh, updateServiceWorker, } = useRegisterSW({
    background-color: #dcfce7;
    border-style: solid;
    border-radius: 0.25rem /* 4px */;
+   border-color: #dcfce7;
    z-index: 50;
 }
 .pwatoast-text {
