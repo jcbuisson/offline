@@ -1,4 +1,5 @@
 import { precacheAndRoute, cleanupOutdatedCaches } from 'workbox-precaching'
+
 declare let self: ServiceWorkerGlobalScope
 
 // prompt for new content

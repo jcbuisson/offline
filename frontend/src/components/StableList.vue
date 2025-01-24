@@ -13,7 +13,7 @@
 
    <!-- version -->
    <div class="version">
-      v2.4
+      v2.5
    </div>
    
 
