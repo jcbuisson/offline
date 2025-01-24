@@ -80,7 +80,7 @@ export default function expressXClient(socket, options={}) {
          //    reject(`Error: timeout on service '${name}', action '${action}', args: ${JSON.stringify(args)}`)
          // }, serviceOptions.timeout)
       })
-      if (isOnline) {
+      if (navigator.onLine) {
          // send request to server through websocket
          if (options.debug) console.log('client-request', uid, name, action, args)
          socket.emit('client-request', { uid, name, action, args })
@@ -118,16 +118,13 @@ export default function expressXClient(socket, options={}) {
    ///////////////         OFFLINE         /////////////////
 
    const requestQueue = []
-   let isOnline = navigator.onLine
    
-
    window.addEventListener('online', async () => {
       if (options.debug) console.log('online...')
-      isOnline = true
       // execute stacked requests
       while (requestQueue.length > 0 && navigator.onLine) {
          const {uid, name, action, args } = requestQueue.shift()
-         if (options.debug) console.log('(POP) client-request', uid, name, action, args)
+         if (options.debug) console.log('(SHIFT) client-request', uid, name, action, args)
          socket.emit('client-request', { uid, name, action, args })
          await waitingPromisesByUid[uid]
          delete waitingPromisesByUid[uid]
@@ -136,7 +133,6 @@ export default function expressXClient(socket, options={}) {
 
    window.addEventListener('offline', () => {
       if (options.debug) console.log('offline...')
-      isOnline = false
    })
 
 
