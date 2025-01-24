@@ -10,18 +10,23 @@ const { offlineReady, needRefresh, updateServiceWorker, } = useRegisterSW({
    }
 })
 
-async function close() {
-   offlineReady.value = false
-   needRefresh.value = false
-}
+// async function close() {
+//    offlineReady.value = false
+//    needRefresh.value = false
+// }
 </script>
 
 <template>
-   <div
-      v-if="offlineReady || needRefresh"
-      class="pwa-toast"
-      role="alert"
-   >
+   <div v-if="offlineReady || needRefresh" class="pwatoast">
+      <span v-if="offlineReady">
+         L'application est prête à fonctionner hors-ligne
+      </span>
+      <span v-else>
+         Une nouvelle version est disponible <a href="#" class="pwatoast-text" @click="updateServiceWorker">installer</a>
+      </span>
+   </div>
+
+   <!-- <div v-if="offlineReady || needRefresh" class="pwa-toast" role="alert">
       <div class="message">
          <span v-if="offlineReady">
             App ready to work offline
@@ -36,7 +41,7 @@ async function close() {
       <button @click="close">
          Close
       </button>
-   </div>
+   </div> -->
 </template>
 
 <style>
@@ -63,4 +68,24 @@ async function close() {
    border-radius: 2px;
    padding: 3px 10px;
 }
+
+.pwatoast {
+   position: fixed;
+   bottom: 0px;
+   right: 0px;
+   margin: 1rem /* 16px */;
+   padding: 1rem /* 16px */;
+   background-color: #dcfce7;
+   border-style: solid;
+   border-radius: 0.25rem /* 4px */;
+   z-index: 50;
+}
+.pwatoast-text {
+   color: #60a5fa;
+   margin-left: 0.5rem /* 8px */;
+}
+.pwatoast-text:hover {
+   text-decoration-line: underline;
+}
+
 </style>
