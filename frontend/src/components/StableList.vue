@@ -10,6 +10,11 @@
    <div class="offline" :class="{ on: isOnline, off: !isOnline }">
       {{ isOnline ? "ON-LINE" : "OFF-LINE" }}
    </div>
+
+   <!-- version -->
+   <div class="version">
+      v2.0
+   </div>
    
 
    <div class="panel">

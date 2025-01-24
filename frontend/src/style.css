@@ -188,3 +188,10 @@ form:valid .large-button:hover {
   top: 1rem;
   right: 1rem;
 }
+
+.version {
+  color: navajowhite;
+  position: absolute;
+  top: 1rem;
+  left: 1rem;
+}
