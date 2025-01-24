@@ -14,17 +14,23 @@ const initialState = () => ({
 })
 
 const { data: stableData } = useIDBKeyval('stable-state', initialState(), { mergeDefaults: true })
+const { data: onOffData } = useIDBKeyval('on-off', { on: 0, off: 0 }, { mergeDefaults: true })
 
 export const resetUseStable = () => {
    stableData.value = initialState()
 }
 
 window.addEventListener('online', async () => {
+   onOffData.value.on += 1
    resetUseStable()
 })
 
 window.addEventListener('offline', () => {
+   onOffData.value.off += 1
 })
+
+export const onCount = computed(() => onOffData.value.on)
+export const offCount = computed(() => onOffData.value.off)
 
 
 /////////////          PUB / SUB          /////////////

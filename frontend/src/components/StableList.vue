@@ -13,7 +13,7 @@
 
    <!-- version -->
    <div class="version">
-      v2.9
+      v2.9 on {{ onCount }} off {{ offCount }}
    </div>
    
 
@@ -53,7 +53,7 @@
 import { ref } from "vue"
 import { useOnline } from '@vueuse/core'
 
-import { stableList, addStable } from "/src/use/useStable"
+import { stableList, addStable, onCount, offCount } from "/src/use/useStable"
 import router from '/src/router'
 
 const isOnline = useOnline()
