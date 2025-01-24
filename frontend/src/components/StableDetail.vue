@@ -25,7 +25,7 @@
 </template>
 
 <script setup>
-import { computed, ref, onMounted } from "vue"
+import { computed, ref } from "vue"
 import { stableFromId, patchStable, deleteStable } from "/src/use/useStable"
 import router from "/src/router"
 

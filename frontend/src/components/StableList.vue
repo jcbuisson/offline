@@ -32,10 +32,11 @@
          </form>
 
          <ul class="styled-list" v-if="stableList.length">
-            <li v-for="stable of stableList" key="stable.id">
-               <router-link :to="`/stables/${stable.id}`">
+            <li v-for="stable of stableList" key="stable.id" :class="{ selected: stable.id === selectedId}" @click="selectStable(stable.id)">
+               {{ stable.name }}
+               <!-- <router-link :to="`/stables/${stable.id}`">
                   {{ stable.name }}
-               </router-link>
+               </router-link> -->
             </li>
          </ul>
 
@@ -49,18 +50,17 @@
 </template>
 
 <script setup>
-import { ref, onMounted } from "vue"
+import { ref } from "vue"
 import { useOnline } from '@vueuse/core'
 
-import { fetchStables, stableList, addStable } from "/src/use/useStable"
+import { stableList, addStable } from "/src/use/useStable"
+import router from '/src/router'
 
 const isOnline = useOnline()
 
 const formData = ref({})
 
-onMounted(async () => {
-   // await fetchStables()
-})
+const selectedId = ref()
 
 async function newStable() {
    const dataCopy = Object.assign({}, formData.value)
@@ -68,7 +68,14 @@ async function newStable() {
    /*await*/ addStable(dataCopy)
 }
 
+function selectStable(id) {
+   selectedId.value = id
+   router.push(`/stables/${id}`)
+}
 </script>
 
 <style scoped>
+.selected {
+   background-color: #f0f0f0;
+}
 </style>

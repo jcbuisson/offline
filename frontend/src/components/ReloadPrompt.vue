@@ -2,6 +2,7 @@
 /// <reference types="vite-plugin-pwa/vue" />
 import { useRegisterSW } from 'virtual:pwa-register/vue'
 
+// check new version every 10s
 const { offlineReady, needRefresh, updateServiceWorker, } = useRegisterSW({
    onRegistered(r) {
       r && setInterval(() => {
@@ -29,6 +30,7 @@ const { offlineReady, needRefresh, updateServiceWorker, } = useRegisterSW({
    right: 0px;
    margin: 1rem /* 16px */;
    padding: 1rem /* 16px */;
+   color: rgba(0, 0, 0, 0.662);
    background-color: #dcfce7;
    border-style: solid;
    border-radius: 0.25rem /* 4px */;

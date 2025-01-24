@@ -1,7 +1,6 @@
 import { computed } from 'vue'
 import { useIDBKeyval } from '@vueuse/integrations/useIDBKeyval'
 import { v4 as uuidv4 } from 'uuid'
-import { useOnline } from '@vueuse/core'
 
 import { app } from '/src/client-app.js'
 
@@ -19,8 +18,6 @@ const { data: stableData } = useIDBKeyval('stable-state', initialState(), { merg
 export const resetUseStable = () => {
    stableData.value = initialState()
 }
-
-// const online = useOnline()
 
 window.addEventListener('online', async () => {
    resetUseStable()
@@ -50,17 +47,7 @@ app.service('stable').on('delete', stable => {
 
 /////////////          METHODS & COMPUTED          /////////////
 
-export async function fetchStables() {
-   const stableList = await app.service('stable').findMany({})
-   for (const stable of stableList) {
-      stableData.value.stableCache[stable.id] = stable
-   }
-   return stableList
-}
-
 export const stableList = computed(() => {
-   // return Object.values(stableData.value.stableCache)
-
    if (!stableData.value) return []
    if (stableData.value.stableListStatus === 'ready') {
       return Object.values(stableData.value.stableCache)
@@ -84,10 +71,6 @@ export const stableList = computed(() => {
 
 export const stableFromId = computed(() => (id) => stableData.value.stableCache[id])
 
-// export async function getStable(id) {
-//    return stableData?.value.stableCache[id]
-// }
-
 export async function addStable(data) {
    const uuid = uuidv4()
    console.log('create stable', uuid)
@@ -96,7 +79,6 @@ export async function addStable(data) {
    stableData.value.stableCache[uuid] = data
    // perform request on backend
    const stable = await app.service('stable').create({ data })
-   console.log('stable', stable)
    stableData.value.stableCache[stable.id] = stable
 }
 
