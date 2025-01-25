@@ -43,7 +43,7 @@
 import { ref } from "vue"
 
 import { stableList, addStable } from "/src/use/useStable"
-import { onCount, offCount, beforeunloadCount, unloadCount, visibilitychangeCount, pagehideCount, pageshowCount } from "/src/use/useStable"
+import { onCount, offCount, beforeunloadCount, unloadCount, loadCount, visibilitychangeCount, pagehideCount, pageshowCount } from "/src/use/useStable"
 import router from '/src/router'
 
 import GithubLink from "/src/components/GithubLink.vue"
