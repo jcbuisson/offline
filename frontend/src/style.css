@@ -2,39 +2,19 @@ body {
   font-family: Arial, sans-serif;
   margin: 20px;
   padding: 20px;
-  /* display: flex;
-  justify-content: center;
-  align-items: center; */
   height: 100vh;
   background-color: #f9f9f9;
 }
 
-/* Main panel container */
-.panel {
-  display: flex;
-  width: 100%;
-}
-
-/* Subpanels */
-.subpanel {
-  flex: 1; /* Each subpanel takes equal space */
-  padding: 20px;
-}
-
-/* Separator line */
-.subpanel:not(:last-child) {
-  border-right: 1px solid #ccc; /* Thin vertical line */
-}
-
-
-h2 {
-  font-size: 24px;
-  margin-bottom: 20px;
-}
 
 .form-group {
   text-align: left; /* labels are left-aligned */
   width: 100%;
+}
+
+h2 {
+  font-size: 24px;
+  margin-bottom: 20px;
 }
 
 .my-1 {
@@ -126,72 +106,4 @@ form:valid .large-button {
 
 form:valid .large-button:hover {
   background-color: #0056b3;
-}
-
-
-
-.styled-list {
-  list-style: none; /* Remove default markers */
-  padding: 0;       /* Remove default padding */
-  margin: 0;        /* Remove default margin */
-  margin-top: 40px;
-  border: 1px solid #ccc; /* Optional: Add a border around the list */
-  border-radius: 5px;     /* Optional: Rounded corners for the list */
-  overflow: hidden;       /* Ensures inner items don't overflow */
-}
-
-.styled-list li {
-  padding: 10px 15px;      /* Inner spacing */
-  background-color: #ffffff;
-  border-bottom: 1px solid #ccc; /* Thin separator line */
-  text-align: center;      /* Center-align text */
-}
-
-.styled-list li:last-child {
-  border-bottom: none; /* Remove bottom border for the last item */
-}
-
-/* Add hover effect */
-.styled-list li:hover {
-  background-color: #f0f0f0; /* Highlight item on hover */
-  cursor: pointer;
-}
-
-.offline {
-  padding: 5px;
-  font-size: 14px;
-  width: 80px;
-  height: 15px;
-  position: absolute;
-  top: 1rem;
-  right: 6rem;
-  border-style: solid;
-  border-radius: 10px;
-  border-width: 0;
-  text-align: center;
-}
-
-.off {
-  color: white;
-  background-color: rgb(236, 139, 139);
-}
-.on {
-  color: white;
-  background-color: #54daa0;
-}
-
-.github {
-  color: black;
-  width: 2rem /* 32px */;
-  height: 2rem /* 32px */;
-  position: absolute;
-  top: 1rem;
-  right: 1rem;
-}
-
-.version {
-  color: rgb(97, 110, 137);
-  position: absolute;
-  top: 1rem;
-  left: 1rem;
 }

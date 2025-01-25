@@ -14,7 +14,16 @@ const initialState = () => ({
 })
 
 const { data: stableData } = useIDBKeyval('stable-state', initialState(), { mergeDefaults: true })
-const { data: onOffData } = useIDBKeyval('on-off', { on: 0, off: 0 }, { mergeDefaults: true })
+const { data: onOffData } = useIDBKeyval('on-off', {
+   on: 0,
+   off: 0,
+   beforeunload: 0,
+   load: 0,
+   unload: 0,
+   visibilitychange: 0,
+   pagehide: 0,
+   pageshow: 0,
+}, { mergeDefaults: true })
 
 export const resetUseStable = () => {
    stableData.value = initialState()
@@ -29,8 +38,54 @@ window.addEventListener('offline', () => {
    onOffData.value.off += 1
 })
 
+window.addEventListener('beforeunload', (event) => {
+   console.log('User is about to leave the page.');
+   event.preventDefault();
+   event.returnValue = ''; // Shows the confirmation dialog in some browsers
+   onOffData.value.beforeunload += 1
+});
+ 
+window.addEventListener('load', () => {
+   console.log('Page is being loaded.');
+   onOffData.value.load += 1
+});
+ 
+window.addEventListener('unload', () => {
+   console.log('Page is being unloaded.');
+   navigator.sendBeacon('/log', JSON.stringify({ action: 'page_unload' }));
+   onOffData.value.unload += 1
+});
+ 
+ document.addEventListener('visibilitychange', () => {
+   if (document.visibilityState === 'hidden') {
+     console.log('Page is hidden. Pausing tasks...');
+   } else if (document.visibilityState === 'visible') {
+     console.log('Page is visible. Resuming tasks...');
+   }
+   onOffData.value.visibilitychange += 1
+});
+ 
+ window.addEventListener('pagehide', () => {
+   console.log('Page is being hidden.');
+   onOffData.value.pagehide += 1
+});
+ 
+ window.addEventListener('pageshow', (event) => {
+   if (event.persisted) {
+     console.log('Page restored from cache.');
+   }
+   console.log('Page is visible again.');
+   onOffData.value.pageshow += 1
+});
+ 
 export const onCount = computed(() => onOffData.value.on)
 export const offCount = computed(() => onOffData.value.off)
+export const beforeunloadCount = computed(() => onOffData.value.beforeunload)
+export const loadCount = computed(() => onOffData.value.load)
+export const unloadCount = computed(() => onOffData.value.unload)
+export const visibilitychangeCount = computed(() => onOffData.value.visibilitychange)
+export const pagehideCount = computed(() => onOffData.value.pagehide)
+export const pageshowCount = computed(() => onOffData.value.pageshow)
 
 
 /////////////          PUB / SUB          /////////////
