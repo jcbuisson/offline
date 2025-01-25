@@ -5,10 +5,10 @@
    <OnlineStatus></OnlineStatus>
 
    <!-- version -->
-   <div class="version">
+   <!-- <div class="version">
       v2.9 on {{ onCount }}, off {{ offCount }}, beforeunloadCount {{ beforeunloadCount }}, unloadCount {{ unloadCount }}, loadCount {{ loadCount }},
       visibilitychangeCount {{ visibilitychangeCount }}, pagehideCount {{ pagehideCount }}, pageshowCount {{ pageshowCount }}
-   </div>
+   </div> -->
    
 
    <div class="panel">
