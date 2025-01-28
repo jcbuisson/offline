@@ -12,7 +12,13 @@ const app = expressX({
    WS_PATH: '/offline-socket-io/',
 })
 
-app.createService('stable', prisma.stable)
+app.createService('stable', {
+   sync: async (request, list) => {
+      const stables = await prisma.stable.findMany(request)
+      return { request, stables }
+   },
+   ...prisma.stable
+})
 app.createService('horse', prisma.horse)
 
 app.configure(channels)

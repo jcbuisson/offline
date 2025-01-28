@@ -80,15 +80,26 @@ export default function expressXClient(socket, options={}) {
          //    reject(`Error: timeout on service '${name}', action '${action}', args: ${JSON.stringify(args)}`)
          // }, serviceOptions.timeout)
       })
-      if (navigator.onLine) {
-         // send request to server through websocket
+
+      // send request to server through websocket (if connected)
+      if (socket.connected) {
          if (options.debug) console.log('client-request', uid, name, action, args)
          socket.emit('client-request', { uid, name, action, args })
       } else {
-         // stack request - will be executed when online
+         // queue request - will be executed when online
          if (options.debug) console.log('(PUSH) client-request', uid, name, action, args)
          requestQueue.push({ uid, name, action, args })
       }
+
+      // if (navigator.onLine) {
+      //    // send request to server through websocket
+      //    if (options.debug) console.log('client-request', uid, name, action, args)
+      //    socket.emit('client-request', { uid, name, action, args })
+      // } else {
+      //    // stack request - will be executed when online
+      //    if (options.debug) console.log('(PUSH) client-request', uid, name, action, args)
+      //    requestQueue.push({ uid, name, action, args })
+      // }
       return promise
    }
 
@@ -119,20 +130,16 @@ export default function expressXClient(socket, options={}) {
 
    const requestQueue = []
    
-   window.addEventListener('online', async () => {
-      if (options.debug) console.log('online...')
-      // execute stacked requests
-      while (requestQueue.length > 0 && navigator.onLine) {
+   socket.on("connect", async () => {
+      if (options.debug) console.log('online, execute queued requests...')
+      // execute queued requests
+      while (requestQueue.length > 0 && socket.connected) {
          const {uid, name, action, args } = requestQueue.shift()
          if (options.debug) console.log('(SHIFT) client-request', uid, name, action, args)
          socket.emit('client-request', { uid, name, action, args })
          await waitingPromisesByUid[uid]
          delete waitingPromisesByUid[uid]
       }
-   })
-
-   window.addEventListener('offline', () => {
-      if (options.debug) console.log('offline...')
    })
 
 

@@ -5,10 +5,9 @@
    <OnlineStatus></OnlineStatus>
 
    <!-- version -->
-   <!-- <div class="version">
-      v2.9 on {{ onCount }}, off {{ offCount }}, beforeunloadCount {{ beforeunloadCount }}, unloadCount {{ unloadCount }}, loadCount {{ loadCount }},
-      visibilitychangeCount {{ visibilitychangeCount }}, pagehideCount {{ pagehideCount }}, pageshowCount {{ pageshowCount }}
-   </div> -->
+   <div class="version">
+      v2.9
+   </div>
    
 
    <div class="panel">
@@ -24,13 +23,13 @@
             </div>
          </form>
 
-         <ul class="styled-list" v-if="stableList.length">
-            <li v-for="stable of stableList" key="stable.id" :class="{ selected: stable.id === selectedId}" @click="selectStable(stable.id)">
+         <ul class="styled-list" v-if="stableListX.length">
+            <li v-for="stable of stableListX" key="stable.id" :class="{ selected: stable.id === selectedId}" @click="selectStable(stable.id)">
                {{ stable.name }}
             </li>
          </ul>
 
-         <h2 v-if="stableList.length === 0">Aucune écurie</h2>
+         <h2 v-if="stableListX.length === 0">Aucune écurie</h2>
       </div>
 
       <div class="subpanel">
@@ -42,8 +41,7 @@
 <script setup>
 import { ref } from "vue"
 
-import { stableList, addStable } from "/src/use/useStable"
-import { onCount, offCount, beforeunloadCount, unloadCount, loadCount, visibilitychangeCount, pagehideCount, pageshowCount } from "/src/use/useStable"
+import { addStable, stableListX } from "/src/use/useStable"
 import router from '/src/router'
 
 import GithubLink from "/src/components/GithubLink.vue"

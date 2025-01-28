@@ -3,15 +3,19 @@ generator client {
 }
 
 model stable {
-   id             String    @unique
+   id             String     @unique
+   createdAt      DateTime   @default(now())
+   updatedAt      DateTime   @updatedAt
    name           String
 
    horses         horse[]
 }
 
 model horse {
-   id             String    @unique
-   text           String
+   id             String     @unique
+   createdAt      DateTime   @default(now())
+   updatedAt      DateTime   @updatedAt
+   name           String
    stable_id      String
 
    stable         stable    @relation(fields: [stable_id], references: [id], onDelete: Cascade)
