@@ -1,7 +1,7 @@
 import 'dotenv/config'
 
-import { expressX } from '@jcbuisson/express-x'
-// import { expressX } from './server.mjs'
+// import { expressX } from '@jcbuisson/express-x'
+import { expressX } from './server.mjs'
 import { PrismaClient } from '@prisma/client'
 import channels from './channels.js'
 
@@ -15,6 +15,10 @@ const app = expressX({
 app.createService('stable', {
    sync: async (request, list) => {
       const stables = await prisma.stable.findMany(request)
+      const toAdd = []
+      const toUpdate = []
+      const toDelete = []
+      
       return { request, stables }
    },
    ...prisma.stable

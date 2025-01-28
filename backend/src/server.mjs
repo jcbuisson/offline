@@ -115,10 +115,16 @@ export function expressX(config) {
 
                      const trimmedResult = result ? JSON.stringify(result).slice(0, 300) : ''
                      app.log('verbose', `client-response ${uid} ${trimmedResult}`)
-                     socket.emit('client-response', {
+
+
+
+                     if (socket.connected) socket.emit('client-response', {
                         uid,
                         result,
                      })
+
+
+                     
                   } catch(err) {
                      console.log('!!!!!!error', 'name', name, 'action', action, 'args', args, 'err.code', err.code, 'err.message', err.message)
                      app.log('verbose', err.stack)
@@ -205,7 +211,7 @@ export function expressX(config) {
 
             // publish 'service-event' event associated to service/method
             if (service.publishFunction) {
-               // collect channel names to socket is member of
+               // collect channel names to which socket is a member
                const channelNames = await service.publishFunction(context)
                // send event on all these channels
                if (channelNames.length > 0) {

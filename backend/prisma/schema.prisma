@@ -4,8 +4,8 @@ generator client {
 
 model stable {
    id             String     @unique
-   createdAt      DateTime   @default(now())
-   updatedAt      DateTime   @updatedAt
+   createdAt      DateTime   @default(now()) @db.Timestamptz(6)
+   updatedAt      DateTime   @updatedAt @db.Timestamptz(6)
    name           String
 
    horses         horse[]
@@ -13,8 +13,8 @@ model stable {
 
 model horse {
    id             String     @unique
-   createdAt      DateTime   @default(now())
-   updatedAt      DateTime   @updatedAt
+   createdAt      DateTime   @default(now()) @db.Timestamptz(6)
+   updatedAt      DateTime   @updatedAt @db.Timestamptz(6)
    name           String
    stable_id      String
 

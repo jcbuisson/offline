@@ -74,32 +74,21 @@ export default function expressXClient(socket, options={}) {
       const uid = generateUID(20)
       const promise = new Promise((resolve, reject) => {
          waitingPromisesByUid[uid] = [resolve, reject]
-         // // a timeout may also reject the promise
-         // setTimeout(() => {
-         //    delete waitingPromisesByUid[uid]
-         //    reject(`Error: timeout on service '${name}', action '${action}', args: ${JSON.stringify(args)}`)
-         // }, serviceOptions.timeout)
+         // a timeout may also reject the promise
+         setTimeout(() => {
+            delete waitingPromisesByUid[uid]
+            reject(`Error: timeout on service '${name}', action '${action}', args: ${JSON.stringify(args)}`)
+         }, serviceOptions.timeout)
       })
-
-      // send request to server through websocket (if connected)
-      if (socket.connected) {
-         if (options.debug) console.log('client-request', uid, name, action, args)
-         socket.emit('client-request', { uid, name, action, args })
+      // send request to server through websocket
+      if (options.debug) console.log('client-request', uid, name, action, args)
+      if (serviceOptions.volatile) {
+         // event is not sent if connection is not active
+         socket.volatile.emit('client-request', { uid, name, action, args, })
       } else {
-         // queue request - will be executed when online
-         if (options.debug) console.log('(PUSH) client-request', uid, name, action, args)
-         requestQueue.push({ uid, name, action, args })
+         // event is buffered if connection is not active (default)
+         socket.emit('client-request', { uid, name, action, args, })
       }
-
-      // if (navigator.onLine) {
-      //    // send request to server through websocket
-      //    if (options.debug) console.log('client-request', uid, name, action, args)
-      //    socket.emit('client-request', { uid, name, action, args })
-      // } else {
-      //    // stack request - will be executed when online
-      //    if (options.debug) console.log('(PUSH) client-request', uid, name, action, args)
-      //    requestQueue.push({ uid, name, action, args })
-      // }
       return promise
    }
 
@@ -124,24 +113,6 @@ export default function expressXClient(socket, options={}) {
       }
       return new Proxy(service, handler)
    }
-
-
-   ///////////////         OFFLINE         /////////////////
-
-   const requestQueue = []
-   
-   socket.on("connect", async () => {
-      if (options.debug) console.log('online, execute queued requests...')
-      // execute queued requests
-      while (requestQueue.length > 0 && socket.connected) {
-         const {uid, name, action, args } = requestQueue.shift()
-         if (options.debug) console.log('(SHIFT) client-request', uid, name, action, args)
-         socket.emit('client-request', { uid, name, action, args })
-         await waitingPromisesByUid[uid]
-         delete waitingPromisesByUid[uid]
-      }
-   })
-
 
    ///////////////         APPLICATION-LEVEL EVENTS         /////////////////
 
