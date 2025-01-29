@@ -18,7 +18,12 @@ const socket = io(socketOptions)
 export const app = expressXClient(socket, { debug: true })
 
 export const onlineDate = ref()
+export const offlineDate = ref()
 
 app.onConnect(async (socket) => {
    onlineDate.value = new Date()
+})
+
+app.onDisconnect(async (socket) => {
+   offlineDate.value = new Date()
 })

@@ -2,7 +2,7 @@ import { computed } from 'vue'
 import { useIDBKeyval } from '@vueuse/integrations/useIDBKeyval'
 import { v4 as uuidv4 } from 'uuid'
 
-import { app, onlineDate } from '/src/client-app.js'
+import { app, onlineDate, offlineDate } from '/src/client-app.js'
 
 
 /////////////          CACHE BACKED BY INDEXEDB          /////////////
@@ -13,10 +13,10 @@ const initialState = () => ({
    cache: {},
 })
 
-const { data: stableData } = useIDBKeyval('stable-state', initialState(), { mergeDefaults: true })
+const { data: storage } = useIDBKeyval('stable-state', initialState(), { mergeDefaults: true })
 
 export const resetUseStable = () => {
-   stableData.value = initialState()
+   storage.value = initialState()
 }
 
 
@@ -24,76 +24,90 @@ export const resetUseStable = () => {
 
 app.service('stable').on('create', stable => {
    console.log('STABLE EVENT created', stable)
-   stableData.value.cache[stable.id] = stable
+   storage.value.cache[stable.id] = stable
 })
 
 app.service('stable').on('update', stable => {
    console.log('STABLE EVENT update', stable)
-   stableData.value.cache[stable.id] = stable
+   storage.value.cache[stable.id] = stable
 })
 
 app.service('stable').on('delete', stable => {
    console.log('STABLE EVENT delete', stable)
-   delete stableData.value.cache[stable.id]
+   delete storage.value.cache[stable.id]
 })
 
-app.service('stable').on('sync', ({ request, stables }) => {
-   console.log('STABLE EVENT sync', request, stables)
-   const requestKey = JSON.stringify(request)
-   stableData.value.requestOngoingDate[requestKey] = null
-   stableData.value.requestSyncDate[requestKey] = new Date()
-   for (const stable of stables) {
-      stableData.value.cache[stable.id] = stable
-   }
-})
+// app.service('stable').on('sync', ({ request, syncDate, toAdd, toUpdate, toDelete }) => {
+//    console.log('STABLE EVENT sync', request, syncDate, toAdd, toUpdate, toDelete)
+//    console.log(syncDate, toAdd, toUpdate, toDelete)
+//    const requestKey = JSON.stringify(request)
+//    storage.value.requestOngoingDate[requestKey] = null
+//    storage.value.requestSyncDate[requestKey] = syncDate
+//    for (const value of toAdd) {
+//       storage.value.cache[value.id] = value
+//    }
+// })
 
 
 /////////////          METHODS & COMPUTED          /////////////
 
 export const stableListX = computed(() => {
-   if (!stableData.value) return []
+   if (!storage.value) return []
    if (!onlineDate.value) return []
+   const now = new Date()
    const request = { where: {}}
    const requestPredicate = (stable) => true
    const requestKey = JSON.stringify(request)
-   const syncDate = stableData.value.requestSyncDate[requestKey]
-   if (syncDate && syncDate > onlineDate.value) {
-      return Object.values(stableData.value.cache)
+   const syncDate = storage.value.requestSyncDate[requestKey]
+   console.log('syncDate', syncDate, 'onlineDate', onlineDate.value, syncDate >= onlineDate.value)
+   if (syncDate && syncDate >= onlineDate.value) {
+      return Object.values(storage.value.cache).filter(value => !value._deleted)
    }
-   if (!stableData.value.requestOngoingDate[requestKey]) {
-      stableData.value.requestOngoingDate[requestKey] = new Date()
-      const list = Object.entries(stableData.value.cache).reduce((accu, [id, value]) => {
-         return requestPredicate(value) ? accu.concat({ id, createdAt: value.createdAt, updatedAt: value.updatedAt }) : accu
-      }, [])
-      app.service('stable').sync(request, list)
+   if (!storage.value.requestOngoingDate[requestKey]) {
+      storage.value.requestOngoingDate[requestKey] = now
+      const clientValuesDict = Object.entries(storage.value.cache).reduce((accu, [id, value]) => {
+         if (requestPredicate(value)) accu[id] = value
+         return accu
+      }, {})
+
+      app.service('stable').sync(request, now, offlineDate.value, clientValuesDict)
+      .then(({ request, syncDate, toAdd, toUpdate, toDelete }) => {
+         console.log(syncDate, toAdd, toUpdate, toDelete)
+         const requestKey = JSON.stringify(request)
+         storage.value.requestOngoingDate[requestKey] = null
+         storage.value.requestSyncDate[requestKey] = new Date() // syncDate
+         for (const value of toAdd) {
+            storage.value.cache[value.id] = value
+         }
+      })
    }
    return []
 })
 
 
-export const stableFromId = computed(() => (id) => stableData.value.cache[id])
+export const stableFromId = computed(() => (id) => storage.value.cache[id])
 
 export async function addStable(data) {
    const uuid = uuidv4()
    console.log('create stable', uuid)
    // optimistic update
    const now = new Date()
-   stableData.value.cache[uuid] = { id: uuid, createdAt: now, updatedAt: now, ...data }
+   storage.value.cache[uuid] = { id: uuid, createdAt: now, updatedAt: now, ...data }
    // perform request on backend if connection is active
    const stable = await app.service('stable', { volatile: true }).create({ data: { id: uuid, ...data } })
-   stableData.value.cache[stable.id] = stable
+   storage.value.cache[stable.id] = stable
 }
 
 export async function patchStable(id, data) {
    // optimistic update
-   Object.assign(stableData.value.cache[id], data)
+   Object.assign(storage.value.cache[id], data)
    // perform request on backend
    await app.service('stable', { volatile: true }).update({ where: { id }, data})
 }
 
 export async function deleteStable(id) {
    // optimistic update
-   delete stableData.value.cache[id]
+   storage.value.cache[id]._deleted = true // mark it deleted in case of sync
    // perform request on backend
    await app.service('stable', { volatile: true }).delete({ where: { id }})
 }

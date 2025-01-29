@@ -117,7 +117,7 @@ export function expressX(config) {
                      app.log('verbose', `client-response ${uid} ${trimmedResult}`)
 
 
-
+///// VOLATILE EVENT
                      if (socket.connected) socket.emit('client-response', {
                         uid,
                         result,

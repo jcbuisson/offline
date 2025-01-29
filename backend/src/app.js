@@ -3,28 +3,18 @@ import 'dotenv/config'
 // import { expressX } from '@jcbuisson/express-x'
 import { expressX } from './server.mjs'
 import { PrismaClient } from '@prisma/client'
+import services from './services/index.js'
 import channels from './channels.js'
-
-const prisma = new PrismaClient()
 
 const app = expressX({
    WS_TRANSPORT: true,
    WS_PATH: '/offline-socket-io/',
 })
 
-app.createService('stable', {
-   sync: async (request, list) => {
-      const stables = await prisma.stable.findMany(request)
-      const toAdd = []
-      const toUpdate = []
-      const toDelete = []
-      
-      return { request, stables }
-   },
-   ...prisma.stable
-})
-app.createService('horse', prisma.horse)
+const prisma = new PrismaClient()
+app.set('prisma', prisma)
 
+app.configure(services)
 app.configure(channels)
 
 app.on('connection', (socket) => {
