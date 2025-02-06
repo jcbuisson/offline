@@ -22,10 +22,12 @@
          <button class="large-red-button" @click="removeStable">Supprimer</button>
       </div>
    </div>
+
+   <router-view></router-view>
 </template>
 
 <script setup>
-import { computed, ref, watch } from "vue"
+import { ref, watch } from "vue"
 
 import { getStable, patchStable, deleteStable } from "/src/use/useStable"
 import router from "/src/router"
@@ -49,8 +51,7 @@ async function updateStable() {
 }
 
 async function removeStable() {
-   // do not await when offline
-   /* await */ deleteStable(props.uid)
+   deleteStable(props.uid)
    router.push("/stables")
 }
 </script>

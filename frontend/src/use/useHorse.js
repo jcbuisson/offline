@@ -8,13 +8,13 @@ import { app, offlineDate } from '/src/client-app.js'
 
 
 
-const db = new Dexie("stablesDatabase")
+
+const db = new Dexie("horseDatabase")
 
 db.version(1).stores({
-   requestSyncDate: "requestKey, date",
-   requestOngoingDate: "requestKey, date",
-   stables: "uid, createdAt, updatedAt, name, deleted_"
+   stables: "uid, createdAt, updatedAt, deleted_, name, stable_id"
 })
+
 
 export const resetUseStable = () => {
    // ??

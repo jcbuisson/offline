@@ -9,33 +9,29 @@
       v2.9
    </div>
    
-   <div class="panel">
-      <div class="subpanel">
-         <form @submit.prevent="newStable">
-            <div class="form-group">
-               <div class="input-container">
-                  <input type="text" name="addstable" v-model="formData.name" placeholder="Ex: Écurie Guillem" required>
-               </div>
+   <div>
+      <form @submit.prevent="newStable">
+         <div class="form-group">
+            <div class="input-container">
+               <input type="text" name="addstable" v-model="formData.name" placeholder="Ex: Écurie Guillem" required>
             </div>
-            <div class="my-1">
-               <button type="submit" class="large-button">Créer écurie</button>
-            </div>
-         </form>
+         </div>
+         <div class="my-1">
+            <button type="submit" class="large-button">Créer écurie</button>
+         </div>
+      </form>
 
-         <ul class="styled-list" v-if="stableList?.length">
-            <li v-for="stable of stableList" key="stable.uid" :class="{ selected: stable.uid === selectedId}" @click="selectStable(stable.uid)">
-               {{ stable.name }}
-            </li>
-         </ul>
+      <ul class="styled-list" v-if="stableList?.length">
+         <li v-for="stable of stableList" key="stable.uid" :class="{ selected: stable.uid === selectedId}" @click="selectStable(stable.uid)">
+            {{ stable.name }}
+         </li>
+      </ul>
 
-         <h2 v-if="!stableList?.length">Aucune écurie</h2>
+      <h2 v-if="!stableList?.length">Aucune écurie</h2>
 
-      </div>
-
-      <div class="subpanel">
-         <router-view></router-view>
-      </div>
    </div>
+
+   <router-view></router-view>
 </template>
 
 <script setup>
@@ -66,21 +62,6 @@ function selectStable(id) {
 </script>
 
 <style scoped>
-.panel {
-  display: flex;
-  width: 100%;
-}
-
-.subpanel {
-  flex: 1; /* Each subpanel takes equal space */
-  padding: 20px;
-}
-
- /* Thin vertical line */
- .subpanel:not(:last-child) {
-  border-right: 1px solid #ccc;
-}
-
 .selected {
    background-color: #f0f0f0;
 }
