@@ -7,7 +7,7 @@ export default function (app) {
 
       time: async () => new Date(),
 
-      // TO CHANGE: WE ONLY NEED CLIENT VALUES METATDATA. NECESSITATE A FURTHER STEP FOR VALUES TO UPDATE?
+      // À CHANGER : PLUSIEURS ÉTAPES, LA PREMIÈRE SIMPLE ÉCHANGE DES METADATA SANS LES VALEURS, ENSUITE ÉCHANGE DES VALEURS À AJOUTER/MODIFIER
       sync: async (request, clientTime, offlineDate, clientValuesDict) => {
          console.log('clientValuesDict', clientValuesDict)
          const cutoffDate = offlineDate // || clientTime
@@ -19,7 +19,7 @@ export default function (app) {
          }, {})
          console.log('databaseValuesDict', databaseValuesDict)
 
-         // STEP 1: compute intersections betwen client and database uids
+         // STEP 1: compute intersections between client and database uids
          const onlyDatabaseIds = new Set()
          const onlyClientIds = new Set()
          const databaseAndClientIds = new Set()
