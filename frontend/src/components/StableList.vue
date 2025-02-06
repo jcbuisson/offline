@@ -23,26 +23,28 @@
             </div>
          </form>
 
-         <ul class="styled-list" v-if="stableListX.length">
-            <li v-for="stable of stableListX" key="stable.id" :class="{ selected: stable.id === selectedId}" @click="selectStable(stable.id)">
+         <ul class="styled-list" v-if="stableList?.length">
+            <li v-for="stable of stableList" key="stable.uid" :class="{ selected: stable.uid === selectedId}" @click="selectStable(stable.uid)">
                {{ stable.name }}
             </li>
          </ul>
 
-         <h2 v-if="stableListX.length === 0">Aucune écurie</h2>
+         <h2 v-else">Aucune écurie</h2>
+
       </div>
 
       <div class="subpanel">
          <router-view></router-view>
       </div>
-  </div>
+   </div>
 </template>
 
 <script setup>
 import { ref } from "vue"
 
-import { addStable, stableListX } from "/src/use/useStable"
+import { addStable, stableList } from "/src/use/useStable"
 import router from '/src/router'
+import { onlineDate, offlineDate } from '/src/client-app.js'
 
 import GithubLink from "/src/components/GithubLink.vue"
 import OnlineStatus from "/src/components/OnlineStatus.vue"
@@ -50,6 +52,7 @@ import OnlineStatus from "/src/components/OnlineStatus.vue"
 const formData = ref({})
 
 const selectedId = ref()
+
 
 async function newStable() {
    const dataCopy = Object.assign({}, formData.value)

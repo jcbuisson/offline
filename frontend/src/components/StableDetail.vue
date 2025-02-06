@@ -1,17 +1,17 @@
 <template>
 
-   <div>
+   <div>{{ stable }}
       <form @submit.prevent="updateStable">
          <div class="form-group my-1">
-            <label for="id">Id</label>
+            <label for="uid">uid</label>
             <div class="input-container">
-               <input type="text" name="id" :value="id" disabled>
+               <input type="text" name="uid" :value="uid" disabled>
             </div>
          </div>
          <div class="form-group my-1">
-            <label for="name">Name</label>
+            <label for="name">name</label>
             <div class="input-container">
-               <input type="text" name="name" :value="stable?.name" @change="(evt) => formData.name = evt.target.value" required>
+               <input type="text" name="name" :value="stable.name" @change="(evt) => formData.name = evt.target.value" required>
             </div>
          </div>
          <div class="my-1">
@@ -25,17 +25,17 @@
 </template>
 
 <script setup>
-import { computed, ref } from "vue"
-import { stableFromId, patchStable, deleteStable } from "/src/use/useStable"
+import { computed, ref, onUpdated } from "vue"
+import { stableFromId, getStable, patchStable, deleteStable } from "/src/use/useStable"
 import router from "/src/router"
 
 const props = defineProps({
-   id: String,
+   uid: String,
 })
 
 const formData = ref({})
 
-const stable = computed(() => stableFromId.value(props.id))
+const stable = computed(() => stableFromId.value(props.uid))
 
 async function updateStable() {
    await patchStable(props.id, formData.value)
@@ -43,7 +43,7 @@ async function updateStable() {
 
 async function removeStable() {
    // do not await when offline
-   /* await */ deleteStable(props.id)
+   /* await */ deleteStable(props.uid)
    router.push("/stables")
 }
 </script>

@@ -92,7 +92,8 @@ export default function expressXClient(socket, options={}) {
       return promise
    }
 
-   function service(name, serviceOptions={ timeout: 20000 }) {
+   function service(name, serviceOptions={}) {
+      if (serviceOptions.timeout === undefined) serviceOptions.timeout = 20000
       const service = {
          // associate a handler to a pub/sub event for this service
          on: (action, handler) => {

@@ -1,114 +1,164 @@
-import { computed } from 'vue'
-import { useIDBKeyval } from '@vueuse/integrations/useIDBKeyval'
+import { ref, computed } from 'vue'
 import { v4 as uuidv4 } from 'uuid'
+import Dexie from "dexie"
+import { liveQuery } from "dexie"
+import { useObservable } from "@vueuse/rxjs"
 
 import { app, onlineDate, offlineDate } from '/src/client-app.js'
+import { getTime } from '/src/use/useTime.js'
 
 
-/////////////          CACHE BACKED BY INDEXEDB          /////////////
 
-const initialState = () => ({
-   requestSyncDate: {},
-   requestOngoingDate: {},
-   cache: {},
+
+const db = new Dexie("stablesDatabase")
+
+db.version(1).stores({
+   requestSyncDate: "requestKey, date",
+   requestOngoingDate: "requestKey, date",
+   stables: "uid, createdAt, updatedAt, name, deleted_"
 })
 
-const { data: storage } = useIDBKeyval('stable-state', initialState(), { mergeDefaults: true })
+// const stables = ref({})
+
+// // Automatically update users when IndexedDB changes
+// liveQuery(() => db.stables.toArray()).subscribe((stableList) => {
+//    console.log('liveQuery')
+//    for (const stable of stableList) {
+//       stables.value[stable.uid] = stable
+//    }
+// })
+
+
 
 export const resetUseStable = () => {
-   storage.value = initialState()
+   // ??
 }
 
 
 /////////////          PUB / SUB          /////////////
 
-app.service('stable').on('create', stable => {
+app.service('stable').on('create', async stable => {
    console.log('STABLE EVENT created', stable)
-   storage.value.cache[stable.id] = stable
+   await db.stables.put(stable)
 })
 
-app.service('stable').on('update', stable => {
+app.service('stable').on('update', async stable => {
    console.log('STABLE EVENT update', stable)
-   storage.value.cache[stable.id] = stable
+   await db.stables.put(stable)
 })
 
-app.service('stable').on('delete', stable => {
+app.service('stable').on('delete', async stable => {
    console.log('STABLE EVENT delete', stable)
-   delete storage.value.cache[stable.id]
+   await db.stables.delete(stable.uid)
 })
 
 // app.service('stable').on('sync', ({ request, syncDate, toAdd, toUpdate, toDelete }) => {
 //    console.log('STABLE EVENT sync', request, syncDate, toAdd, toUpdate, toDelete)
 //    console.log(syncDate, toAdd, toUpdate, toDelete)
 //    const requestKey = JSON.stringify(request)
-//    storage.value.requestOngoingDate[requestKey] = null
-//    storage.value.requestSyncDate[requestKey] = syncDate
+//    idb.data.value.requestOngoingDate[requestKey] = null
+//    idb.data.value.requestSyncDate[requestKey] = syncDate
 //    for (const value of toAdd) {
-//       storage.value.cache[value.id] = value
+//       idb.data.value.cache[value.uid] = value
 //    }
 // })
 
 
 /////////////          METHODS & COMPUTED          /////////////
 
-export const stableListX = computed(() => {
-   if (!storage.value) return []
-   if (!onlineDate.value) return []
-   const now = new Date()
-   const request = { where: {}}
-   const requestPredicate = (stable) => true
-   const requestKey = JSON.stringify(request)
-   const syncDate = storage.value.requestSyncDate[requestKey]
-   console.log('syncDate', syncDate, 'onlineDate', onlineDate.value, syncDate >= onlineDate.value)
-   if (syncDate && syncDate >= onlineDate.value) {
-      return Object.values(storage.value.cache).filter(value => !value._deleted)
-   }
-   if (!storage.value.requestOngoingDate[requestKey]) {
-      storage.value.requestOngoingDate[requestKey] = now
-      const clientValuesDict = Object.entries(storage.value.cache).reduce((accu, [id, value]) => {
-         if (requestPredicate(value)) accu[id] = value
-         return accu
-      }, {})
+export async function getStable(uid) {
+   return db.stables.get(uid)
+}
 
-      app.service('stable').sync(request, now, offlineDate.value, clientValuesDict)
-      .then(({ request, syncDate, toAdd, toUpdate, toDelete }) => {
-         console.log(syncDate, toAdd, toUpdate, toDelete)
-         const requestKey = JSON.stringify(request)
-         storage.value.requestOngoingDate[requestKey] = null
-         storage.value.requestSyncDate[requestKey] = new Date() // syncDate
-         for (const value of toAdd) {
-            storage.value.cache[value.id] = value
-         }
-      })
-   }
-   return []
-})
+export const stableFromId = computed(() => (uid) => useObservable(
+   liveQuery(() => {
+      console.log(`liveQuery ${uid}`)
+      return db.stables.get(uid)
+   })
+))
+
+export const stableList = useObservable(
+   liveQuery(() => {
+      console.log('liveQuery list')
+      const promise = db.stables.filter(stable => !stable.deleted_).toArray()
+      return promise
+   })
+)
+
+// export const stableListX = computed(() => {
+//    // if (!idb.data.value) return { synced: false, values: [] }
+
+//    const request = { where: {}}
+//    const requestPredicate = (stable) => true
+//    const requestKey = JSON.stringify(request)
+
+//    const syncDate = db.requestOngoingDate.get(requestKey)
+//    console.log('syncDate', syncDate, 'onlineDate', onlineDate.value, syncDate >= onlineDate.value)
+//    const values = Object.values(idb.data.value.cache).filter(value => !value._deleted)
+
+//    // a sync has been done after online date: data is up to date
+//    if (syncDate && onlineDate.value && syncDate >= onlineDate.value) {
+//       return { synced: true, values }
+//    }
+
+//    // a sync must be done
+//    if (!idb.data.value.requestOngoingDate[requestKey]) {
+//       const now = getTime()
+//       idb.data.value.requestOngoingDate[requestKey] = now
+//       // collect selected local data
+//       const clientValuesDict = db.stables.toArray().reduce((accu, [uid, value]) => {
+//          if (requestPredicate(value)) accu[uid] = value
+//          return accu
+//       }, {})
+
+//       // send local data to server and ask for local changes to be made (add, update, delete) to be in sync
+//       app.service('stable').sync(request, now, offlineDate.value, clientValuesDict)
+//       .then(({ request, syncDate, toAdd, toUpdate, toDelete }) => {
+//          console.log(syncDate, toAdd, toUpdate, toDelete)
+//          const requestKey = JSON.stringify(request)
+//          db.requestOngoingDate.put({ requestKey, date: null })
+//          db.requestSyncDate.put({ requestKey, date: new Date() })
+//          // update cache according to server sync directives
+//          // 1- add missing elements
+//          for (const stable of toAdd) {
+//             db.stables.put(stable)
+//          }
+//          // 2- delete removed elements
+//          for (const stable of toDelete) {
+//             db.stables.delete(stable.uid)
+//          }
+//          // 3- update elements
+//          for (const stable of toUpdate) {
+//             db.stables.put(stable)
+//          }
+//       })
+//    }
+//    return { synced: false, values }
+// })
 
 
-export const stableFromId = computed(() => (id) => storage.value.cache[id])
+// export const stableFromId = computed(() => (uid) => db.stables.get(uid))
 
 export async function addStable(data) {
    const uuid = uuidv4()
    console.log('create stable', uuid)
    // optimistic update
    const now = new Date()
-   storage.value.cache[uuid] = { id: uuid, createdAt: now, updatedAt: now, ...data }
-   // perform request on backend if connection is active
-   const stable = await app.service('stable', { volatile: true }).create({ data: { id: uuid, ...data } })
-   storage.value.cache[stable.id] = stable
+   await db.stables.add({ uid: uuid, createdAt: now, updatedAt: now, ...data })
+   // perform request on backend (if connection is active)
+   await app.service('stable', { volatile: true }).create({ data: { uid: uuid, ...data } })
 }
 
-export async function patchStable(id, data) {
+export async function patchStable(uid, data) {
    // optimistic update
-   Object.assign(storage.value.cache[id], data)
-   // perform request on backend
-   await app.service('stable', { volatile: true }).update({ where: { id }, data})
+   await db.stables.put(data)
+   // perform request on backend (if connection is active)
+   await app.service('stable', { volatile: true }).update({ where: { uid }, data})
 }
 
-export async function deleteStable(id) {
+export async function deleteStable(uid) {
    // optimistic update
-   storage.value.cache[id]._deleted = true // mark it deleted in case of sync
-   // perform request on backend
-   await app.service('stable', { volatile: true }).delete({ where: { id }})
+   await db.stables.update(uid, { deleted_: true })
+   // perform request on backend (if connection is active)
+   await app.service('stable', { volatile: true }).delete({ where: { uid }})
 }
-

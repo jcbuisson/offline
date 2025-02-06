@@ -22,8 +22,10 @@ export const offlineDate = ref()
 
 app.onConnect(async (socket) => {
    onlineDate.value = new Date()
+   offlineDate.value = null
 })
 
 app.onDisconnect(async (socket) => {
    offlineDate.value = new Date()
+   onlineDate.value = null
 })
