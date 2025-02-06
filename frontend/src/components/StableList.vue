@@ -9,7 +9,6 @@
       v2.9
    </div>
    
-
    <div class="panel">
       <div class="subpanel">
          <form @submit.prevent="newStable">
@@ -29,7 +28,7 @@
             </li>
          </ul>
 
-         <h2 v-else">Aucune écurie</h2>
+         <h2 v-if="!stableList?.length">Aucune écurie</h2>
 
       </div>
 

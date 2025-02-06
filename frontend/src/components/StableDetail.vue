@@ -1,6 +1,6 @@
 <template>
 
-   <div>{{ stable }}
+   <div>
       <form @submit.prevent="updateStable">
          <div class="form-group my-1">
             <label for="uid">uid</label>
@@ -11,7 +11,7 @@
          <div class="form-group my-1">
             <label for="name">name</label>
             <div class="input-container">
-               <input type="text" name="name" :value="stable.name" @change="(evt) => formData.name = evt.target.value" required>
+               <input type="text" name="name" :value="stable?.name" @change="(evt) => formData.name = evt.target.value" required>
             </div>
          </div>
          <div class="my-1">
@@ -25,8 +25,9 @@
 </template>
 
 <script setup>
-import { computed, ref, onUpdated } from "vue"
-import { stableFromId, getStable, patchStable, deleteStable } from "/src/use/useStable"
+import { computed, ref, watch } from "vue"
+
+import { getStable, patchStable, deleteStable } from "/src/use/useStable"
 import router from "/src/router"
 
 const props = defineProps({
@@ -35,10 +36,16 @@ const props = defineProps({
 
 const formData = ref({})
 
-const stable = computed(() => stableFromId.value(props.uid))
+
+const stable = ref()
+watch(() => props.uid, async (newValue, oldValue) => {
+   stable.value = await getStable(props.uid)
+}, { immediate: true })
+
+
 
 async function updateStable() {
-   await patchStable(props.id, formData.value)
+   await patchStable(props.uid, formData.value)
 }
 
 async function removeStable() {

@@ -9,7 +9,7 @@
     "preview": "vite preview"
   },
   "dependencies": {
-    "@jcbuisson/express-x-client": "^2.1.7",
+    "@jcbuisson/express-x-client": "^2.1.8",
     "@vueuse/integrations": "^12.5.0",
     "@vueuse/rxjs": "^12.5.0",
     "dexie": "^4.0.11",

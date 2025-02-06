@@ -1,4 +1,4 @@
-import { ref, computed } from 'vue'
+import { ref, computed, toRaw } from 'vue'
 import { v4 as uuidv4 } from 'uuid'
 import Dexie from "dexie"
 import { liveQuery } from "dexie"
@@ -70,13 +70,6 @@ export async function getStable(uid) {
    return db.stables.get(uid)
 }
 
-export const stableFromId = computed(() => (uid) => useObservable(
-   liveQuery(() => {
-      console.log(`liveQuery ${uid}`)
-      return db.stables.get(uid)
-   })
-))
-
 export const stableList = useObservable(
    liveQuery(() => {
       console.log('liveQuery list')
@@ -84,6 +77,48 @@ export const stableList = useObservable(
       return promise
    })
 )
+
+app.onConnect(async (socket) => {
+   console.log('online! synchronizing...')
+   synchronize()
+})
+app.onDisconnect(async (socket) => {
+   console.log('offline!')
+})
+
+
+export async function synchronize() {
+   const request = { where: {}}
+   const requestPredicate = (stable) => true
+   const requestKey = JSON.stringify(request)
+
+   const allValues = await db.stables.toArray()
+   console.log('allValues', allValues)
+   const clientValuesDict = allValues.reduce((accu, elt) => {
+      if (requestPredicate(elt)) accu[elt.uid] = elt
+      return accu
+   }, {})
+
+   // send local data to server and ask for local changes to be made (add, update, delete) to be in sync
+   const now = new Date()
+   const { syncDate, toAdd, toUpdate, toDelete } = await app.service('stable').sync(request, now, offlineDate.value, clientValuesDict)
+   console.log(syncDate, toAdd, toUpdate, toDelete)
+   await db.requestOngoingDate.put({ requestKey, date: null })
+   await db.requestSyncDate.put({ requestKey, date: new Date() })
+   // update cache according to server sync directives
+   // 1- add missing elements
+   for (const stable of toAdd) {
+      await db.stables.add(stable)
+   }
+   // 2- delete removed elements
+   for (const stable of toDelete) {
+      await db.stables.delete(stable.uid)
+   }
+   // 3- update elements
+   for (const stable of toUpdate) {
+      await db.stables.update(stable.uid, stable)
+   }
+}
 
 // export const stableListX = computed(() => {
 //    // if (!idb.data.value) return { synced: false, values: [] }
@@ -151,7 +186,7 @@ export async function addStable(data) {
 
 export async function patchStable(uid, data) {
    // optimistic update
-   await db.stables.put(data)
+   await db.stables.update(uid, { name: data.name, updatedAt: new Date() })
    // perform request on backend (if connection is active)
    await app.service('stable', { volatile: true }).update({ where: { uid }, data})
 }

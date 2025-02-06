@@ -2,8 +2,8 @@
 import { io } from "socket.io-client"
 import { ref } from 'vue'
 
-// import expressXClient from '@jcbuisson/express-x-client'
-import expressXClient from './client.mjs'
+import expressXClient from '@jcbuisson/express-x-client'
+// import expressXClient from './client.mjs'
 
 
 const socketOptions = {
