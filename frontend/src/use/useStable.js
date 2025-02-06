@@ -52,17 +52,6 @@ app.service('stable').on('delete', async stable => {
    await db.stables.delete(stable.uid)
 })
 
-// app.service('stable').on('sync', ({ request, syncDate, toAdd, toUpdate, toDelete }) => {
-//    console.log('STABLE EVENT sync', request, syncDate, toAdd, toUpdate, toDelete)
-//    console.log(syncDate, toAdd, toUpdate, toDelete)
-//    const requestKey = JSON.stringify(request)
-//    idb.data.value.requestOngoingDate[requestKey] = null
-//    idb.data.value.requestSyncDate[requestKey] = syncDate
-//    for (const value of toAdd) {
-//       idb.data.value.cache[value.uid] = value
-//    }
-// })
-
 
 /////////////          METHODS & COMPUTED          /////////////
 
@@ -118,60 +107,6 @@ export async function synchronize() {
       await db.stables.update(stable.uid, stable)
    }
 }
-
-// export const stableListX = computed(() => {
-//    // if (!idb.data.value) return { synced: false, values: [] }
-
-//    const request = { where: {}}
-//    const requestPredicate = (stable) => true
-//    const requestKey = JSON.stringify(request)
-
-//    const syncDate = db.requestOngoingDate.get(requestKey)
-//    console.log('syncDate', syncDate, 'onlineDate', onlineDate.value, syncDate >= onlineDate.value)
-//    const values = Object.values(idb.data.value.cache).filter(value => !value._deleted)
-
-//    // a sync has been done after online date: data is up to date
-//    if (syncDate && onlineDate.value && syncDate >= onlineDate.value) {
-//       return { synced: true, values }
-//    }
-
-//    // a sync must be done
-//    if (!idb.data.value.requestOngoingDate[requestKey]) {
-//       const now = getTime()
-//       idb.data.value.requestOngoingDate[requestKey] = now
-//       // collect selected local data
-//       const clientValuesDict = db.stables.toArray().reduce((accu, [uid, value]) => {
-//          if (requestPredicate(value)) accu[uid] = value
-//          return accu
-//       }, {})
-
-//       // send local data to server and ask for local changes to be made (add, update, delete) to be in sync
-//       app.service('stable').sync(request, now, offlineDate.value, clientValuesDict)
-//       .then(({ request, syncDate, toAdd, toUpdate, toDelete }) => {
-//          console.log(syncDate, toAdd, toUpdate, toDelete)
-//          const requestKey = JSON.stringify(request)
-//          db.requestOngoingDate.put({ requestKey, date: null })
-//          db.requestSyncDate.put({ requestKey, date: new Date() })
-//          // update cache according to server sync directives
-//          // 1- add missing elements
-//          for (const stable of toAdd) {
-//             db.stables.put(stable)
-//          }
-//          // 2- delete removed elements
-//          for (const stable of toDelete) {
-//             db.stables.delete(stable.uid)
-//          }
-//          // 3- update elements
-//          for (const stable of toUpdate) {
-//             db.stables.put(stable)
-//          }
-//       })
-//    }
-//    return { synced: false, values }
-// })
-
-
-// export const stableFromId = computed(() => (uid) => db.stables.get(uid))
 
 export async function addStable(data) {
    const uuid = uuidv4()
