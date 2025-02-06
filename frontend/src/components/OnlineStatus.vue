@@ -6,33 +6,33 @@
 
 
 <script setup>
-import { useOnline } from '@vueuse/core'
-
-const isOnline = useOnline()
+const props = defineProps({
+   isOnline: Boolean,
+})
 </script>
 
 
 <style scoped>
 .offline {
-  padding: 5px;
-  font-size: 14px;
-  width: 80px;
-  height: 15px;
-  position: absolute;
-  top: 1rem;
-  right: 6rem;
-  border-style: solid;
-  border-radius: 10px;
-  border-width: 0;
-  text-align: center;
+   padding: 5px;
+   font-size: 14px;
+   width: 80px;
+   height: 15px;
+   position: absolute;
+   top: 1rem;
+   right: 6rem;
+   border-style: solid;
+   border-radius: 10px;
+   border-width: 0;
+   text-align: center;
 }
 
 .off {
-  color: white;
-  background-color: rgb(236, 139, 139);
+   color: white;
+   background-color: rgb(236, 139, 139);
 }
 .on {
-  color: white;
-  background-color: #54daa0;
+   color: white;
+   background-color: #54daa0;
 }
 </style>

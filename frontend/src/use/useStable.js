@@ -78,11 +78,11 @@ export const stableList = useObservable(
    })
 )
 
-app.onConnect(async (socket) => {
+app.addConnectListener(async (socket) => {
    console.log('online! synchronizing...')
-   synchronize()
+   await synchronize()
 })
-app.onDisconnect(async (socket) => {
+app.addDisconnectListener(async (socket) => {
    console.log('offline!')
 })
 
@@ -93,7 +93,6 @@ export async function synchronize() {
    const requestKey = JSON.stringify(request)
 
    const allValues = await db.stables.toArray()
-   console.log('allValues', allValues)
    const clientValuesDict = allValues.reduce((accu, elt) => {
       if (requestPredicate(elt)) accu[elt.uid] = elt
       return accu
@@ -111,8 +110,8 @@ export async function synchronize() {
       await db.stables.add(stable)
    }
    // 2- delete removed elements
-   for (const stable of toDelete) {
-      await db.stables.delete(stable.uid)
+   for (const uid of toDelete) {
+      await db.stables.delete(uid)
    }
    // 3- update elements
    for (const stable of toUpdate) {

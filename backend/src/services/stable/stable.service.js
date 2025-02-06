@@ -59,23 +59,26 @@ export default function (app) {
 
          for (const uid of onlyClientIds) {
             const clientValue = clientValuesDict[uid]
-            if (clientValue._deleted) {
-               deleteDatabase.push(clientValue)
-            } else if (new Date(clientValue.createdAt) > cutoffDate) {
+            if (clientValue.deleted_) continue
+            if (new Date(clientValue.createdAt) > cutoffDate) {
                addDatabase.push(clientValue)
             } else {
-               deleteClient.push(clientValue)
+               deleteClient.push(uid)
             }
          }
 
          for (const uid of databaseAndClientIds) {
             const databaseValue = databaseValuesDict[uid]
             const clientValue = clientValuesDict[uid]
-            const dateDifference = new Date(clientValue.updatedAt) - databaseValue.updatedAt
-            if (dateDifference > 0) {
-               updateDatabase.push(clientValue)
-            } else if (dateDifference < 0) {
-               updateClient.push(databaseValue)
+            if (clientValue.deleted_) {
+               deleteDatabase.push(uid)
+            } else {
+               const dateDifference = new Date(clientValue.updatedAt) - databaseValue.updatedAt
+               if (dateDifference > 0) {
+                  updateDatabase.push(clientValue)
+               } else if (dateDifference < 0) {
+                  updateClient.push(databaseValue)
+               }
             }
          }
          console.log('addDatabase', addDatabase)
@@ -96,8 +99,8 @@ export default function (app) {
                data: { name: data.name }
             })
          }
-         for (const data of deleteDatabase) {
-            await prisma.stable.delete({ where: { uid: data.uid } })
+         for (const uid of deleteDatabase) {
+            await prisma.stable.delete({ where: { uid } })
          }
 
          // STEP4: return client changes to execute
