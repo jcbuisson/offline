@@ -10,7 +10,7 @@ import { app, offlineDate } from '/src/client-app.js'
 const db = new Dexie("horseDatabase")
 
 db.version(1).stores({
-   horses: "uid, createdAt, updatedAt, deleted_, name, horse_id"
+   horses: "uid, createdAt, updatedAt, deleted_, name, stable_id"
 })
 
 
@@ -44,7 +44,7 @@ export function getHorseList(stable_uid) {
 }
 
 app.addConnectListener(async (socket) => {
-   console.log('online! synchronizing...')
+   console.log('websocket reconnection: synchronizing...')
    await synchronize()
 })
 

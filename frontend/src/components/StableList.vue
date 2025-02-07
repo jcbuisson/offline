@@ -32,6 +32,8 @@
    </div>
 
    <router-view></router-view>
+
+   <SigmaGraph></SigmaGraph>
 </template>
 
 <script setup>
@@ -43,6 +45,7 @@ import { onlineDate } from '/src/client-app.js'
 
 import GithubLink from "/src/components/GithubLink.vue"
 import OnlineStatus from "/src/components/OnlineStatus.vue"
+import SigmaGraph from "/src/components/SigmaGraph.vue"
 
 const formData = ref({})
 const selectedId = ref()
