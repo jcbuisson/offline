@@ -16,10 +16,6 @@ db.version(1).stores({
    stables: "uid, createdAt, updatedAt, name, deleted_"
 })
 
-export const resetUseStable = () => {
-   // ??
-}
-
 
 /////////////          PUB / SUB          /////////////
 

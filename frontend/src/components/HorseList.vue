@@ -11,13 +11,13 @@
          </div>
       </form>
 
-      <ul class="styled-list" v-if="horseList?.length">
-         <li v-for="horse of horseList" key="horse.uid" :class="{ selected: horse.uid === selectedId}" @click="selectHorse(horse.uid)">
+      <ul class="styled-list" v-if="horseList_?.length">
+         <li v-for="horse of horseList" key="horse.uid" :class="{ selected: horse.uid === selectedUid}" @click="selectHorse(horse.uid)">
             {{ horse.name }}
          </li>
       </ul>
 
-      <h2 v-if="!horseList?.length">Aucune écurie</h2>
+      <h2 v-if="!horseList_?.length">Aucun cheval</h2>
 
    </div>
 
@@ -25,57 +25,33 @@
 </template>
 
 <script setup>
-import { ref, computed } from "vue"
+import { ref, watch } from "vue"
 
-import { addHorse, horseList } from "/src/use/useHorse"
+import { addHorse, getHorseList } from "/src/use/useHorse"
 import router from '/src/router'
-import { onlineDate } from '/src/client-app.js'
+
+
+const props = defineProps({
+   stable_uid: String,
+})
 
 const formData = ref({})
-const selectedId = ref()
+const selectedUid = ref()
+
+const horseList = ref()
+watch(() => props.uid, async (newValue, oldValue) => {
+   horseList.value = await getHorseList(props.stable_uid)
+}, { immediate: true })
 
 
 async function newHorse() {
    const dataCopy = Object.assign({}, formData.value)
    formData.value = {}
-   /*await*/ addHorse(dataCopy)
+   await addHorse(dataCopy)
 }
 
-function selectHorse(id) {
-   selectedId.value = id
-   router.push(`/horses/${id}`)
+function selectHorse(uid) {
+   selectedUid.value = uid
+   router.push(`/horses/${uid}`)
 }
 </script>
-
-<style scoped>
-.selected {
-   background-color: #f0f0f0;
-}
-
-.styled-list {
-  list-style: none; /* Remove default markers */
-  background-color: #ffffff;
-  padding: 0;       /* Remove default padding */
-  margin: 0;        /* Remove default margin */
-  margin-top: 40px;
-  border: 1px solid #ccc; /* Optional: Add a border around the list */
-  border-radius: 5px;     /* Optional: Rounded corners for the list */
-  overflow: hidden;       /* Ensures inner items don't overflow */
-}
-
-.styled-list li {
-  padding: 10px 15px;      /* Inner spacing */
-  border-bottom: 1px solid #ccc; /* Thin separator line */
-  text-align: center;      /* Center-align text */
-}
-
-.styled-list li:last-child {
-  border-bottom: none; /* Remove bottom border for the last item */
-}
-
-/* Add hover effect */
-.styled-list li:hover {
-  background-color: #f0f0f0; /* Highlight item on hover */
-  cursor: pointer;
-}
-</style>

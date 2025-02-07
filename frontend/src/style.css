@@ -1,110 +1,153 @@
 body {
-  font-family: Arial, sans-serif;
-  margin: 20px;
-  padding: 20px;
-  height: 100vh;
-  background-color: #f9f9f9;
-  max-width: 800px;
+   font-family: Arial, sans-serif;
+   margin: 20px;
+   padding: 20px;
+   height: 100vh;
+   background-color: #f9f9f9;
+   max-width: 800px;
 }
 
 
 .form-group {
-  text-align: left; /* labels are left-aligned */
-  width: 100%;
+   text-align: left; /* labels are left-aligned */
+   width: 100%;
 }
 
 h2 {
-  font-size: 24px;
-  margin-bottom: 20px;
+   font-size: 24px;
+   margin-bottom: 20px;
 }
 
 .my-1 {
-  margin-top: 10px;
-  margin-bottom: 10px;
+   margin-top: 10px;
+   margin-bottom: 10px;
+}
+
+.my-2 {
+   margin-top: 20px;
+   margin-bottom: 20px;
 }
 
 .mb-2 {
-  margin-bottom: 20px;
+   margin-bottom: 20px;
 }
 
 .mt-6 {
-  margin-top: 60px;
+   margin-top: 60px;
 }
 
 .mb-4 {
-  margin-bottom: 40px;
+   margin-bottom: 40px;
 }
 
 label {
-  display: block;
-  font-size: 16px;
-  margin-bottom: 8px;
+   display: block;
+   font-size: 16px;
+   margin-bottom: 8px;
 }
 
 .input-container {
-  display: flex;
-  align-items: center;
-  border: 2px solid #4f46e5;
-  border-radius: 10px;
-  padding: 8px 12px;
+   display: flex;
+   align-items: center;
+   border: 2px solid #4f46e5;
+   border-radius: 10px;
+   padding: 8px 12px;
 }
 
 .input-container .icon {
-  font-size: 18px;
-  color: #4f46e5;
-  margin-right: 8px;
+   font-size: 18px;
+   color: #4f46e5;
+   margin-right: 8px;
 }
 
 .input-container input {
-  border: none;
-  outline: none;
-  font-size: 16px;
-  color: #333;
-  flex: 1;
+   border: none;
+   outline: none;
+   font-size: 16px;
+   color: #333;
+   flex: 1;
 }
 
 .input-container input::placeholder {
-  color: #aaa;
+   color: #aaa;
 }
 
 .input-container:focus-within {
-  box-shadow: 0 0 5px #4f46e5;
+   box-shadow: 0 0 5px #4f46e5;
 }
 
 .large-red-button {
-  display: block;
-  width: 100%;
-  padding: 12px;
-  font-size: 16px;
-  color: #fff;
-  background-color: #b30000d0;
-  border: none;
-  border-radius: 10px;
-  font-weight: bold;
-  transition: background-color 0.3s ease;
+   display: block;
+   width: 100%;
+   padding: 12px;
+   font-size: 16px;
+   color: #fff;
+   background-color: #b30000d0;
+   border: none;
+   border-radius: 10px;
+   font-weight: bold;
+   transition: background-color 0.3s ease;
 }
 
 .large-button {
-  display: block;
-  width: 100%;
-  padding: 12px;
-  font-size: 16px;
-  color: #fff;
-  background-color: #ccc; /* Disabled color */
-  border: none;
-  border-radius: 10px;
-  cursor: not-allowed;
-  font-weight: bold;
-  transition: background-color 0.3s ease;
+   display: block;
+   width: 100%;
+   padding: 12px;
+   font-size: 16px;
+   color: #fff;
+   background-color: #ccc; /* Disabled color */
+   border: none;
+   border-radius: 10px;
+   cursor: not-allowed;
+   font-weight: bold;
+   transition: background-color 0.3s ease;
 }
 
 
 /* Enabled state for the button */
 form:valid .large-button {
-  background-color: #007bff; /* Active color */
-  cursor: pointer;
+   background-color: #007bff; /* Active color */
+   cursor: pointer;
 }
 
 form:valid .large-button:hover {
-  background-color: #0056b3;
+   background-color: #0056b3;
+}
+
+.selected {
+   background-color: #f0f0f0;
+}
+
+.styled-list {
+   list-style: none; /* Remove default markers */
+   background-color: #ffffff;
+   padding: 0;       /* Remove default padding */
+   margin: 0;        /* Remove default margin */
+   margin-top: 40px;
+   border: 1px solid #ccc; /* Optional: Add a border around the list */
+   border-radius: 5px;     /* Optional: Rounded corners for the list */
+   overflow: hidden;       /* Ensures inner items don't overflow */
+}
+
+.styled-list li {
+   padding: 10px 15px;      /* Inner spacing */
+   border-bottom: 1px solid #ccc; /* Thin separator line */
+   text-align: center;      /* Center-align text */
+}
+
+.styled-list li:last-child {
+   border-bottom: none; /* Remove bottom border for the last item */
+}
+
+/* Add hover effect */
+.styled-list li:hover {
+   background-color: #f0f0f0; /* Highlight item on hover */
+   cursor: pointer;
+}
+
+.version {
+   color: rgb(97, 110, 137);
+   position: absolute;
+   top: 1rem;
+   left: 1rem;
 }

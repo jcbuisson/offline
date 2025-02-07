@@ -15,11 +15,11 @@
             </div>
          </div>
          <div class="my-1">
-            <button type="submit" class="large-button">Mettre à jour</button>
+            <button type="submit" class="large-button">Mettre à jour écurie</button>
          </div>
       </form>
       <div class="my-1">
-         <button class="large-red-button" @click="removeStable">Supprimer</button>
+         <button class="large-red-button" @click="removeStable">Supprimer écurie</button>
       </div>
    </div>
 
@@ -51,7 +51,7 @@ async function updateStable() {
 }
 
 async function removeStable() {
-   deleteStable(props.uid)
+   await deleteStable(props.uid)
    router.push("/stables")
 }
 </script>
