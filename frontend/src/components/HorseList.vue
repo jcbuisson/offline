@@ -1,13 +1,13 @@
 <template>   
    <div>
-      <form @submit.prevent="newHorse">
+      <form @submit.prevent="createHorse">
          <div class="form-group">
             <div class="input-container">
                <input type="text" name="addhorse" v-model="formData.name" placeholder="Ex: Donatello" required>
             </div>
          </div>
          <div class="my-1">
-            <button type="submit" class="large-button">Créer écurie</button>
+            <button type="submit" class="large-button">Créer cheval</button>
          </div>
       </form>
 
@@ -44,14 +44,14 @@ watch(() => props.uid, async (newValue, oldValue) => {
 }, { immediate: true })
 
 
-async function newHorse() {
+async function createHorse() {
    const dataCopy = Object.assign({}, formData.value)
    formData.value = {}
-   await addHorse(dataCopy)
+   await addHorse(props.stable_uid, dataCopy)
 }
 
-function selectHorse(uid) {
-   selectedUid.value = uid
-   router.push(`/horses/${uid}`)
+function selectHorse(horse_uid) {
+   selectedUid.value = horse_uid
+   router.push(`/horses/${horse_uid}`)
 }
 </script>

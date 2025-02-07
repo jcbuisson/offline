@@ -35,8 +35,8 @@ app.service('horse').on('delete', async horse => {
 
 /////////////          METHODS & COMPUTED          /////////////
 
-export async function getHorse(uid) {
-   return db.horses.get(uid)
+export async function getHorse(horse_uid) {
+   return db.horses.get(horse_uid)
 }
 
 export function getHorseList(stable_uid) {
@@ -81,14 +81,13 @@ export async function synchronize() {
    }
 }
 
-export async function addHorse(data) {
-   const uuid = uuidv4()
-   console.log('create horse', uuid)
+export async function addHorse(stable_uid, data) {
+   const uid = uuidv4()
    // optimistic update
    const now = new Date()
-   await db.horses.add({ uid: uuid, createdAt: now, updatedAt: now, ...data })
+   await db.horses.add({ uid, createdAt: now, updatedAt: now, stable_uid, ...data })
    // perform request on backend (if connection is active)
-   await app.service('horse', { volatile: true }).create({ data: { uid: uuid, ...data } })
+   await app.service('horse', { volatile: true }).create({ data: { uid, stable_uid, ...data } })
 }
 
 export async function patchHorse(uid, data) {

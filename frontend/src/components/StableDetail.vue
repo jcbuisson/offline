@@ -5,7 +5,7 @@
          <div class="form-group my-1">
             <label for="uid">uid</label>
             <div class="input-container">
-               <input type="text" name="uid" :value="uid" disabled>
+               <input type="text" name="uid" :value="stable_uid" disabled>
             </div>
          </div>
          <div class="form-group my-1">
@@ -33,25 +33,25 @@ import { getStable, patchStable, deleteStable } from "/src/use/useStable"
 import router from "/src/router"
 
 const props = defineProps({
-   uid: String,
+   stable_uid: String,
 })
 
 const formData = ref({})
 
 
 const stable = ref()
-watch(() => props.uid, async (newValue, oldValue) => {
-   stable.value = await getStable(props.uid)
+watch(() => props.stable_uid, async (newValue, oldValue) => {
+   stable.value = await getStable(props.stable_uid)
 }, { immediate: true })
 
 
 
 async function updateStable() {
-   await patchStable(props.uid, formData.value)
+   await patchStable(props.stable_uid, formData.value)
 }
 
 async function removeStable() {
-   await deleteStable(props.uid)
+   await deleteStable(props.stable_uid)
    router.push("/stables")
 }
 </script>

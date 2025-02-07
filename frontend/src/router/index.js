@@ -10,12 +10,12 @@ const routes = [
       component: () => import('/src/components/StableList.vue'),
       children: [
          {
-            path: '/stables/:uid',
+            path: '/stables/:stable_uid',
             component: () => import('/src/components/StableDetail.vue'),
             props: true,
             children: [
                {
-                  path: '/stables/:uid/horses',
+                  path: '/stables/:stable_uid/horses',
                   component: () => import('/src/components/HorseList.vue'),
                   props: true,
                },

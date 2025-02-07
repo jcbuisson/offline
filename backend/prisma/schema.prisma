@@ -16,9 +16,9 @@ model horse {
    createdAt      DateTime   @default(now()) @db.Timestamptz(6)
    updatedAt      DateTime   @updatedAt @db.Timestamptz(6)
    name           String
-   stable_id      String
+   stable_uid     String
 
-   stable         stable    @relation(fields: [stable_id], references: [uid], onDelete: Cascade)
+   stable         stable    @relation(fields: [stable_uid], references: [uid], onDelete: Cascade)
 }
 
 datasource db {
