@@ -49,6 +49,16 @@ export const stableList = useObservable(
    })
 )
 
+export const graphData = computed(() => {
+   if (!stableList.value) return []
+   const list = stableList.value
+   return list.map((stable, index) => ({
+      id: stable.name,
+      x: 50 + index*50,
+      y: 100,
+   }))
+})
+
 app.addConnectListener(async (socket) => {
    console.log('online! synchronizing...')
    await synchronize()

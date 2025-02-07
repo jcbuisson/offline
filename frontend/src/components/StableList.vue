@@ -33,7 +33,8 @@
 
    <router-view></router-view>
 
-   <SigmaGraph></SigmaGraph>
+   <!-- <SigmaGraph></SigmaGraph> -->
+   <D3Graph></D3Graph>
 </template>
 
 <script setup>
@@ -46,6 +47,7 @@ import { onlineDate } from '/src/client-app.js'
 import GithubLink from "/src/components/GithubLink.vue"
 import OnlineStatus from "/src/components/OnlineStatus.vue"
 import SigmaGraph from "/src/components/SigmaGraph.vue"
+import D3Graph from "/src/components/D3Graph.vue"
 
 const formData = ref({})
 const selectedId = ref()
