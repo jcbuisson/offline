@@ -2,7 +2,7 @@
 import { ref, onMounted, watch } from "vue"
 import * as d3 from "d3"
 
-import { graphData } from "/src/use/useStable"
+import { stableList } from "/src/use/useStable"
 
 const container = ref(null)
 
@@ -12,7 +12,20 @@ const container = ref(null)
 // ])
 
 onMounted(() => {
-   drawGraph();
+   drawGraph()
+})
+
+const graphData = computed(() => {
+   if (!stableList.value) return []
+   const list = stableList.value
+   const nodes = list.map((stable, index) => ({
+      uid: stable.uid,
+      name: stable.name,
+      x: 150 + index*300,
+      y: 100,
+   }))
+   const links = []
+   return { nodes, links }
 })
 
 const drawGraph = () => {

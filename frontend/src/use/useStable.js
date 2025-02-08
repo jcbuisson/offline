@@ -5,7 +5,7 @@ import { liveQuery } from "dexie"
 import { useObservable } from "@vueuse/rxjs"
 
 import { app, offlineDate } from '/src/client-app.js'
-
+import { synchronize } from '/src/lib/sync.js'
 
 
 const db = new Dexie("stablesDatabase")
@@ -47,58 +47,12 @@ export const stableList = useObservable(
    })
 )
 
-export const graphData = computed(() => {
-   if (!stableList.value) return []
-   const list = stableList.value
-   const nodes = list.map((stable, index) => ({
-      uid: stable.uid,
-      name: stable.name,
-      x: 150 + index*300,
-      y: 100,
-   }))
-   const links = []
-   return { nodes, links }
-})
-
 app.addConnectListener(async (socket) => {
    console.log('online! synchronizing...')
-   await synchronize({})
+   const where = {}
+   await synchronize(app.service('stable'), db.stables, where, offlineDate.value)
 })
 
-
-// ex: where = { stable_id: 'azer' }
-export async function synchronize(where) {
-   const requestPredicate = (elt) => {
-      for (const [key, value] of Object.entries(where)) {
-         // implements only 'attr = value' clauses 
-         if (elt[key] !== value) return false
-      }
-      return true
-   }
-
-   const allValues = await db.stables.toArray()
-   const clientValuesDict = allValues.reduce((accu, elt) => {
-      if (requestPredicate(elt)) accu[elt.uid] = elt
-      return accu
-   }, {})
-
-   // send local data to server and ask for local changes to be made (add, update, delete) to be in sync
-   const { toAdd, toUpdate, toDelete } = await app.service('stable').sync(where, offlineDate.value, clientValuesDict)
-   console.log(toAdd, toUpdate, toDelete)
-   // update cache according to server sync directives
-   // 1- add missing elements
-   for (const stable of toAdd) {
-      await db.stables.add(stable)
-   }
-   // 2- delete removed elements
-   for (const uid of toDelete) {
-      await db.stables.delete(uid)
-   }
-   // 3- update elements
-   for (const stable of toUpdate) {
-      await db.stables.update(stable.uid, stable)
-   }
-}
 
 export async function addStable(data) {
    const uuid = uuidv4()
