@@ -9,6 +9,10 @@
     "node": ">= 14.0.0",
     "npm": ">= 6.0.0"
   },
+  "imports": {
+    "#root/*": "./*",
+    "#lib/*": "./src/lib/*"
+  },
   "homepage": "",
   "repository": {
     "type": "git",

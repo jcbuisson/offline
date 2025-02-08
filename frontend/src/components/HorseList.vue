@@ -11,13 +11,13 @@
          </div>
       </form>
 
-      <ul class="styled-list" v-if="horseList_?.length">
+      <ul class="styled-list" v-if="horseList?.length">
          <li v-for="horse of horseList" key="horse.uid" :class="{ selected: horse.uid === selectedUid}" @click="selectHorse(horse.uid)">
             {{ horse.name }}
          </li>
       </ul>
 
-      <h2 v-if="!horseList_?.length">Aucun cheval</h2>
+      <h2 v-if="!horseList?.length">Aucun cheval</h2>
 
    </div>
 
@@ -39,7 +39,7 @@ const formData = ref({})
 const selectedUid = ref()
 
 const horseList = ref()
-watch(() => props.uid, async (newValue, oldValue) => {
+watch(() => props.stable_uid, async (newValue, oldValue) => {
    horseList.value = await getHorseList(props.stable_uid)
 }, { immediate: true })
 
@@ -52,6 +52,6 @@ async function createHorse() {
 
 function selectHorse(horse_uid) {
    selectedUid.value = horse_uid
-   router.push(`/horses/${horse_uid}`)
+   router.push(`/stables/${props.stable_uid}/horses/${horse_uid}`)
 }
 </script>

@@ -11,8 +11,6 @@ import { app, offlineDate } from '/src/client-app.js'
 const db = new Dexie("stablesDatabase")
 
 db.version(1).stores({
-   requestSyncDate: "requestKey, date",
-   requestOngoingDate: "requestKey, date",
    stables: "uid, createdAt, updatedAt, name, deleted_"
 })
 
@@ -52,23 +50,31 @@ export const stableList = useObservable(
 export const graphData = computed(() => {
    if (!stableList.value) return []
    const list = stableList.value
-   return list.map((stable, index) => ({
-      id: stable.name,
-      x: 50 + index*50,
+   const nodes = list.map((stable, index) => ({
+      uid: stable.uid,
+      name: stable.name,
+      x: 150 + index*300,
       y: 100,
    }))
+   const links = []
+   return { nodes, links }
 })
 
 app.addConnectListener(async (socket) => {
    console.log('online! synchronizing...')
-   await synchronize()
+   await synchronize({})
 })
 
 
-export async function synchronize() {
-   const request = { where: {}}
-   const requestPredicate = (stable) => true
-   const requestKey = JSON.stringify(request)
+// ex: where = { stable_id: 'azer' }
+export async function synchronize(where) {
+   const requestPredicate = (elt) => {
+      for (const [key, value] of Object.entries(where)) {
+         // implements only 'attr = value' clauses 
+         if (elt[key] !== value) return false
+      }
+      return true
+   }
 
    const allValues = await db.stables.toArray()
    const clientValuesDict = allValues.reduce((accu, elt) => {
@@ -77,11 +83,8 @@ export async function synchronize() {
    }, {})
 
    // send local data to server and ask for local changes to be made (add, update, delete) to be in sync
-   const now = new Date()
-   const { syncDate, toAdd, toUpdate, toDelete } = await app.service('stable').sync(request, now, offlineDate.value, clientValuesDict)
-   console.log(syncDate, toAdd, toUpdate, toDelete)
-   await db.requestOngoingDate.put({ requestKey, date: null })
-   await db.requestSyncDate.put({ requestKey, date: new Date() })
+   const { toAdd, toUpdate, toDelete } = await app.service('stable').sync(where, offlineDate.value, clientValuesDict)
+   console.log(toAdd, toUpdate, toDelete)
    // update cache according to server sync directives
    // 1- add missing elements
    for (const stable of toAdd) {

@@ -1,8 +1,6 @@
-import { ref, computed, toRaw } from 'vue'
+import { ref, computed } from 'vue'
 import { v4 as uuidv4 } from 'uuid'
 import Dexie from "dexie"
-import { liveQuery } from "dexie"
-import { useObservable } from "@vueuse/rxjs"
 
 import { app, offlineDate } from '/src/client-app.js'
 
@@ -10,6 +8,7 @@ import { app, offlineDate } from '/src/client-app.js'
 const db = new Dexie("horseDatabase")
 
 db.version(1).stores({
+   requests: "hash, where",
    horses: "uid, createdAt, updatedAt, deleted_, name, stable_id"
 })
 
@@ -45,14 +44,19 @@ export function getHorseList(stable_uid) {
 
 app.addConnectListener(async (socket) => {
    console.log('websocket reconnection: synchronizing...')
-   await synchronize()
+   await synchronize({})
 })
 
 
-export async function synchronize() {
-   const request = { where: {}}
-   const requestPredicate = (horse) => true
-   const requestKey = JSON.stringify(request)
+// ex: where = { stable_id: 'azer' }
+export async function synchronize(where) {
+   const requestPredicate = (elt) => {
+      for (const [key, value] of Object.entries(where)) {
+         // implements only 'attr = value' clauses 
+         if (elt[key] !== value) return false
+      }
+      return true
+   }
 
    const allValues = await db.horses.toArray()
    const clientValuesDict = allValues.reduce((accu, elt) => {
@@ -60,12 +64,9 @@ export async function synchronize() {
       return accu
    }, {})
 
-   // send local data to server and ask for local changes to be made (add, update, delete) to be in sync
-   const now = new Date()
-   const { syncDate, toAdd, toUpdate, toDelete } = await app.service('horse').sync(request, now, offlineDate.value, clientValuesDict)
-   console.log(syncDate, toAdd, toUpdate, toDelete)
-   await db.requestOngoingDate.put({ requestKey, date: null })
-   await db.requestSyncDate.put({ requestKey, date: new Date() })
+   // send local data to sync service which stores new data and returns local changes to be made
+   const { toAdd, toUpdate, toDelete } = await app.service('horse').sync(where, offlineDate.value, clientValuesDict)
+   console.log(toAdd, toUpdate, toDelete)
    // update cache according to server sync directives
    // 1- add missing elements
    for (const horse of toAdd) {
