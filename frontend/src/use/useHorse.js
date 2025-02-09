@@ -3,6 +3,7 @@ import { v4 as uuidv4 } from 'uuid'
 import Dexie from "dexie"
 
 import { app, offlineDate } from '/src/client-app.js'
+import { synchronize } from '/src/lib/sync.js'
 
 
 const db = new Dexie("horseDatabase")
@@ -44,43 +45,44 @@ export function getHorseList(stable_uid) {
 
 app.addConnectListener(async (socket) => {
    console.log('websocket reconnection: synchronizing...')
-   await synchronize({})
+   const where = {}
+   await synchronize(app.service('horse'), db.horses, where, offlineDate.value)
 })
 
 
-// ex: where = { stable_id: 'azer' }
-export async function synchronize(where) {
-   const requestPredicate = (elt) => {
-      for (const [key, value] of Object.entries(where)) {
-         // implements only 'attr = value' clauses 
-         if (elt[key] !== value) return false
-      }
-      return true
-   }
+// // ex: where = { stable_id: 'azer' }
+// export async function synchronize(where) {
+//    const requestPredicate = (elt) => {
+//       for (const [key, value] of Object.entries(where)) {
+//          // implements only 'attr = value' clauses 
+//          if (elt[key] !== value) return false
+//       }
+//       return true
+//    }
 
-   const allValues = await db.horses.toArray()
-   const clientValuesDict = allValues.reduce((accu, elt) => {
-      if (requestPredicate(elt)) accu[elt.uid] = elt
-      return accu
-   }, {})
+//    const allValues = await db.horses.toArray()
+//    const clientValuesDict = allValues.reduce((accu, elt) => {
+//       if (requestPredicate(elt)) accu[elt.uid] = elt
+//       return accu
+//    }, {})
 
-   // send local data to sync service which stores new data and returns local changes to be made
-   const { toAdd, toUpdate, toDelete } = await app.service('horse').sync(where, offlineDate.value, clientValuesDict)
-   console.log(toAdd, toUpdate, toDelete)
-   // update cache according to server sync directives
-   // 1- add missing elements
-   for (const horse of toAdd) {
-      await db.horses.add(horse)
-   }
-   // 2- delete removed elements
-   for (const uid of toDelete) {
-      await db.horses.delete(uid)
-   }
-   // 3- update elements
-   for (const horse of toUpdate) {
-      await db.horses.update(horse.uid, horse)
-   }
-}
+//    // send local data to sync service which stores new data and returns local changes to be made
+//    const { toAdd, toUpdate, toDelete } = await app.service('horse').sync(where, offlineDate.value, clientValuesDict)
+//    console.log(toAdd, toUpdate, toDelete)
+//    // update cache according to server sync directives
+//    // 1- add missing elements
+//    for (const horse of toAdd) {
+//       await db.horses.add(horse)
+//    }
+//    // 2- delete removed elements
+//    for (const uid of toDelete) {
+//       await db.horses.delete(uid)
+//    }
+//    // 3- update elements
+//    for (const horse of toUpdate) {
+//       await db.horses.update(horse.uid, horse)
+//    }
+// }
 
 export async function addHorse(stable_uid, data) {
    const uid = uuidv4()

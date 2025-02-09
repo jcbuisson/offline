@@ -10,7 +10,7 @@ onMounted(() => {
    drawGraph()
 })
 
-const nodes = computed(() => {
+const stableNodes = computed(() => {
    if (!stableList.value) return []
    return stableList.value.map((stable, index) => ({
       uid: stable.uid,
@@ -40,7 +40,7 @@ const drawGraph = () => {
       .attr("height", 400)
 
    svg.selectAll("circle")
-      .data(nodes.value)
+      .data(stableNodes.value)
       .enter()
       .append("circle")
       .attr("cx", d => d.x)
@@ -49,7 +49,7 @@ const drawGraph = () => {
       .attr("fill", "cyan")
 
    svg.selectAll("text")
-      .data(nodes.value)
+      .data(stableNodes.value)
       .enter()
       .append("text")
       .attr("x", d => d.x)
@@ -71,7 +71,7 @@ const drawGraph = () => {
 }
 
 // Watch for changes in graphData and update the graph
-watch(() => nodes.value, () => {
+watch(() => stableNodes.value, () => {
    drawGraph()
 }, { deep: true })
 </script>
