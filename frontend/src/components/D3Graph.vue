@@ -1,32 +1,35 @@
 <script setup>
-import { ref, onMounted, watch } from "vue"
+import { ref, onMounted, watch, computed } from "vue"
 import * as d3 from "d3"
 
 import { stableList } from "/src/use/useStable"
 
 const container = ref(null)
 
-// const graphData = ref([
-//    { id: "A", x: 100, y: 100 },
-//    { id: "B", x: 200, y: 200 },
-// ])
-
 onMounted(() => {
    drawGraph()
 })
 
-const graphData = computed(() => {
+const nodes = computed(() => {
    if (!stableList.value) return []
-   const list = stableList.value
-   const nodes = list.map((stable, index) => ({
+   return stableList.value.map((stable, index) => ({
       uid: stable.uid,
       name: stable.name,
       x: 150 + index*300,
       y: 100,
    }))
-   const links = []
-   return { nodes, links }
 })
+
+const links = computed(() => {
+   if (!stableList.value) return []
+   return stableList.value.map((stable, index) => ({
+      uid: stable.uid,
+      name: stable.name,
+      x: 150 + index*300,
+      y: 100,
+   }))
+})
+
 
 const drawGraph = () => {
    d3.select(container.value).select("svg").remove() // Clear previous graph
@@ -37,7 +40,7 @@ const drawGraph = () => {
       .attr("height", 400)
 
    svg.selectAll("circle")
-      .data(graphData.value.nodes)
+      .data(nodes.value)
       .enter()
       .append("circle")
       .attr("cx", d => d.x)
@@ -46,7 +49,7 @@ const drawGraph = () => {
       .attr("fill", "cyan")
 
    svg.selectAll("text")
-      .data(graphData.value.nodes)
+      .data(nodes.value)
       .enter()
       .append("text")
       .attr("x", d => d.x)
@@ -68,8 +71,8 @@ const drawGraph = () => {
 }
 
 // Watch for changes in graphData and update the graph
-watch(graphData, () => {
-   drawGraph();
+watch(() => nodes.value, () => {
+   drawGraph()
 }, { deep: true })
 </script>
 
