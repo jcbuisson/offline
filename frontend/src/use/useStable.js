@@ -33,7 +33,7 @@ app.service('stable').on('delete', async stable => {
 })
 
 
-/////////////          METHODS & COMPUTED          /////////////
+/////////////          METHODS          /////////////
 
 export async function getStable(uid) {
    return db.stables.get(uid)
@@ -46,13 +46,6 @@ export const stableList = useObservable(
       return promise
    })
 )
-
-app.addConnectListener(async (socket) => {
-   console.log('online! synchronizing...')
-   const where = {}
-   await synchronize(app.service('stable'), db.stables, where, offlineDate.value)
-})
-
 
 export async function addStable(data) {
    const uuid = uuidv4()
@@ -77,3 +70,12 @@ export async function deleteStable(uid) {
    // perform request on backend (if connection is active)
    await app.service('stable', { volatile: true }).delete({ where: { uid }})
 }
+
+
+/////////////          SYNCHRONIZATION          /////////////
+
+app.addConnectListener(async (socket) => {
+   console.log('online! synchronizing...')
+   const where = {}
+   await synchronize(app.service('stable'), db.stables, where, offlineDate.value)
+})

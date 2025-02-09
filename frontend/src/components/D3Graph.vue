@@ -4,6 +4,8 @@ import * as d3 from "d3"
 
 import { stableList } from "/src/use/useStable"
 
+const emit = defineEmits(['stableSelect', 'horseSelect'])
+
 const container = ref(null)
 
 onMounted(() => {
@@ -60,8 +62,8 @@ const drawGraph = () => {
       .attr("font-size", "14px")
 
    svg.selectAll("circle")
-      .on("click", function(event, d) {
-         console.log('this', this)
+      .on("click", function(event, stable) {
+         emit('stableSelect', stable)
          d3.selectAll("circle")
             .attr("stroke", "none")
          d3.select(this)

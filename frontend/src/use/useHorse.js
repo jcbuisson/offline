@@ -33,7 +33,7 @@ app.service('horse').on('delete', async horse => {
 })
 
 
-/////////////          METHODS & COMPUTED          /////////////
+/////////////          METHODS          /////////////
 
 export async function getHorse(horse_uid) {
    return db.horses.get(horse_uid)
@@ -42,47 +42,6 @@ export async function getHorse(horse_uid) {
 export function getHorseList(stable_uid) {
    return db.horses.filter(horse => !horse.deleted_ && horse.stable_uid === stable_uid).toArray()
 }
-
-app.addConnectListener(async (socket) => {
-   console.log('websocket reconnection: synchronizing...')
-   const where = {}
-   await synchronize(app.service('horse'), db.horses, where, offlineDate.value)
-})
-
-
-// // ex: where = { stable_id: 'azer' }
-// export async function synchronize(where) {
-//    const requestPredicate = (elt) => {
-//       for (const [key, value] of Object.entries(where)) {
-//          // implements only 'attr = value' clauses 
-//          if (elt[key] !== value) return false
-//       }
-//       return true
-//    }
-
-//    const allValues = await db.horses.toArray()
-//    const clientValuesDict = allValues.reduce((accu, elt) => {
-//       if (requestPredicate(elt)) accu[elt.uid] = elt
-//       return accu
-//    }, {})
-
-//    // send local data to sync service which stores new data and returns local changes to be made
-//    const { toAdd, toUpdate, toDelete } = await app.service('horse').sync(where, offlineDate.value, clientValuesDict)
-//    console.log(toAdd, toUpdate, toDelete)
-//    // update cache according to server sync directives
-//    // 1- add missing elements
-//    for (const horse of toAdd) {
-//       await db.horses.add(horse)
-//    }
-//    // 2- delete removed elements
-//    for (const uid of toDelete) {
-//       await db.horses.delete(uid)
-//    }
-//    // 3- update elements
-//    for (const horse of toUpdate) {
-//       await db.horses.update(horse.uid, horse)
-//    }
-// }
 
 export async function addHorse(stable_uid, data) {
    const uid = uuidv4()
@@ -106,3 +65,12 @@ export async function deleteHorse(uid) {
    // perform request on backend (if connection is active)
    await app.service('horse', { volatile: true }).delete({ where: { uid }})
 }
+
+
+/////////////          SYNCHRONIZATION          /////////////
+
+app.addConnectListener(async (socket) => {
+   console.log('websocket reconnection: synchronizing...')
+   const where = {}
+   await synchronize(app.service('horse'), db.horses, where, offlineDate.value)
+})
