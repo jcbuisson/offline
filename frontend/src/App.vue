@@ -33,6 +33,9 @@ function fetchStableA() {
 
 function onSelect(node) {
    console.log('node', node)
+   if (node.type === 'stable') {
+      addHorseSynchro({ stable_uid: node.uid })
+   }
 }
 </script>
 
