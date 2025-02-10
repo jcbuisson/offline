@@ -1,15 +1,17 @@
 import { ref, computed } from 'vue'
 import { v4 as uuidv4 } from 'uuid'
 import Dexie from "dexie"
+import { liveQuery } from "dexie"
+import { useObservable } from "@vueuse/rxjs"
 
 import { app, offlineDate } from '/src/client-app.js'
-import { synchronize } from '/src/lib/sync.js'
+import { synchronize, handleWhere } from '/src/lib/sync.js'
 
 
 const db = new Dexie("horseDatabase")
 
 db.version(1).stores({
-   requests: "hash, where",
+   whereList: "id",
    horses: "uid, createdAt, updatedAt, deleted_, name, stable_id"
 })
 
@@ -39,9 +41,22 @@ export async function getHorse(horse_uid) {
    return db.horses.get(horse_uid)
 }
 
-export function getHorseList(stable_uid) {
+export const horseList = useObservable(
+   liveQuery(() => {
+      const promise = db.horses.filter(horse => !horse.deleted_).toArray()
+      return promise
+   })
+)
+
+export function getStableHorses(stable_uid) {
    return db.horses.filter(horse => !horse.deleted_ && horse.stable_uid === stable_uid).toArray()
 }
+
+export const horsesOfStable = computed(() => (stable_id) => useObservable(
+   liveQuery(() => {
+      return db.horses.filter(horse => !horse.deleted_ && horse.stable_id === stable_id).toArray()
+   })
+))
 
 export async function addHorse(stable_uid, data) {
    const uid = uuidv4()
@@ -69,8 +84,14 @@ export async function deleteHorse(uid) {
 
 /////////////          SYNCHRONIZATION          /////////////
 
+export async function addHorseSynchro(where) {
+   if (handleWhere(where, db.whereList)) {
+      await synchronize(app.service('horse'), db.horses, where, offlineDate.value)
+   }
+}
+
 app.addConnectListener(async (socket) => {
    console.log('websocket reconnection: synchronizing...')
-   const where = {}
-   await synchronize(app.service('horse'), db.horses, where, offlineDate.value)
+   // const where = {}
+   // await synchronize(app.service('horse'), db.horses, where, offlineDate.value)
 })

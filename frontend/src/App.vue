@@ -2,27 +2,37 @@
 
    <ReloadPrompt></ReloadPrompt>
 
-   <D3Graph @stableSelect="stableSelect"></D3Graph>
+   <D3Graph @select="onSelect"></D3Graph>
 
    <button class="mybutton" @click="fetchAllStables">All stables</button>
-   <button class="mybutton">All horses</button>
+   <button class="mybutton" @click="fetchStableA">Stable 'a'</button>
+   <button class="mybutton" @click="fetchAllHorses">All horses</button>
   
 </template>
 
 <script setup>
 import { ref, computed } from "vue"
 
-import { addStable, stableList } from "/src/use/useStable"
+import { addStableSynchro } from "/src/use/useStable"
+import { addHorseSynchro } from "/src/use/useHorse"
 
 import ReloadPrompt from '/src/components/ReloadPrompt.vue'
 import D3Graph from "/src/components/D3Graph.vue"
 
 function fetchAllStables() {
-   
+   addStableSynchro({})
 }
 
-function stableSelect(stable) {
-   console.log('stable', stable)
+function fetchAllHorses() {
+   addHorseSynchro({})
+}
+
+function fetchStableA() {
+   addStableSynchro({ name: 'a' })
+}
+
+function onSelect(node) {
+   console.log('node', node)
 }
 </script>
 

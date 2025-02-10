@@ -1,16 +1,17 @@
-import { ref, computed, toRaw } from 'vue'
+import { ref, computed } from 'vue'
 import { v4 as uuidv4 } from 'uuid'
 import Dexie from "dexie"
 import { liveQuery } from "dexie"
 import { useObservable } from "@vueuse/rxjs"
 
 import { app, offlineDate } from '/src/client-app.js'
-import { synchronize } from '/src/lib/sync.js'
+import { synchronize, handleWhere } from '/src/lib/sync.js'
 
 
 const db = new Dexie("stablesDatabase")
 
 db.version(1).stores({
+   whereList: "id",
    stables: "uid, createdAt, updatedAt, name, deleted_"
 })
 
@@ -74,8 +75,15 @@ export async function deleteStable(uid) {
 
 /////////////          SYNCHRONIZATION          /////////////
 
+export async function addStableSynchro(where) {
+   if (handleWhere(where, db.whereList)) {
+      await synchronize(app.service('stable'), db.stables, where, offlineDate.value)
+   }
+}
+
 app.addConnectListener(async (socket) => {
    console.log('online! synchronizing...')
-   const where = {}
-   await synchronize(app.service('stable'), db.stables, where, offlineDate.value)
+   // const where = {}
+   // // await synchronize(app.service('stable'), db.stables, where, offlineDate.value)
+   // addSynchro(where)
 })

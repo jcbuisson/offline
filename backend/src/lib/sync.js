@@ -2,7 +2,7 @@
 // À CHANGER : PLUSIEURS ÉTAPES, LA PREMIÈRE SIMPLE ÉCHANGE DES METADATA SANS LES VALEURS, ENSUITE ÉCHANGE DES VALEURS À AJOUTER/MODIFIER
 export async function synchronize(model, where, cutoffDate, clientValuesDict) {
 
-   // STEP 1: get database values according to `where`
+   // STEP 1: get existing database `where` values
    const databaseValues = await model.findMany({ where })
 
    const databaseValuesDict = databaseValues.reduce((accu, value) => {
@@ -82,7 +82,7 @@ export async function synchronize(model, where, cutoffDate, clientValuesDict) {
    console.log('deleteClient', deleteClient)
    console.log('updateClient', updateClient)
 
-   // STEP4: execute database necessary changes
+   // STEP4: execute database changes
    for (const data of addDatabase) {
       await model.create({ data })
    }
@@ -96,7 +96,7 @@ export async function synchronize(model, where, cutoffDate, clientValuesDict) {
       await model.delete({ where: { uid } })
    }
 
-   // STEP5: return to client changes to perform
+   // STEP5: return to client changes to perform on its cache
    return {
       toAdd: addClient,
       toUpdate: updateClient,

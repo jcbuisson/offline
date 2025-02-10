@@ -27,7 +27,7 @@
 <script setup>
 import { ref, watch } from "vue"
 
-import { addHorse, getHorseList } from "/src/use/useHorse"
+import { addHorse, getStableHorses } from "/src/use/useHorse"
 import router from '/src/router'
 
 
@@ -40,7 +40,7 @@ const selectedUid = ref()
 
 const horseList = ref()
 watch(() => props.stable_uid, async (newValue, oldValue) => {
-   horseList.value = await getHorseList(props.stable_uid)
+   horseList.value = await getStableHorses(props.stable_uid)
 }, { immediate: true })
 
 

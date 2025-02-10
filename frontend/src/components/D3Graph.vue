@@ -3,8 +3,9 @@ import { ref, onMounted, watch, computed } from "vue"
 import * as d3 from "d3"
 
 import { stableList } from "/src/use/useStable"
+import { horseList } from "/src/use/useHorse"
 
-const emit = defineEmits(['stableSelect', 'horseSelect'])
+const emit = defineEmits(['select'])
 
 const container = ref(null)
 
@@ -12,14 +13,31 @@ onMounted(() => {
    drawGraph()
 })
 
-const stableNodes = computed(() => {
-   if (!stableList.value) return []
-   return stableList.value.map((stable, index) => ({
-      uid: stable.uid,
-      name: stable.name,
-      x: 150 + index*300,
-      y: 100,
-   }))
+const nodes = computed(() => {
+   const nodeList = []
+   const stableNodes = stableList.value || []
+   stableNodes.forEach((node, index) => {
+      nodeList.push({
+         type: 'stable',
+         color: 'cyan',
+         uid: node.uid,
+         name: node.name,
+         x: 150 + index*300,
+         y: 100,
+      })
+   })
+   const horseNodes = horseList.value || []
+   horseNodes.forEach((node, index) => {
+      nodeList.push({
+         type: 'horse',
+         color: 'orange',
+         uid: node.uid,
+         name: node.name,
+         x: 150 + index*300,
+         y: 200,
+      })
+   })
+   return nodeList
 })
 
 const links = computed(() => {
@@ -42,16 +60,16 @@ const drawGraph = () => {
       .attr("height", 400)
 
    svg.selectAll("circle")
-      .data(stableNodes.value)
+      .data(nodes.value)
       .enter()
       .append("circle")
       .attr("cx", d => d.x)
       .attr("cy", d => d.y)
       .attr("r", 20)
-      .attr("fill", "cyan")
+      .attr("fill", d => d.color)
 
    svg.selectAll("text")
-      .data(stableNodes.value)
+      .data(nodes.value)
       .enter()
       .append("text")
       .attr("x", d => d.x)
@@ -63,7 +81,8 @@ const drawGraph = () => {
 
    svg.selectAll("circle")
       .on("click", function(event, stable) {
-         emit('stableSelect', stable)
+         // emit select event
+         emit('select', stable)
          d3.selectAll("circle")
             .attr("stroke", "none")
          d3.select(this)
@@ -73,7 +92,7 @@ const drawGraph = () => {
 }
 
 // Watch for changes in graphData and update the graph
-watch(() => stableNodes.value, () => {
+watch(() => nodes, () => {
    drawGraph()
 }, { deep: true })
 </script>
