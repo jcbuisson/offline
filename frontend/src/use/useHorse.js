@@ -5,7 +5,7 @@ import { liveQuery } from "dexie"
 import { useObservable } from "@vueuse/rxjs"
 
 import { app, offlineDate } from '/src/client-app.js'
-import { synchronize, handleWhere } from '/src/lib/sync.js'
+import { synchronize, handleWhere, synchronizeAll } from '/src/lib/sync.js'
 
 
 const db = new Dexie("horseDatabase")
@@ -92,6 +92,5 @@ export async function addHorseSynchro(where) {
 
 app.addConnectListener(async (socket) => {
    console.log('websocket reconnection: synchronizing...')
-   // const where = {}
-   // await synchronize(app.service('horse'), db.horses, where, offlineDate.value)
+   await synchronizeAll(app.service('horse'), db.horses, offlineDate.value, db.whereList)
 })

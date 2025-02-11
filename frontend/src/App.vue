@@ -5,7 +5,7 @@
    <D3Graph @select="onSelect"></D3Graph>
 
    <button class="mybutton" @click="fetchAllStables">All stables</button>
-   <button class="mybutton" @click="fetchStableA">Stable 'a'</button>
+   <button class="mybutton" @click="newStable">Add stable</button>
    <button class="mybutton" @click="fetchAllHorses">All horses</button>
   
 </template>
@@ -13,7 +13,7 @@
 <script setup>
 import { ref, computed } from "vue"
 
-import { addStableSynchro } from "/src/use/useStable"
+import { addStableSynchro, addStable } from "/src/use/useStable"
 import { addHorseSynchro } from "/src/use/useHorse"
 
 import ReloadPrompt from '/src/components/ReloadPrompt.vue'
@@ -27,8 +27,8 @@ function fetchAllHorses() {
    addHorseSynchro({})
 }
 
-function fetchStableA() {
-   addStableSynchro({ name: 'a' })
+async function newStable() {
+   await addStable({ name: 'tochange' })
 }
 
 function onSelect(node) {
