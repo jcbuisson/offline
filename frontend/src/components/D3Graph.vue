@@ -18,6 +18,7 @@ const nodes = computed(() => {
    const stableNodes = stableList.value || []
    stableNodes.forEach((node, index) => {
       nodeList.push({
+         id: node.uid,
          type: 'stable',
          color: 'cyan',
          uid: node.uid,
@@ -29,6 +30,7 @@ const nodes = computed(() => {
    const horseNodes = horseList.value || []
    horseNodes.forEach((node, index) => {
       nodeList.push({
+         id: node.uid,
          type: 'horse',
          color: 'orange',
          uid: node.uid,
@@ -41,15 +43,10 @@ const nodes = computed(() => {
 })
 
 const links = computed(() => {
-   if (!stableList.value) return []
-   return stableList.value.map((stable, index) => ({
-      uid: stable.uid,
-      name: stable.name,
-      x: 150 + index*300,
-      y: 100,
-   }))
+   if (!stableList.value || !stableList.value.length) return []
+   if (!horseList.value || !horseList.value.length) return []
+   return [{ source: stableList.value[0], target: horseList.value[0] }]
 })
-
 
 const drawGraph = () => {
    d3.select(container.value).select("svg").remove() // Clear previous graph
@@ -58,6 +55,24 @@ const drawGraph = () => {
       .append("svg")
       .attr("width", "100%")
       .attr("height", 400)
+
+         
+   // svg.selectAll(".link")
+   //    .data(links.value)
+   //    .enter()
+   //    .append("line")
+   //    .attr("class", "link")
+   //    .attr("stroke", "#999")
+   //    .attr("stroke-width", 2);
+
+   //    // .append("text")
+   //    // .attr("x", d => 180)
+   //    // .attr("y", d => 320)
+   //    // .attr("text-anchor", "middle")
+   //    // .text(d => "line")
+   //    // .attr("fill", "black")
+   //    // .attr("font-size", "14px")
+
 
    svg.selectAll("circle")
       .data(nodes.value)
@@ -89,10 +104,15 @@ const drawGraph = () => {
             .attr("stroke", "steelblue")
             .attr("stroke-width", 3)
       })
+
 }
 
 // Watch for changes in graphData and update the graph
 watch(() => nodes, () => {
+   drawGraph()
+}, { deep: true })
+watch(() => links, () => {
+   console.log('links.value', links.value)
    drawGraph()
 }, { deep: true })
 </script>
@@ -112,5 +132,8 @@ button {
    margin-bottom: 10px;
    padding: 8px;
    cursor: pointer;
+}
+.link {
+  stroke-opacity: 0.6;
 }
 </style>

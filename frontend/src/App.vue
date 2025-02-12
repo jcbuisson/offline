@@ -1,23 +1,52 @@
 <template>
-
    <ReloadPrompt></ReloadPrompt>
 
-   <D3Graph @select="onSelect"></D3Graph>
+   <h1>Offline-first, realtime web applications with relational database backend</h1>
+
+   <h2>Cache contents</h2>
+   <!-- <D3Graph @select="onSelect"></D3Graph> -->
+   <!-- <div>Stables : {{ stableList }}</div>
+   <div>Horses : {{ horseList }}</div> -->
+   <SimpleGraph2 />
+   <!-- <SimpleGraph /> -->
+
 
    <button class="mybutton" @click="fetchAllStables">All stables</button>
    <button class="mybutton" @click="newStable">Add stable</button>
    <button class="mybutton" @click="fetchAllHorses">All horses</button>
+
+   <div style="border-style: dotted;" v-if="selectedNode?.type === 'stable'">
+      <button class="mybutton" @click="newHorse">Add horse</button>
+   </div>
   
+   <h2>Explanations</h2>
+   <p>
+      The client reads and writes in denormalized caches, one for each model. These caches are the client's source of truth,
+      from which it derives all its information.
+      
+      The client also gives synchronization directives on model subsets, so that:
+      1- the contents of caches on these subsets are saved on database server
+      2- client's cache and server table keep being synchronized from that moment on these subsets
+   </p>
+   <p>
+      For example if synchronization directive (horse, { stable_id: 'azer' }) is executed, the cache will contain all horses from stable 'azer',
+      from that moment, even if other clients add, delete or update the set of horses from stable 'azer'
+   </p>
+
 </template>
 
 <script setup>
 import { ref, computed } from "vue"
 
-import { addStableSynchro, addStable } from "/src/use/useStable"
-import { addHorseSynchro } from "/src/use/useHorse"
+import { addStableSynchro, addStable, stableList } from "/src/use/useStable"
+import { addHorseSynchro, addHorse, horseList } from "/src/use/useHorse"
 
 import ReloadPrompt from '/src/components/ReloadPrompt.vue'
-import D3Graph from "/src/components/D3Graph.vue"
+// import D3Graph from "/src/components/D3Graph.vue"
+import SimpleGraph2 from "/src/components/SimpleGraph2.vue"
+// import SimpleGraph from "/src/components/SimpleGraph.vue"
+
+const selectedNode = ref()
 
 function fetchAllStables() {
    addStableSynchro({})
@@ -31,11 +60,27 @@ async function newStable() {
    await addStable({ name: 'tochange' })
 }
 
-function onSelect(node) {
+async function onSelect(node) {
+   selectedNode.value = node
    console.log('node', node)
    if (node.type === 'stable') {
-      addHorseSynchro({ stable_uid: node.uid })
+      await addHorseSynchro({ stable_uid: node.uid })
    }
+}
+
+async function newHorse() {
+   await addHorse(selectedNode.value.uid, { name: 'tochange' })
+}
+
+const nestedData = {
+   "73137a0a-380f-44e6-8a67-01166b6e275f": {
+      uid: "73137a0a-380f-44e6-8a67-01166b6e275f",
+      createdAt: "2025-02-10T04:19:16.613Z",
+   },
+   "a2d8595e-0679-41ff-82c0-593f3a7b8266": {
+      uid: "a2d8595e-0679-41ff-82c0-593f3a7b8266",
+      createdAt: "2025-02-09T03:19:16.613Z",
+   },
 }
 </script>
 
