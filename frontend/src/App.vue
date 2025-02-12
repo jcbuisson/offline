@@ -7,7 +7,7 @@
    <!-- <D3Graph @select="onSelect"></D3Graph> -->
    <!-- <div>Stables : {{ stableList }}</div>
    <div>Horses : {{ horseList }}</div> -->
-   <SimpleGraph2 />
+   <SimpleGraph2 @select="onSelect" />
    <!-- <SimpleGraph /> -->
 
 
@@ -16,7 +16,14 @@
    <button class="mybutton" @click="fetchAllHorses">All horses</button>
 
    <div style="border-style: dotted;" v-if="selectedNode?.type === 'stable'">
+      <p>Stable {{ selectedNode.uid }}</p>
+      <input :value="selectedNode.name" @change="e => updateStable(e.target.value)"/>
       <button class="mybutton" @click="newHorse">Add horse</button>
+   </div>
+
+   <div style="border-style: dotted;" v-if="selectedNode?.type === 'horse'">
+      <p>Horse {{ selectedNode.uid }}</p>
+      <input :value="selectedNode.name" @change="e => updateHorse(e.target.value)"/>
    </div>
   
    <h2>Explanations</h2>
@@ -38,8 +45,8 @@
 <script setup>
 import { ref, computed } from "vue"
 
-import { addStableSynchro, addStable, stableList } from "/src/use/useStable"
-import { addHorseSynchro, addHorse, horseList } from "/src/use/useHorse"
+import { addStableSynchro, addStable, patchStable, stableList } from "/src/use/useStable"
+import { addHorseSynchro, addHorse, patchHorse, horseList } from "/src/use/useHorse"
 
 import ReloadPrompt from '/src/components/ReloadPrompt.vue'
 // import D3Graph from "/src/components/D3Graph.vue"
@@ -72,15 +79,14 @@ async function newHorse() {
    await addHorse(selectedNode.value.uid, { name: 'tochange' })
 }
 
-const nestedData = {
-   "73137a0a-380f-44e6-8a67-01166b6e275f": {
-      uid: "73137a0a-380f-44e6-8a67-01166b6e275f",
-      createdAt: "2025-02-10T04:19:16.613Z",
-   },
-   "a2d8595e-0679-41ff-82c0-593f3a7b8266": {
-      uid: "a2d8595e-0679-41ff-82c0-593f3a7b8266",
-      createdAt: "2025-02-09T03:19:16.613Z",
-   },
+async function updateStable(name) {
+   console.log('update', name)
+   await patchStable(selectedNode.value.uid, { name })
+}
+
+async function updateHorse(name) {
+   console.log('update', name)
+   await patchHorse(selectedNode.value.uid, { name })
 }
 </script>
 
