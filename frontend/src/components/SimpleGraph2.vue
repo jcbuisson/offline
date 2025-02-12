@@ -7,21 +7,6 @@ import { horseList } from "/src/use/useHorse"
 
 const emit = defineEmits(['select'])
 
-// Sample data
-const nodes = [
-   { id: "Node 1" },
-   { id: "Node 2" },
-   { id: "Node 3" },
-   { id: "Node 4" },
-]
-
-const links = [
-   { source: "Node 1", target: "Node 2" },
-   { source: "Node 2", target: "Node 3" },
-   { source: "Node 3", target: "Node 4" },
-   { source: "Node 4", target: "Node 1" },
-]
-
 
 const nodesX = computed(() => {
    const nodeList = []
@@ -55,7 +40,6 @@ const nodesX = computed(() => {
 const linksX = computed(() => {
    if (!stableList.value || !stableList.value.length) return []
    if (!horseList.value || !horseList.value.length) return []
-   // return [{ source: stableList.value[0].uid, target: horseList.value[0].uid }]
    return horseList.value.reduce((accu, horse) => {
       if (horse.stable_uid) {
          accu.push({
@@ -78,6 +62,9 @@ onMounted(() => {
 function drawGraph() {
    const width = 600
    const height = 400
+
+   // Clear any existing SVG in the container
+   d3.select(svgContainer.value).selectAll("svg").remove();
 
    // Create the SVG container
    const svg = d3
