@@ -19,11 +19,13 @@
       <p>Stable {{ selectedNode.uid }}</p>
       <input :value="selectedNode.name" @change="e => updateStable(e.target.value)"/>
       <button class="mybutton" @click="newHorse">Add horse</button>
+      <button class="mybutton" @click="delStable">Delete stable</button>
    </div>
 
    <div style="border-style: dotted;" v-if="selectedNode?.type === 'horse'">
       <p>Horse {{ selectedNode.uid }}</p>
       <input :value="selectedNode.name" @change="e => updateHorse(e.target.value)"/>
+      <button class="mybutton" @click="delHorse">Delete horse</button>
    </div>
   
    <h2>Explanations</h2>
@@ -45,8 +47,8 @@
 <script setup>
 import { ref, computed } from "vue"
 
-import { addStableSynchro, addStable, patchStable, stableList } from "/src/use/useStable"
-import { addHorseSynchro, addHorse, patchHorse, horseList } from "/src/use/useHorse"
+import { addStableSynchro, addStable, patchStable, deleteStable, stableList } from "/src/use/useStable"
+import { addHorseSynchro, addHorse, patchHorse, deleteHorse, horseList } from "/src/use/useHorse"
 
 import ReloadPrompt from '/src/components/ReloadPrompt.vue'
 // import D3Graph from "/src/components/D3Graph.vue"
@@ -80,13 +82,19 @@ async function newHorse() {
 }
 
 async function updateStable(name) {
-   console.log('update', name)
    await patchStable(selectedNode.value.uid, { name })
 }
 
 async function updateHorse(name) {
-   console.log('update', name)
    await patchHorse(selectedNode.value.uid, { name })
+}
+
+async function delStable() {
+   await deleteStable(selectedNode.value.uid)
+}
+
+async function delHorse() {
+   await deleteHorse(selectedNode.value.uid)
 }
 </script>
 

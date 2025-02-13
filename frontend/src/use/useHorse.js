@@ -8,11 +8,11 @@ import { app, offlineDate } from '/src/client-app.js'
 import { synchronize, handleWhere, synchronizeAll } from '/src/lib/sync.js'
 
 
-const db = new Dexie("horseDatabase")
+export const db = new Dexie("horseDatabase")
 
 db.version(1).stores({
    whereList: "id",
-   horses: "uid, createdAt, updatedAt, deleted_, name, stable_id"
+   horses: "uid, createdAt, updatedAt, deleted_, name, stable_uid"
 })
 
 

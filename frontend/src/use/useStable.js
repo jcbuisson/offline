@@ -5,7 +5,9 @@ import { liveQuery } from "dexie"
 import { useObservable } from "@vueuse/rxjs"
 
 import { app, offlineDate } from '/src/client-app.js'
-import { synchronize, handleWhere } from '/src/lib/sync.js'
+import { synchronize, handleWhere, synchronizeAll } from '/src/lib/sync.js'
+
+import { db as horseDB } from '/src/use/useHorse.js'
 
 
 const db = new Dexie("stablesDatabase")
@@ -68,6 +70,7 @@ export async function patchStable(uid, data) {
 export async function deleteStable(uid) {
    // optimistic update
    await db.stables.update(uid, { deleted_: true })
+   await horseDB.horses.where("stable_uid").equals(uid).modify({ deleted_: true }) // delete on cascade
    // perform request on backend (if connection is active)
    await app.service('stable', { volatile: true }).delete({ where: { uid }})
 }
@@ -83,7 +86,5 @@ export async function addStableSynchro(where) {
 
 app.addConnectListener(async (socket) => {
    console.log('online! synchronizing...')
-   // const where = {}
-   // // await synchronize(app.service('stable'), db.stables, where, offlineDate.value)
-   // addSynchro(where)
+   await synchronizeAll(app.service('stable'), db.stables, offlineDate.value, db.whereList)
 })
