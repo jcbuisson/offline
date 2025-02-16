@@ -92,5 +92,5 @@ export async function addHorseSynchro(where) {
 
 app.addConnectListener(async (socket) => {
    console.log('websocket reconnection: synchronizing...')
-   // await synchronizeAll(app.service('horse'), db.horses, offlineDate.value, db.whereList)
+   await synchronizeAll(app.service('horse'), db.horses, offlineDate.value, db.whereList)
 })

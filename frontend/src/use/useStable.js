@@ -86,5 +86,5 @@ export async function addStableSynchro(where) {
 
 app.addConnectListener(async (socket) => {
    console.log('online! synchronizing...')
-   // await synchronizeAll(app.service('stable'), db.stables, offlineDate.value, db.whereList)
+   await synchronizeAll(app.service('stable'), db.stables, offlineDate.value, db.whereList)
 })
