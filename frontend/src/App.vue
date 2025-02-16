@@ -4,20 +4,15 @@
    <OnlineStatus :isOnline="isOnline"></OnlineStatus>
 
    <h1>Offline-first webapps</h1>
-   <h3>Offline-first, realtime web applications with relational database backend</h3>
-
-   <h2>Cache contents</h2>
-   <!-- <D3Graph @select="onSelect"></D3Graph> -->
-   <!-- <div>Stables : {{ stableList }}</div>
-   <div>Horses : {{ horseList }}</div> -->
-   <SimpleGraph2 @select="onSelect" />
-   <!-- <SimpleGraph /> -->
-
+   <p>Offline-first, realtime web applications with relational database backend</p>
 
    <button class="mybutton" @click="fetchAllStables">All stables</button>
    <button class="mybutton" @click="newStable">Add stable</button>
    <button class="mybutton" @click="fetchAllHorses">All horses</button>
    <button class="mybutton" @click="sync">Sync</button>
+
+   <h2>Cache contents</h2>
+   <SimpleGraph2 @select="onSelect" />
 
    <div style="border-style: dotted;" v-if="selectedNode?.type === 'stable'">
       <p>Stable {{ selectedNode.uid }}</p>
@@ -32,9 +27,8 @@
       <button class="mybutton" @click="delHorse">Delete horse</button>
    </div>
   
-   <h2>Explanations</h2>
-   <p>... uncomment</p>
-   <!-- <p>
+   <!-- <h2>Explanations</h2>
+   <p>
       The client reads and writes in denormalized caches, one for each model. These caches are the client's source of truth,
       from which it derives all its information.
       

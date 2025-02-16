@@ -61,7 +61,7 @@ onMounted(() => {
 
 function drawGraph() {
    const width = 600
-   const height = 400
+   const height = 300
 
    // Clear any existing SVG in the container
    d3.select(svgContainer.value).selectAll("svg").remove();
