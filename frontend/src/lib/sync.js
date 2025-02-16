@@ -15,9 +15,12 @@ export async function synchronize(modelService, modelCache, where, cutoffDate) {
       return accu
    }, {})
 
+   
    // send cache data to sync service which stores new data and returns local changes to be made
    const { toAdd, toUpdate, toDelete } = await modelService.sync(where, cutoffDate, clientValuesDict)
    console.log(toAdd, toUpdate, toDelete)
+
+
    // update client cache according to server sync directives
    // 1- add missing elements
    for (const elt of toAdd) {
@@ -45,19 +48,23 @@ function isSubset(subset, fullObject) {
 }
  
 async function getWhereList(whereDb) {
-   // whereDb has a single row of id=0
-   let whereListRec = await whereDb.get(0)
-   if (!whereListRec) { await whereDb.add({ id: 0, value: []}) }
-   whereListRec = await whereDb.get(0)
-   return whereListRec.value
+   // // whereDb has a single row of id=0
+   // let whereListRec = await whereDb.get(0)
+   // if (!whereListRec) { await whereDb.add({ id: 0, value: []}) }
+   // whereListRec = await whereDb.get(0)
+   // return whereListRec.value
+   const list = await whereDb.toArray()
+   return list.map(elt => elt.where)
 }
 
 export async function handleWhere(where, whereDb) {
    const whereList = await getWhereList(whereDb)
    // if `where` is identical or more specific than an element of `whereList`, return false
    if (isIncluded(where, whereList)) return false
-   whereList.push(where)
-   await whereDb.update(0, whereList)
+   // whereList.push(where)
+   // await whereDb.update(0, whereList)
+   console.log('adding where', where)
+   whereDb.add({ where })
    return true
 }
 

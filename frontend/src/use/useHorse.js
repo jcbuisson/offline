@@ -11,7 +11,7 @@ import { synchronize, handleWhere, synchronizeAll } from '/src/lib/sync.js'
 export const db = new Dexie("horseDatabase")
 
 db.version(1).stores({
-   whereList: "id",
+   whereList: "id++",
    horses: "uid, createdAt, updatedAt, deleted_, name, stable_uid"
 })
 
@@ -92,5 +92,5 @@ export async function addHorseSynchro(where) {
 
 app.addConnectListener(async (socket) => {
    console.log('websocket reconnection: synchronizing...')
-   await synchronizeAll(app.service('horse'), db.horses, offlineDate.value, db.whereList)
+   // await synchronizeAll(app.service('horse'), db.horses, offlineDate.value, db.whereList)
 })

@@ -10,10 +10,10 @@ import { synchronize, handleWhere, synchronizeAll } from '/src/lib/sync.js'
 import { db as horseDB } from '/src/use/useHorse.js'
 
 
-const db = new Dexie("stablesDatabase")
+export const db = new Dexie("stablesDatabase")
 
 db.version(1).stores({
-   whereList: "id",
+   whereList: "id++",
    stables: "uid, createdAt, updatedAt, name, deleted_"
 })
 
@@ -86,5 +86,5 @@ export async function addStableSynchro(where) {
 
 app.addConnectListener(async (socket) => {
    console.log('online! synchronizing...')
-   await synchronizeAll(app.service('stable'), db.stables, offlineDate.value, db.whereList)
+   // await synchronizeAll(app.service('stable'), db.stables, offlineDate.value, db.whereList)
 })

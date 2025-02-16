@@ -65,6 +65,7 @@ export async function synchronize(model, where, cutoffDate, clientValuesDict) {
       const clientValue = clientValuesDict[uid]
       if (clientValue.deleted_) {
          deleteDatabase.push(uid)
+         deleteClient.push(uid) // also ask the client to remove the record with deleted_=true
       } else {
          const dateDifference = new Date(clientValue.updatedAt) - databaseValue.updatedAt
          if (dateDifference > 0) {

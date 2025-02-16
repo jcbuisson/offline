@@ -14,6 +14,7 @@
    <button class="mybutton" @click="fetchAllStables">All stables</button>
    <button class="mybutton" @click="newStable">Add stable</button>
    <button class="mybutton" @click="fetchAllHorses">All horses</button>
+   <button class="mybutton" @click="sync">Sync</button>
 
    <div style="border-style: dotted;" v-if="selectedNode?.type === 'stable'">
       <p>Stable {{ selectedNode.uid }}</p>
@@ -29,7 +30,8 @@
    </div>
   
    <h2>Explanations</h2>
-   <p>
+   <p>... uncomment</p>
+   <!-- <p>
       The client reads and writes in denormalized caches, one for each model. These caches are the client's source of truth,
       from which it derives all its information.
       
@@ -40,7 +42,7 @@
    <p>
       For example if synchronization directive (horse, { stable_id: 'azer' }) is executed, the cache will contain all horses from stable 'azer',
       from that moment, even if other clients add, delete or update the set of horses from stable 'azer'
-   </p>
+   </p> -->
 
 </template>
 
@@ -49,6 +51,11 @@ import { ref, computed } from "vue"
 
 import { addStableSynchro, addStable, patchStable, deleteStable, stableList } from "/src/use/useStable"
 import { addHorseSynchro, addHorse, patchHorse, deleteHorse, horseList } from "/src/use/useHorse"
+
+import { db as stableDB } from '/src/use/useStable.js'
+import { db as horseDB } from '/src/use/useHorse.js'
+import { synchronizeAll } from '/src/lib/sync.js'
+import { app, offlineDate } from '/src/client-app.js'
 
 import ReloadPrompt from '/src/components/ReloadPrompt.vue'
 // import D3Graph from "/src/components/D3Graph.vue"
@@ -63,6 +70,12 @@ function fetchAllStables() {
 
 function fetchAllHorses() {
    addHorseSynchro({})
+}
+
+async function sync() {
+   console.log('sync...')
+   await synchronizeAll(app.service('stable'), stableDB.stables, offlineDate.value, stableDB.whereList)
+   await synchronizeAll(app.service('horse'), horseDB.horses, offlineDate.value, horseDB.whereList)
 }
 
 async function newStable() {
