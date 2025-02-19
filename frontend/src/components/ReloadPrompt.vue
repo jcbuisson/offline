@@ -13,13 +13,8 @@ const { offlineReady, needRefresh, updateServiceWorker, } = useRegisterSW({
 </script>
 
 <template>
-   <div v-if="offlineReady || needRefresh" class="pwatoast">
-      <span v-if="offlineReady">
-         L'application est prête à fonctionner hors-ligne
-      </span>
-      <span v-else>
-         Une nouvelle version est disponible <a href="#" class="pwatoast-text" @click="updateServiceWorker">installer</a>
-      </span>
+   <div v-if="needRefresh" class="pwatoast">
+      Une nouvelle version est disponible <a href="#" class="pwatoast-text" @click="updateServiceWorker">installer</a>
    </div>
 </template>
 
