@@ -13,7 +13,7 @@ const socketOptions = {
    reconnectionDelayMax: 10000,
 }
 
-const socket = io(socketOptions)
+export const socket = io(socketOptions)
 
 export const app = expressXClient(socket, { debug: true })
 

@@ -33,7 +33,6 @@
 
    <router-view></router-view>
 
-   <D3Graph></D3Graph>
 </template>
 
 <script setup>
@@ -45,7 +44,6 @@ import { onlineDate } from '/src/client-app.js'
 
 import GithubLink from "/src/components/GithubLink.vue"
 import OnlineStatus from "/src/components/OnlineStatus.vue"
-import D3Graph from "/src/components/D3Graph.vue"
 
 const formData = ref({})
 const selectedId = ref()

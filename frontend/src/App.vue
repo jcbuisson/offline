@@ -10,9 +10,10 @@
    <button class="mybutton" @click="newStable">Add stable</button>
    <button class="mybutton" @click="fetchAllHorses">All horses</button>
    <button class="mybutton" @click="sync">Sync</button>
+   <button class="mybutton" @click="disconnect">Disconnect</button>
 
    <h2>Cache contents</h2>
-   <SimpleGraph2 @select="onSelect" />
+   <SimpleGraph @select="onSelect" />
 
    <div style="border-style: dotted;" v-if="selectedNode?.type === 'stable'">
       <p>Stable {{ selectedNode.uid }}</p>
@@ -46,19 +47,20 @@
 <script setup>
 import { ref, computed } from "vue"
 
-import { addStableSynchro, addStable, patchStable, deleteStable, stableList } from "/src/use/useStable"
-import { addHorseSynchro, addHorse, patchHorse, deleteHorse, horseList } from "/src/use/useHorse"
+import { addStableSynchro, addStable, patchStable, deleteStable } from "/src/use/useStable"
+import { addHorseSynchro, addHorse, patchHorse, deleteHorse } from "/src/use/useHorse"
 import { onlineDate } from '/src/client-app.js'
 
 import { db as stableDB } from '/src/use/useStable.js'
 import { db as horseDB } from '/src/use/useHorse.js'
 import { synchronizeAll } from '/src/lib/sync.js'
-import { app, offlineDate } from '/src/client-app.js'
+
+import { app, offlineDate, socket } from '/src/client-app.js'
 
 import ReloadPrompt from '/src/components/ReloadPrompt.vue'
 import GithubLink from '/src/components/GithubLink.vue'
 import OnlineStatus from '/src/components/OnlineStatus.vue'
-import SimpleGraph2 from "/src/components/SimpleGraph2.vue"
+import SimpleGraph from "/src/components/SimpleGraph.vue"
 
 const isOnline = computed(() => !!onlineDate.value)
 
@@ -104,10 +106,16 @@ async function updateHorse(name) {
 
 async function delStable() {
    await deleteStable(selectedNode.value.uid)
+   selectedNode.value = null
 }
 
 async function delHorse() {
    await deleteHorse(selectedNode.value.uid)
+   selectedNode.value = null
+}
+
+function disconnect() {
+   socket.disconnect()
 }
 </script>
 

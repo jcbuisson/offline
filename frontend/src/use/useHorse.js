@@ -5,7 +5,7 @@ import { liveQuery } from "dexie"
 import { useObservable } from "@vueuse/rxjs"
 
 import { app, offlineDate } from '/src/client-app.js'
-import { synchronize, handleWhere, synchronizeAll } from '/src/lib/sync.js'
+import { synchronize, addSynchroWhere, synchronizeAll } from '/src/lib/synchronize.js'
 
 
 export const db = new Dexie("horseDatabase")
@@ -85,12 +85,12 @@ export async function deleteHorse(uid) {
 /////////////          SYNCHRONIZATION          /////////////
 
 export async function addHorseSynchro(where) {
-   if (handleWhere(where, db.whereList)) {
-      await synchronize(app.service('horse'), db.horses, where, offlineDate.value)
+   if (addSynchroWhere(where, db.whereList)) {
+      await synchronize(app, 'horse', db.horses, where, offlineDate.value)
    }
 }
 
 app.addConnectListener(async (socket) => {
    console.log('websocket reconnection: synchronizing...')
-   await synchronizeAll(app.service('horse'), db.horses, offlineDate.value, db.whereList)
+   await synchronizeAll(app, 'horse', db.horses, offlineDate.value, db.whereList)
 })
