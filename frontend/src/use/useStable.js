@@ -38,10 +38,6 @@ app.service('stable').on('delete', async stable => {
 
 /////////////          METHODS          /////////////
 
-export async function getStable(uid) {
-   return db.stables.get(uid)
-}
-
 export const getStableRef = (uid) => {
    // synchronize on this stable
    addSynchroWhere({ uid })

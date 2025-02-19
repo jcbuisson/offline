@@ -53,7 +53,7 @@ import { onlineDate } from '/src/client-app.js'
 
 import { db as stableDB } from '/src/use/useStable.js'
 import { db as horseDB } from '/src/use/useHorse.js'
-import { synchronizeAll } from '/src/lib/sync.js'
+import { synchronizeAll } from '/src/lib/synchronize.js'
 
 import { app, offlineDate, socket } from '/src/client-app.js'
 
