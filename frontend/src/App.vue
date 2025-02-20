@@ -6,7 +6,7 @@
    <h1>Offline-first webapps</h1>
    <p>Offline-first, realtime web applications with relational database backend</p>
 
-   <button class="mybutton" @click="fetchAllStables">All stables</button>
+   <v-btn size="small" @click="fetchAllStables">All stables</v-btn>
    <button class="mybutton" @click="newStable">Add stable</button>
    <button class="mybutton" @click="fetchAllHorses">All horses</button>
    <button class="mybutton" @click="sync">Sync</button>
@@ -15,37 +15,37 @@
    <h2>Cache contents</h2>
    <SimpleGraph @select="onSelect" />
 
-   <div style="border-style: dotted;" v-if="selectedNode?.type === 'stable'">
+   <div v-if="selectedNode?.type === 'stable'">
       <p>Stable {{ selectedNode.uid }}</p>
       <input :value="selectedNode.name" @change="e => updateStable(e.target.value)"/>
       <button class="mybutton" @click="newHorse">Add horse</button>
       <button class="mybutton" @click="delStable">Delete stable</button>
    </div>
 
-   <div style="border-style: dotted;" v-if="selectedNode?.type === 'horse'">
+   <div v-if="selectedNode?.type === 'horse'">
       <p>Horse {{ selectedNode.uid }}</p>
       <input :value="selectedNode.name" @change="e => updateHorse(e.target.value)"/>
       <button class="mybutton" @click="delHorse">Delete horse</button>
    </div>
+
+   <div>
+      <div><v-btn size="small" @click="getDatabaseData">Database data</v-btn></div>
+      <v-data-table :items="databaseStables" density="compact" hide-default-footer></v-data-table>
+      <v-data-table :items="databaseHorses" density="compact" hide-default-footer></v-data-table>
+   </div>
+
+   <div>
+      <div><v-btn size="small" @click="getLocalData">Local data</v-btn></div>
+      <v-data-table :items="localStables" density="compact" hide-default-footer></v-data-table>
+      <v-data-table :items="localHorses" density="compact" hide-default-footer></v-data-table>
+   </div>
   
-   <!-- <h2>Explanations</h2>
-   <p>
-      The client reads and writes in denormalized caches, one for each model. These caches are the client's source of truth,
-      from which it derives all its information.
-      
-      The client also gives synchronization directives on model subsets, so that:
-      1- the contents of caches on these subsets are saved on database server
-      2- client's cache and server table keep being synchronized from that moment on these subsets
-   </p>
-   <p>
-      For example if synchronization directive (horse, { stable_id: 'azer' }) is executed, the cache will contain all horses from stable 'azer',
-      from that moment, even if other clients add, delete or update the set of horses from stable 'azer'
-   </p> -->
 
 </template>
 
 <script setup>
 import { ref, computed } from "vue"
+import { format } from 'date-fns'
 
 import { addStableSynchro, addStable, patchStable, deleteStable } from "/src/use/useStable"
 import { addHorseSynchro, addHorse, patchHorse, deleteHorse } from "/src/use/useHorse"
@@ -63,8 +63,41 @@ import OnlineStatus from '/src/components/OnlineStatus.vue'
 import SimpleGraph from "/src/components/SimpleGraph.vue"
 
 const isOnline = computed(() => !!onlineDate.value)
-
 const selectedNode = ref()
+const databaseStables = ref()
+const databaseHorses = ref()
+const localStables = ref()
+const localHorses = ref()
+
+
+function formatStable(stable) {
+   return {
+      name: stable.name,
+      uid: stable.uid.substring(0, 8),
+      created: format(new Date(stable.createdAt), 'dd/MM/yyyy HH:mm:ss'),
+      updated: format(new Date(stable.updatedAt), 'dd/MM/yyyy HH:mm:ss'),
+   }
+}
+
+function formatHorse(horse) {
+   return {
+      name: horse.name,
+      uid: horse.uid.substring(0, 8),
+      stable_uid: horse.stable_uid.substring(0, 8),
+      created: format(new Date(horse.createdAt), 'dd/MM/yyyy HH:mm:ss'),
+      updated: format(new Date(horse.updatedAt), 'dd/MM/yyyy HH:mm:ss'),
+   }
+}
+
+async function getDatabaseData() {
+   databaseStables.value = (await app.service('stable').findMany({})).map(formatStable)
+   databaseHorses.value = (await app.service('horse').findMany({})).map(formatHorse)
+}
+
+async function getLocalData() {
+   localStables.value = (await stableDB.stables.toArray()).map(formatStable)
+   localHorses.value = (await horseDB.horses.toArray()).map(formatHorse)
+}
 
 function fetchAllStables() {
    addStableSynchro({})
@@ -76,8 +109,8 @@ function fetchAllHorses() {
 
 async function sync() {
    console.log('sync...')
-   await synchronizeAll(app.service('stable'), stableDB.stables, offlineDate.value, stableDB.whereList)
-   await synchronizeAll(app.service('horse'), horseDB.horses, offlineDate.value, horseDB.whereList)
+   await synchronizeAll(app, 'stable', stableDB.stables, offlineDate.value, stableDB.whereList)
+   await synchronizeAll(app, 'horse', horseDB.horses, offlineDate.value, horseDB.whereList)
 }
 
 async function newStable() {

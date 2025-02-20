@@ -20,8 +20,6 @@ const nodesX = computed(() => {
          color: 'cyan',
          uid: node.uid,
          name: node.name,
-         // x: 150 + index*300,
-         // y: 100,
       })
    })
    const horseNodes = horseList.value || []
@@ -32,8 +30,6 @@ const nodesX = computed(() => {
          color: 'orange',
          uid: node.uid,
          name: node.name,
-         // x: 150 + index*300,
-         // y: 200,
       })
    })
    return nodeList
@@ -62,7 +58,7 @@ onMounted(() => {
 })
 
 function drawGraph() {
-   const width = 600
+   const width = 300
    const height = 300
 
    // Clear any existing SVG in the container
@@ -83,9 +79,9 @@ function drawGraph() {
          d3
          .forceLink(linksX.value)
          .id((d) => d.id)
-         .distance(100)
+         .distance(70)
       )
-      .force("charge", d3.forceManyBody().strength(-50))
+      .force("charge", d3.forceManyBody().strength(-5))
       .force("center", d3.forceCenter(width / 2, height / 2))
 
    // Draw links (lines)
@@ -106,7 +102,7 @@ function drawGraph() {
       .append("circle")
       .attr("class", "node")
       .attr("r", 10)
-      .attr("fill", "steelblue")
+      .attr("fill", d => d.type === 'stable' ? "steelblue": "red")
       .call(
          d3
          .drag()
@@ -183,8 +179,8 @@ watchEffect(() => {
 
 <style scoped>
 .graph-container {
-  width: 600px;
-  height: 400px;
+  width: 300px;
+  height: 300px;
   border: 1px solid #ccc;
 }
 
