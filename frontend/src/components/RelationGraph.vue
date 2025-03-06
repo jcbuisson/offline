@@ -1,8 +1,8 @@
 <script setup>
 import * as d3 from "d3"
-import { onMounted, ref, computed, watch, watchEffect } from "vue"
+import { ref, computed, watch, watchEffect } from "vue"
 
-import { getUserListObservable } from '/src/use/useUser'
+import { getUserListObservable, deleteUser } from '/src/use/useUser'
 import { getGroupListObservable } from '/src/use/useGroup'
 
 
@@ -11,25 +11,6 @@ const emit = defineEmits(['select'])
 // Reference to the SVG container
 const svgContainer = ref(null);
 
-onMounted(() => {
-   // drawGraph()
-})
-
-const data = {
-   nodes: [
-      { id: 'user1', type: 'user' },
-      { id: 'user2', type: 'user' },
-      { id: 'user3', type: 'user' },
-      { id: 'group1', type: 'group' },
-      { id: 'group2', type: 'group' },
-   ],
-   links: [
-      { source: 'user1', target: 'group1' },
-      { source: 'user2', target: 'group1' },
-      { source: 'user2', target: 'group2' },
-      { source: 'user3', target: 'group2' },
-   ],
-}
 
 const userList = ref([])
 getUserListObservable().subscribe(users => {
@@ -45,14 +26,15 @@ getGroupListObservable().subscribe(groups => {
 
 const nodes = computed(() => {
    if (!userList.value || !groupList.value) return []
-   const userNodes = userList.value.map(user => ({ id: user.name, type: 'user' }))
-   const groupNodes = groupList.value.map(group => ({ id: group.name, type: 'group' }))
+   const userNodes = userList.value.map(user => ({ id: user.uid, name: user.name, type: 'user' }))
+   const groupNodes = groupList.value.map(group => ({ id: group.uid, name: group.name, type: 'group' }))
    return [...userNodes, ...groupNodes]
 })
 
 const links = computed(() => [])
 
-const selectedNode = ref()
+const selectedUserNode = ref()
+const selectedGroupNode = ref()
 
 function drawGraph() {
    if (!nodes.value || !links.value) return
@@ -105,11 +87,11 @@ function drawGraph() {
       .data(nodes.value)
       .enter()
       .append('circle')
-         .attr("class", "node")
+         .attr("class", d => `node ${d.type}`)
          .attr('r', 10)
          .attr('cx', d => d.x)
          .attr('cy', d => d.y)
-         .attr('fill', d => (d.type === 'user' ? '#4CAF50' : '#1976D2')) // Color nodes by type
+         .attr('fill', d => (d.type === 'user' ? '#4CAF50' : '#1976D2'))
 
    // Add labels to nodes
    const label = svg.append('g')
@@ -117,19 +99,32 @@ function drawGraph() {
       .data(nodes.value)
       .enter()
       .append('text')
-         .text(d => d.id)
+         .text(d => d.name)
          .attr('font-size', 12)
-         .attr('x', d => d.x + 15) // Position labels to the right of nodes
-         .attr('y', d => d.y + 4)
+         .attr('x', d => d.x - 5) // Position labels to the right of nodes
+         .attr('y', d => d.y - 15)
 
-   // node select
-   svg.selectAll(".node")
-      .on("click", function(event, node) {
-         d3.selectAll("circle").attr("stroke", "none")
-         if (selectedNode.value?.id === node.id) {
-            selectedNode.value = null
+   svg.selectAll(".node.user")
+      .on("click", async function(event, node) {
+         d3.selectAll("circle.user").attr("stroke", "none")
+         if (selectedUserNode.value?.id === node.id) {
+            selectedUserNode.value = null
          } else {
-            selectedNode.value = node
+            selectedUserNode.value = node
+            // emit select event
+            emit('select', node)
+            // circle in red
+            d3.select(this).attr("stroke", "red").attr("stroke-width", 3)
+         }
+      })
+
+   svg.selectAll(".node.group")
+      .on("click", async function(event, node) {
+         d3.selectAll("circle.group").attr("stroke", "none")
+         if (selectedGroupNode.value?.id === node.id) {
+            selectedGroupNode.value = null
+         } else {
+            selectedGroupNode.value = node
             // emit select event
             emit('select', node)
             // circle in red

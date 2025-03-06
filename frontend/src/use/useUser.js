@@ -7,8 +7,6 @@ import { useObservable } from "@vueuse/rxjs"
 import { app, offlineDate } from '/src/client-app.js'
 import { synchronize, addSynchroWhere, synchronizeAll } from '/src/lib/synchronize.js'
 
-import { db as horseDB } from '/src/use/useHorse.js'
-
 
 export const db = new Dexie("userDatabase")
 
@@ -78,7 +76,6 @@ export async function deleteUser(uid) {
    // removeSynchroWhere({ uid }, db.whereList)
    // optimistic update
    await db.values.update(uid, { deleted_: true })
-   await horseDB.horses.where("user_uid").equals(uid).modify({ deleted_: true }) // delete on cascade
    // perform request on backend (if connection is active)
    await app.service('user', { volatile: true }).delete({ where: { uid }})
 }
