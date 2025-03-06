@@ -21,6 +21,31 @@ model horse {
    stable         stable    @relation(fields: [stable_uid], references: [uid], onDelete: Cascade)
 }
 
+
+model user {
+   uid            String     @unique
+   createdAt      DateTime   @default(now()) @db.Timestamptz(6)
+   updatedAt      DateTime   @updatedAt @db.Timestamptz(6)
+   name           String
+}
+
+model group {
+   uid            String     @unique
+   createdAt      DateTime   @default(now()) @db.Timestamptz(6)
+   updatedAt      DateTime   @updatedAt @db.Timestamptz(6)
+   name           String
+}
+
+model relation {
+   uid            String     @unique
+   createdAt      DateTime   @default(now()) @db.Timestamptz(6)
+   updatedAt      DateTime   @updatedAt @db.Timestamptz(6)
+   user_id        String
+   group_id       String
+
+  @@unique([user_id, group_id])
+}
+
 datasource db {
    provider = "postgresql"
    url = env("DATABASE_URL")

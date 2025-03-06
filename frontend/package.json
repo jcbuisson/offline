@@ -10,6 +10,7 @@
   },
   "dependencies": {
     "@jcbuisson/express-x-client": "^2.1.8",
+    "@mdi/font": "^7.4.47",
     "@vueuse/integrations": "^12.5.0",
     "@vueuse/rxjs": "^12.5.0",
     "d3": "^7.9.0",

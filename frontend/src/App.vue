@@ -6,14 +6,45 @@
    <h1>Offline-first webapps</h1>
    <p>Offline-first, realtime web applications with relational database backend</p>
 
-   <v-btn size="small" @click="fetchAllStables">All stables</v-btn>
+   <v-text-field style="max-width: 150px;"
+      v-model="userName"
+      append-inner-icon="mdi-plus"
+      label="user"
+      type="text"
+      variant="underlined"
+      density="compact"
+      @click:append-inner="onAddUser"
+   ></v-text-field>
+   <v-text-field style="max-width: 150px;"
+      v-model="searchUser"
+      append-inner-icon="mdi-magnify"
+      label="search user"
+      type="text"
+      variant="underlined"
+      density="compact"
+      @click:append-inner="onSearchUser"
+   ></v-text-field>
+   <v-text-field style="max-width: 150px;"
+      v-model="groupName"
+      append-inner-icon="mdi-plus"
+      label="group"
+      type="text"
+      variant="underlined"
+      density="compact"
+      @click:append-inner="onAddGroup"
+   ></v-text-field>
+   <RelationGraph></RelationGraph>
+
+   <!-- <v-btn size="small" @click="fetchAllStables">All stables</v-btn>
    <button class="mybutton" @click="newStable">Add stable</button>
    <button class="mybutton" @click="fetchAllHorses">All horses</button>
    <button class="mybutton" @click="sync">Sync</button>
-   <button class="mybutton" @click="disconnect">Disconnect</button>
+   <button class="mybutton" @click="disconnect">Disconnect</button> -->
 
-   <h2>Cache contents</h2>
+   <!-- <h2>Cache contents</h2>
    <SimpleGraph @select="onSelect" />
+
+   <v-checkbox label="Checkbox"></v-checkbox>
 
    <div v-if="selectedNode?.type === 'stable'">
       <p>Stable {{ selectedNode.uid }}</p>
@@ -30,7 +61,7 @@
 
    <div>
       <div><v-btn size="small" @click="getDatabaseData">Database data</v-btn></div>
-      <v-data-table :items="databaseStables" density="compact" hide-default-footer></v-data-table>
+      <v-data-table :items="databaseStables" show-select item-value="uid" v-model="selectedStable" density="compact" hide-default-footer></v-data-table>
       <v-data-table :items="databaseHorses" density="compact" hide-default-footer></v-data-table>
    </div>
 
@@ -40,6 +71,11 @@
       <v-data-table :items="localHorses" density="compact" hide-default-footer></v-data-table>
    </div>
   
+   <div>
+      <div><v-btn size="small" @click="getWhere">Where</v-btn></div>
+      <v-data-table :items="whereStables" density="compact" hide-default-footer></v-data-table>
+      <v-data-table :items="whereHorses" density="compact" hide-default-footer></v-data-table>
+   </div> -->
 
 </template>
 
@@ -49,6 +85,8 @@ import { format } from 'date-fns'
 
 import { addStableSynchro, addStable, patchStable, deleteStable } from "/src/use/useStable"
 import { addHorseSynchro, addHorse, patchHorse, deleteHorse } from "/src/use/useHorse"
+import { addUserSynchro, addUser, patchUser, deleteUser } from "/src/use/useUser"
+import { addGroupSynchro, addGroup, patchGroup, deleteGroup } from "/src/use/useGroup"
 import { onlineDate } from '/src/client-app.js'
 
 import { db as stableDB } from '/src/use/useStable.js'
@@ -61,14 +99,39 @@ import ReloadPrompt from '/src/components/ReloadPrompt.vue'
 import GithubLink from '/src/components/GithubLink.vue'
 import OnlineStatus from '/src/components/OnlineStatus.vue'
 import SimpleGraph from "/src/components/SimpleGraph.vue"
+import RelationGraph from "/src/components/RelationGraph.vue"
 
 const isOnline = computed(() => !!onlineDate.value)
 const selectedNode = ref()
+const whereStables = ref()
+const whereHorses = ref()
 const databaseStables = ref()
 const databaseHorses = ref()
 const localStables = ref()
 const localHorses = ref()
 
+const selectedStable = ref()
+
+
+const userName = ref()
+const onAddUser = async () => {
+   await addUser({ name: userName.value })
+}
+
+const searchUser = ref()
+const onSearchUser = async () => {
+}
+
+const groupName = ref()
+const onAddGroup = async () => {
+   await addGroup({ name: groupName.value })
+}
+
+
+async function getWhere() {
+   whereStables.value = await stableDB.whereList.toArray()
+   whereHorses.value = await horseDB.whereList.toArray()
+}
 
 function formatStable(stable) {
    return {
