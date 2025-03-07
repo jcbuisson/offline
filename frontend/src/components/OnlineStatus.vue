@@ -14,10 +14,8 @@ const props = defineProps({
 
 <style scoped>
 .offline {
-   padding: 5px;
    font-size: 14px;
-   width: 80px;
-   height: 15px;
+   padding: 5px 10px 5px 10px;
    position: absolute;
    top: 1rem;
    right: 6rem;

@@ -98,8 +98,8 @@ const onAddEditUser = async () => {
       }
    }
 }
-const debouncedChangeUserName = useDebounceFn(async (x) => {
-   await patchUser(selectedUserNode.value.id, { name: userName.value })
+const debouncedChangeUserName = useDebounceFn(async (name) => {
+   await patchUser(selectedUserNode.value.id, { name })
 }, 500)
 
 const onDeleteUser = async () => {
