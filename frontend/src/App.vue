@@ -6,32 +6,29 @@
    <h1>Offline-first webapps</h1>
    <p>Offline-first, realtime web applications with relational database backend</p>
 
-   <v-text-field style="max-width: 150px;"
-      v-model="userName"
-      append-inner-icon="mdi-plus"
+   <v-text-field style="max-width: 150px;" type="text" variant="underlined" density="compact" ref="userTF"
+      v-model="userName" @input="ev => debouncedChangeUserName(ev.target.value)"
+      :append-inner-icon="!selectedUserNode && 'mdi-plus'"
+      :append-icon="selectedUserNode && 'mdi-delete'"
       label="user"
-      type="text"
-      variant="underlined"
-      density="compact"
-      @click:append-inner="onAddUser"
+      @click:append-inner="onAddEditUser"
+      @click:append="onDeleteUser"
    ></v-text-field>
-   <v-text-field style="max-width: 150px;"
+
+   <v-text-field style="max-width: 150px;" type="text" variant="underlined" density="compact" ref="groupTF"
+      v-model="groupName"
+      :append-inner-icon="selectedGroupNode ? 'mdi-pencil' : 'mdi-plus'"
+      :append-icon="selectedGroupNode && 'mdi-delete'"
+      label="group"
+      @click:append-inner="onAddEditGroup"
+      @click:append="onDeleteGroup"
+   ></v-text-field>
+
+   <v-text-field style="max-width: 150px;" type="text" variant="underlined" density="compact"
       v-model="searchUser"
       append-inner-icon="mdi-magnify"
       label="search user"
-      type="text"
-      variant="underlined"
-      density="compact"
       @click:append-inner="onSearchUser"
-   ></v-text-field>
-   <v-text-field style="max-width: 150px;"
-      v-model="groupName"
-      append-inner-icon="mdi-plus"
-      label="group"
-      type="text"
-      variant="underlined"
-      density="compact"
-      @click:append-inner="onAddGroup"
    ></v-text-field>
 
    <!--RelationGraph></RelationGraph-->
@@ -86,6 +83,7 @@
 import { ref, computed, watchEffect } from "vue"
 import { format } from 'date-fns'
 import * as d3 from "d3"
+import { useDebounceFn } from '@vueuse/core'
 
 import { addStableSynchro, addStable, patchStable, deleteStable } from "/src/use/useStable"
 import { addHorseSynchro, addHorse, patchHorse, deleteHorse } from "/src/use/useHorse"
@@ -117,18 +115,49 @@ const localHorses = ref()
 const selectedStable = ref()
 
 
-const userName = ref()
-const onAddUser = async () => {
-   await addUser({ name: userName.value })
-}
-
 const searchUser = ref()
 const onSearchUser = async () => {
 }
 
-const groupName = ref()
-const onAddGroup = async () => {
-   await addGroup({ name: groupName.value })
+
+const selectedUserNode = ref()
+const userTF = ref(null)
+const userName = ref('')
+
+const onAddEditUser = async () => {
+   if (!selectedUserNode.value) {
+      if (userName.value.length > 0) {
+         await addUser({ name: userName.value })
+      } else {
+         alert("Entrez le nom d'abord")
+      }
+   }
+}
+const debouncedChangeUserName = useDebounceFn(async (x) => {
+   await patchUser(selectedUserNode.value.id, { name: userName.value })
+}, 500)
+
+const onDeleteUser = async () => {
+   await deleteUser(selectedUserNode.value.id)
+   selectedUserNode.value = null
+}
+const selectedGroupNode = ref()
+const groupTF = ref(null)
+const groupName = ref('')
+
+const onAddEditGroup = async () => {
+   if (!selectedGroupNode.value) {
+      if (groupName.value.length > 0) {
+         await addGroup({ name: groupName.value })
+      } else {
+         alert("Entrez le nom d'abord")
+      }
+   }
+}
+
+const onDeleteGroup = async () => {
+   await deleteGroup(selectedGroupNode.value.id)
+   selectedGroupNode.value = null
 }
 
 
@@ -150,15 +179,12 @@ getGroupListObservable().subscribe(groups => {
 
 const nodes = computed(() => {
    if (!userList.value || !groupList.value) return []
-   const userNodes = userList.value.map(user => ({ id: user.uid, name: user.name, type: 'user' }))
+   const userNodes = userList.value.map(user => ({ id: user.uid, name: user.name, type: 'user' })).sort((n1, n2) => n1.name<n2.name ? -1 : n1.name>n2.name ? 1 : 0)
    const groupNodes = groupList.value.map(group => ({ id: group.uid, name: group.name, type: 'group' }))
    return [...userNodes, ...groupNodes]
 })
 
 const links = computed(() => [])
-
-const selectedUserNode = ref()
-const selectedGroupNode = ref()
 
 function drawGraph() {
    if (!nodes.value || !links.value) return
@@ -230,28 +256,38 @@ function drawGraph() {
 
    svg.selectAll(".node.user")
       .on("click", async function(event, node) {
+         event.stopPropagation()
          d3.selectAll("circle.user").attr("stroke", "none")
          if (selectedUserNode.value?.id === node.id) {
             selectedUserNode.value = null
          } else {
             selectedUserNode.value = node
-            // circle in red
+            userName.value = node.name
+            userTF.value.focus()
             d3.select(this).attr("stroke", "red").attr("stroke-width", 3)
          }
       })
 
    svg.selectAll(".node.group")
       .on("click", async function(event, node) {
+         event.stopPropagation()
          d3.selectAll("circle.group").attr("stroke", "none")
          if (selectedGroupNode.value?.id === node.id) {
             selectedGroupNode.value = null
          } else {
             selectedGroupNode.value = node
-            // circle in red
+            groupName.value = node.name
+            groupTF.value.focus()
             d3.select(this).attr("stroke", "red").attr("stroke-width", 3)
          }
       })
-
+   svg.on("click", async function() {
+      d3.selectAll("circle").attr("stroke", "none")
+      selectedUserNode.value = null
+      selectedGroupNode.value = null
+      userName.value = ''
+      groupName.value = ''
+   })
 }
 
 watchEffect(() => {
