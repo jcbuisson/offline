@@ -19,7 +19,7 @@
                ></v-text-field>
 
                <v-text-field style="max-width: 150px;" type="text" variant="underlined" density="compact" ref="groupTF"
-                  v-model="groupName"
+                  v-model="groupName" @input="ev => debouncedChangeGroupName(ev.target.value)"
                   :append-inner-icon="selectedGroupNode ? 'mdi-pencil' : 'mdi-plus'"
                   :append-icon="selectedGroupNode && 'mdi-delete'"
                   label="group"
@@ -119,6 +119,9 @@ const onAddEditGroup = async () => {
       }
    }
 }
+const debouncedChangeGroupName = useDebounceFn(async (name) => {
+   await patchGroup(selectedGroupNode.value.id, { name })
+}, 500)
 
 const onDeleteGroup = async () => {
    await deleteGroup(selectedGroupNode.value.id)
