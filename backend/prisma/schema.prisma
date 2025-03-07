@@ -40,10 +40,10 @@ model relation {
    uid            String     @unique
    createdAt      DateTime   @default(now()) @db.Timestamptz(6)
    updatedAt      DateTime   @updatedAt @db.Timestamptz(6)
-   user_id        String
-   group_id       String
+   user_uid        String
+   group_uid       String
 
-  @@unique([user_id, group_id])
+  @@unique([user_uid, group_uid])
 }
 
 datasource db {

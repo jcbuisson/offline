@@ -24,6 +24,10 @@
       @click:append="onDeleteGroup"
    ></v-text-field>
 
+   <div v-if="selectedUserNode && selectedGroupNode">
+      <v-btn size="small" @click="createLink">Create link</v-btn>
+   </div>
+
    <v-text-field style="max-width: 150px;" type="text" variant="underlined" density="compact"
       v-model="searchUser"
       append-inner-icon="mdi-magnify"
@@ -87,8 +91,11 @@ import { useDebounceFn } from '@vueuse/core'
 
 import { addStableSynchro, addStable, patchStable, deleteStable } from "/src/use/useStable"
 import { addHorseSynchro, addHorse, patchHorse, deleteHorse } from "/src/use/useHorse"
+
 import { getUserListObservable, addUserSynchro, addUser, patchUser, deleteUser } from "/src/use/useUser"
 import { getGroupListObservable, addGroupSynchro, addGroup, patchGroup, deleteGroup } from "/src/use/useGroup"
+import { getRelationListObservable, addRelationSynchro, addRelation, deleteRelation } from "/src/use/useRelation"
+
 import { onlineDate } from '/src/client-app.js'
 
 import { db as stableDB } from '/src/use/useStable.js'
@@ -160,6 +167,12 @@ const onDeleteGroup = async () => {
    selectedGroupNode.value = null
 }
 
+const createLink = async () => {
+   await addRelation({ user_uid: selectedUserNode.value.id, group_uid: selectedGroupNode.value.id })
+   selectedUserNode.value = null
+   selectedGroupNode.value = null
+}
+
 
 // Reference to the SVG container
 const svgContainer = ref(null);
@@ -167,14 +180,17 @@ const svgContainer = ref(null);
 
 const userList = ref([])
 getUserListObservable().subscribe(users => {
-   console.log('users', users)
    userList.value = users
 })
 
 const groupList = ref([])
 getGroupListObservable().subscribe(groups => {
-   console.log('groups', groups)
    groupList.value = groups
+})
+
+const relationList = ref([])
+getRelationListObservable().subscribe(relations => {
+   relationList.value = relations
 })
 
 const nodes = computed(() => {
@@ -184,7 +200,14 @@ const nodes = computed(() => {
    return [...userNodes, ...groupNodes]
 })
 
-const links = computed(() => [])
+const links = computed(() => {
+   if (!relationList.value) return []
+   return relationList.value.map(relation => ({
+      id: relation.uid,
+      source: relation.user_uid,
+      target: relation.group_uid,
+   }))
+})
 
 function drawGraph() {
    if (!nodes.value || !links.value) return
