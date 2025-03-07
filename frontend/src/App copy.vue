@@ -1,51 +1,86 @@
 <template>
-   <v-responsive class="border rounded" max-height="300">
-      <v-app>
-         <v-app-bar title="Offline-first webapps">
-            <GithubLink url="https://github.com/jcbuisson/offline" svgPath="M12 2A10 10 0 0 0 2 12c0 4.42 2.87 8.17 6.84 9.5c.5.08.66-.23.66-.5v-1.69c-2.77.6-3.36-1.34-3.36-1.34c-.46-1.16-1.11-1.47-1.11-1.47c-.91-.62.07-.6.07-.6c1 .07 1.53 1.03 1.53 1.03c.87 1.52 2.34 1.07 2.91.83c.09-.65.35-1.09.63-1.34c-2.22-.25-4.55-1.11-4.55-4.92c0-1.11.38-2 1.03-2.71c-.1-.25-.45-1.29.1-2.64c0 0 .84-.27 2.75 1.02c.79-.22 1.65-.33 2.5-.33s1.71.11 2.5.33c1.91-1.29 2.75-1.02 2.75-1.02c.55 1.35.2 2.39.1 2.64c.65.71 1.03 1.6 1.03 2.71c0 3.82-2.34 4.66-4.57 4.91c.36.31.69.92.69 1.85V21c0 .27.16.59.67.5C19.14 20.16 22 16.42 22 12A10 10 0 0 0 12 2"></GithubLink>
-            <OnlineStatus :isOnline="isOnline"></OnlineStatus>
-         </v-app-bar>
-   
-         <v-main>
-            <v-container>
-
-               <v-text-field style="max-width: 150px;" type="text" variant="underlined" density="compact" ref="userTF"
-                  v-model="userName" @input="ev => debouncedChangeUserName(ev.target.value)"
-                  :append-inner-icon="!selectedUserNode && 'mdi-plus'"
-                  :append-icon="selectedUserNode && 'mdi-delete'"
-                  label="user"
-                  @click:append-inner="onAddEditUser"
-                  @click:append="onDeleteUser"
-               ></v-text-field>
-
-               <v-text-field style="max-width: 150px;" type="text" variant="underlined" density="compact" ref="groupTF"
-                  v-model="groupName"
-                  :append-inner-icon="selectedGroupNode ? 'mdi-pencil' : 'mdi-plus'"
-                  :append-icon="selectedGroupNode && 'mdi-delete'"
-                  label="group"
-                  @click:append-inner="onAddEditGroup"
-                  @click:append="onDeleteGroup"
-               ></v-text-field>
-
-               <div v-if="selectedUserNode && selectedGroupNode">
-                  <v-btn size="small" @click="createLink">Create link</v-btn>
-               </div>
-
-               <v-text-field style="max-width: 150px;" type="text" variant="underlined" density="compact"
-                  v-model="searchUser"
-                  append-inner-icon="mdi-magnify"
-                  label="search user"
-                  @click:append-inner="onSearchUser"
-               ></v-text-field>
-
-               <div ref="svgContainer" class="graph-container"></div>
-
-            </v-container>
-         </v-main>
-      </v-app>
-   </v-responsive>
-
    <ReloadPrompt></ReloadPrompt>
+   <GithubLink url="https://github.com/jcbuisson/offline" svgPath="M12 2A10 10 0 0 0 2 12c0 4.42 2.87 8.17 6.84 9.5c.5.08.66-.23.66-.5v-1.69c-2.77.6-3.36-1.34-3.36-1.34c-.46-1.16-1.11-1.47-1.11-1.47c-.91-.62.07-.6.07-.6c1 .07 1.53 1.03 1.53 1.03c.87 1.52 2.34 1.07 2.91.83c.09-.65.35-1.09.63-1.34c-2.22-.25-4.55-1.11-4.55-4.92c0-1.11.38-2 1.03-2.71c-.1-.25-.45-1.29.1-2.64c0 0 .84-.27 2.75 1.02c.79-.22 1.65-.33 2.5-.33s1.71.11 2.5.33c1.91-1.29 2.75-1.02 2.75-1.02c.55 1.35.2 2.39.1 2.64c.65.71 1.03 1.6 1.03 2.71c0 3.82-2.34 4.66-4.57 4.91c.36.31.69.92.69 1.85V21c0 .27.16.59.67.5C19.14 20.16 22 16.42 22 12A10 10 0 0 0 12 2"></GithubLink>
+   <OnlineStatus :isOnline="isOnline"></OnlineStatus>
+
+   <h1>Offline-first webapps</h1>
+   <p>Offline-first, realtime web applications with relational database backend</p>
+
+   <v-text-field style="max-width: 150px;" type="text" variant="underlined" density="compact" ref="userTF"
+      v-model="userName" @input="ev => debouncedChangeUserName(ev.target.value)"
+      :append-inner-icon="!selectedUserNode && 'mdi-plus'"
+      :append-icon="selectedUserNode && 'mdi-delete'"
+      label="user"
+      @click:append-inner="onAddEditUser"
+      @click:append="onDeleteUser"
+   ></v-text-field>
+
+   <v-text-field style="max-width: 150px;" type="text" variant="underlined" density="compact" ref="groupTF"
+      v-model="groupName"
+      :append-inner-icon="selectedGroupNode ? 'mdi-pencil' : 'mdi-plus'"
+      :append-icon="selectedGroupNode && 'mdi-delete'"
+      label="group"
+      @click:append-inner="onAddEditGroup"
+      @click:append="onDeleteGroup"
+   ></v-text-field>
+
+   <div v-if="selectedUserNode && selectedGroupNode">
+      <v-btn size="small" @click="createLink">Create link</v-btn>
+   </div>
+
+   <v-text-field style="max-width: 150px;" type="text" variant="underlined" density="compact"
+      v-model="searchUser"
+      append-inner-icon="mdi-magnify"
+      label="search user"
+      @click:append-inner="onSearchUser"
+   ></v-text-field>
+
+   <!--RelationGraph></RelationGraph-->
+   <div ref="svgContainer" class="graph-container"></div>
+
+
+   <!-- <v-btn size="small" @click="fetchAllStables">All stables</v-btn>
+   <button class="mybutton" @click="newStable">Add stable</button>
+   <button class="mybutton" @click="fetchAllHorses">All horses</button>
+   <button class="mybutton" @click="sync">Sync</button>
+   <button class="mybutton" @click="disconnect">Disconnect</button> -->
+
+   <!-- <h2>Cache contents</h2>
+   <SimpleGraph @select="onSelect" />
+
+   <v-checkbox label="Checkbox"></v-checkbox>
+
+   <div v-if="selectedNode?.type === 'stable'">
+      <p>Stable {{ selectedNode.uid }}</p>
+      <input :value="selectedNode.name" @change="e => updateStable(e.target.value)"/>
+      <button class="mybutton" @click="newHorse">Add horse</button>
+      <button class="mybutton" @click="delStable">Delete stable</button>
+   </div>
+
+   <div v-if="selectedNode?.type === 'horse'">
+      <p>Horse {{ selectedNode.uid }}</p>
+      <input :value="selectedNode.name" @change="e => updateHorse(e.target.value)"/>
+      <button class="mybutton" @click="delHorse">Delete horse</button>
+   </div>
+
+   <div>
+      <div><v-btn size="small" @click="getDatabaseData">Database data</v-btn></div>
+      <v-data-table :items="databaseStables" show-select item-value="uid" v-model="selectedStable" density="compact" hide-default-footer></v-data-table>
+      <v-data-table :items="databaseHorses" density="compact" hide-default-footer></v-data-table>
+   </div>
+
+   <div>
+      <div><v-btn size="small" @click="getLocalData">Local data</v-btn></div>
+      <v-data-table :items="localStables" density="compact" hide-default-footer></v-data-table>
+      <v-data-table :items="localHorses" density="compact" hide-default-footer></v-data-table>
+   </div>
+  
+   <div>
+      <div><v-btn size="small" @click="getWhere">Where</v-btn></div>
+      <v-data-table :items="whereStables" density="compact" hide-default-footer></v-data-table>
+      <v-data-table :items="whereHorses" density="compact" hide-default-footer></v-data-table>
+   </div> -->
+
 </template>
 
 <script setup>
@@ -54,12 +89,17 @@ import { format } from 'date-fns'
 import * as d3 from "d3"
 import { useDebounceFn } from '@vueuse/core'
 
+import { addStableSynchro, addStable, patchStable, deleteStable } from "/src/use/useStable"
+import { addHorseSynchro, addHorse, patchHorse, deleteHorse } from "/src/use/useHorse"
+
 import { getUserListObservable, addUserSynchro, addUser, patchUser, deleteUser } from "/src/use/useUser"
 import { getGroupListObservable, addGroupSynchro, addGroup, patchGroup, deleteGroup } from "/src/use/useGroup"
 import { getRelationListObservable, addRelationSynchro, addRelation, deleteRelation } from "/src/use/useRelation"
 
 import { onlineDate } from '/src/client-app.js'
 
+import { db as stableDB } from '/src/use/useStable.js'
+import { db as horseDB } from '/src/use/useHorse.js'
 import { synchronizeAll } from '/src/lib/synchronize.js'
 
 import { app, offlineDate, socket } from '/src/client-app.js'
@@ -67,6 +107,8 @@ import { app, offlineDate, socket } from '/src/client-app.js'
 import ReloadPrompt from '/src/components/ReloadPrompt.vue'
 import GithubLink from '/src/components/GithubLink.vue'
 import OnlineStatus from '/src/components/OnlineStatus.vue'
+import SimpleGraph from "/src/components/SimpleGraph.vue"
+import RelationGraph from "/src/components/RelationGraph.vue"
 
 const isOnline = computed(() => !!onlineDate.value)
 const selectedNode = ref()
@@ -321,10 +363,52 @@ async function getLocalData() {
    localHorses.value = (await horseDB.horses.toArray()).map(formatHorse)
 }
 
+function fetchAllStables() {
+   addStableSynchro({})
+}
+
+function fetchAllHorses() {
+   addHorseSynchro({})
+}
+
 async function sync() {
    console.log('sync...')
    await synchronizeAll(app, 'stable', stableDB.stables, offlineDate.value, stableDB.whereList)
    await synchronizeAll(app, 'horse', horseDB.horses, offlineDate.value, horseDB.whereList)
+}
+
+async function newStable() {
+   await addStable({ name: 'tochange' })
+}
+
+async function onSelect(node) {
+   selectedNode.value = node
+   console.log('node', node)
+   if (node.type === 'stable') {
+      await addHorseSynchro({ stable_uid: node.uid })
+   }
+}
+
+async function newHorse() {
+   await addHorse(selectedNode.value.uid, { name: 'tochange' })
+}
+
+async function updateStable(name) {
+   await patchStable(selectedNode.value.uid, { name })
+}
+
+async function updateHorse(name) {
+   await patchHorse(selectedNode.value.uid, { name })
+}
+
+async function delStable() {
+   await deleteStable(selectedNode.value.uid)
+   selectedNode.value = null
+}
+
+async function delHorse() {
+   await deleteHorse(selectedNode.value.uid)
+   selectedNode.value = null
 }
 
 function disconnect() {
