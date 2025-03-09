@@ -2,10 +2,9 @@ import { ref, computed } from 'vue'
 import { v4 as uuidv4 } from 'uuid'
 import Dexie from "dexie"
 import { liveQuery } from "dexie"
-import { useObservable } from "@vueuse/rxjs"
 
 import { app, offlineDate } from '/src/client-app.js'
-import { synchronize, addSynchroWhere, synchronizeAll } from '/src/lib/synchronize.js'
+import { wherePredicate, synchronize, addSynchroWhere, synchronizeAll } from '/src/lib/synchronize.js'
 
 
 export const db = new Dexie("groupDatabase")
@@ -85,6 +84,9 @@ export async function addGroupSynchro(where) {
    if (addSynchroWhere(where, db.whereList)) {
       await synchronize(app, 'group', db.values, where, offlineDate.value)
    }
+   const predicate = wherePredicate(where)
+   const values = db.values.filter(value => !value.deleted_ && predicate(value)).toArray()
+   return values
 }
 
 app.addConnectListener(async (socket) => {

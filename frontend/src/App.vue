@@ -39,6 +39,13 @@
                   @click:append-inner="onSearchUser"
                ></v-text-field>
 
+               <v-text-field style="max-width: 150px;" type="text" variant="underlined" density="compact"
+                  v-model="searchGroup"
+                  append-inner-icon="mdi-magnify"
+                  label="search group"
+                  @click:append-inner="onSearchGroup"
+               ></v-text-field>
+
                <div ref="svgContainer" class="graph-container"></div>
 
             </v-container>
@@ -88,8 +95,13 @@ const onSearchUser = async () => {
    if (searchUser.value) {
       const [user] = await addUserSynchro({ name: searchUser.value })
       console.log('user', user)
+      if (!user) return
       const relations = await addRelationSynchro({ user_uid: user.uid })
       console.log('relations', relations)
+      for (const relation of relations) {
+         const [group] = await addGroupSynchro({ uid: relation.group_uid })
+         console.log('group', group)
+      }
    } else {
       alert("Enter name")
    }
@@ -117,6 +129,31 @@ const onDeleteUser = async () => {
    await deleteUser(selectedUserNode.value.id)
    selectedUserNode.value = null
 }
+
+
+const groupList = ref([])
+
+getGroupListObservable().subscribe(groups => {
+   groupList.value = groups
+})
+
+const searchGroup = ref()
+const onSearchGroup = async () => {
+   if (searchGroup.value) {
+      const [group] = await addGroupSynchro({ name: searchGroup.value })
+      console.log('group', group)
+      if (!group) return
+      const relations = await addRelationSynchro({ group_uid: group.uid })
+      console.log('relations', relations)
+      for (const relation of relations) {
+         const [user] = await addUserSynchro({ uid: relation.user_uid })
+         console.log('user', user)
+      }
+   } else {
+      alert("Enter name")
+   }
+}
+
 const selectedGroupNode = ref()
 const groupTF = ref(null)
 const groupName = ref('')
@@ -150,15 +187,6 @@ const createLink = async () => {
 }
 
 
-// Reference to the SVG container
-const svgContainer = ref(null);
-
-
-const groupList = ref([])
-getGroupListObservable().subscribe(groups => {
-   groupList.value = groups
-})
-
 const relationList = ref([])
 getRelationListObservable().subscribe(relations => {
    relationList.value = relations
@@ -179,6 +207,10 @@ const links = computed(() => {
       target: relation.group_uid,
    }))
 })
+
+
+// Reference to the SVG container
+const svgContainer = ref(null);
 
 function drawGraph() {
    if (!nodes.value || !links.value) return
