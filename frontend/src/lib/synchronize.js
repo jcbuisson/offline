@@ -1,13 +1,7 @@
 
 // ex: where = { uid: 'azer' }
 export async function synchronize(app, modelName, clientCache, where, cutoffDate) {
-   const requestPredicate = (elt) => {
-      for (const [key, value] of Object.entries(where)) {
-         // implements only 'attr = value' clauses 
-         if (elt[key] !== value) return false
-      }
-      return true
-   }
+   const requestPredicate = wherePredicate(where)
 
    const allValues = await clientCache.toArray()
    const clientValuesDict = allValues.reduce((accu, elt) => {
@@ -16,7 +10,7 @@ export async function synchronize(app, modelName, clientCache, where, cutoffDate
    }, {})
 
    
-   // send cache data to sync service which stores new data and returns local changes to be made
+   // call sync service on `where` perimeter
    const { toAdd, toUpdate, toDelete } = await app.service('sync').go(modelName, where, cutoffDate, clientValuesDict)
    console.log(toAdd, toUpdate, toDelete)
 
@@ -34,6 +28,17 @@ export async function synchronize(app, modelName, clientCache, where, cutoffDate
    for (const elt of toUpdate) {
       await clientCache.update(elt.uid, elt)
    }
+   return clientCache
+}
+
+export function wherePredicate(where) {
+   return (elt) => {
+      for (const [key, value] of Object.entries(where)) {
+         // implements only 'attr = value' clauses 
+         if (elt[key] !== value) return false
+      }
+      return true
+   }
 }
 
 function isIncluded(where, whereList) {
@@ -44,7 +49,7 @@ function isIncluded(where, whereList) {
 }
 
 function isSubset(subset, fullObject) {
-   return Object.entries(subset).every(([key, value]) => fullObject[key] === value);
+   return Object.entries(subset).some(([key, value]) => fullObject[key] === value)
 }
  
 async function getWhereList(whereDb) {

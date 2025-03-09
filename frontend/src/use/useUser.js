@@ -1,11 +1,12 @@
-import { ref, computed } from 'vue'
+import { ref } from 'vue'
 import { v4 as uuidv4 } from 'uuid'
 import Dexie from "dexie"
 import { liveQuery } from "dexie"
-import { useObservable } from "@vueuse/rxjs"
 
 import { app, offlineDate } from '/src/client-app.js'
-import { synchronize, addSynchroWhere, synchronizeAll } from '/src/lib/synchronize.js'
+import { wherePredicate, synchronize, addSynchroWhere, synchronizeAll } from '/src/lib/synchronize.js'
+
+import { deleteRelation, getRelationListFrom } from "/src/use/useRelation"
 
 
 export const db = new Dexie("userDatabase")
@@ -14,6 +15,11 @@ db.version(1).stores({
    whereList: "id++",
    values: "uid, createdAt, updatedAt, name, deleted_"
 })
+
+export const resetUseUser = async () => {
+   await db.values.clear()
+   await db.whereList.clear()
+}
 
 
 /////////////          PUB / SUB          /////////////
@@ -36,17 +42,16 @@ app.service('user').on('delete', async user => {
 
 /////////////          METHODS          /////////////
 
-export const getUserRef = (uid) => {
-   // synchronize on this user
-   addSynchroWhere({ uid })
-   // return reactive ref
-   return useObservable(liveQuery(() => db.values.get(uid)))
-}
+// export const getUserListObservable = (where) => {
+//    // synchronize on `where` perimeter
+//    addSynchroWhere(where, db.whereList)
+//    // return observable
+//    const predicate = wherePredicate(where)
+//    return liveQuery(() => db.values.filter(user => !user.deleted_ && predicate(user)).toArray())
+// }
 
 export const getUserListObservable = () => {
-   // synchronize on this perimeter
-   addSynchroWhere({}, db.whereList)
-   // return reactive ref
+   // return observable
    return liveQuery(() => db.values.filter(user => !user.deleted_).toArray())
 }
 
@@ -76,6 +81,8 @@ export async function deleteUser(uid) {
    // removeSynchroWhere({ uid }, db.whereList)
    // optimistic update
    await db.values.update(uid, { deleted_: true })
+   const relations = await getRelationListFrom(uid)
+   await Promise.all(relations.map(relation => deleteRelation(relation)))
    // perform request on backend (if connection is active)
    await app.service('user', { volatile: true }).delete({ where: { uid }})
 }
@@ -87,6 +94,9 @@ export async function addUserSynchro(where) {
    if (addSynchroWhere(where, db.whereList)) {
       await synchronize(app, 'user', db.values, where, offlineDate.value)
    }
+   const predicate = wherePredicate(where)
+   const values = db.values.filter(value => !value.deleted_ && predicate(value)).toArray()
+   return values
 }
 
 app.addConnectListener(async (socket) => {

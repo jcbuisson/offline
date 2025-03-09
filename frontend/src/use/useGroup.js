@@ -7,8 +7,6 @@ import { useObservable } from "@vueuse/rxjs"
 import { app, offlineDate } from '/src/client-app.js'
 import { synchronize, addSynchroWhere, synchronizeAll } from '/src/lib/synchronize.js'
 
-import { db as horseDB } from '/src/use/useHorse.js'
-
 
 export const db = new Dexie("groupDatabase")
 
@@ -16,6 +14,11 @@ db.version(1).stores({
    whereList: "id++",
    values: "uid, createdAt, updatedAt, name, deleted_"
 })
+
+export const resetUseGroup = async () => {
+   await db.values.clear()
+   await db.whereList.clear()
+}
 
 
 /////////////          PUB / SUB          /////////////
@@ -38,17 +41,10 @@ app.service('group').on('delete', async group => {
 
 /////////////          METHODS          /////////////
 
-export const getGroupRef = (uid) => {
-   // synchronize on this group
-   addSynchroWhere({ uid })
-   // return reactive ref
-   return useObservable(liveQuery(() => db.values.get(uid)))
-}
-
 export const getGroupListObservable = () => {
    // synchronize on this perimeter
    addSynchroWhere({}, db.whereList)
-   // return reactive ref
+   // return observable
    return liveQuery(() => db.values.filter(group => !group.deleted_).toArray())
 }
 
@@ -78,7 +74,6 @@ export async function deleteGroup(uid) {
    // removeSynchroWhere({ uid }, db.whereList)
    // optimistic update
    await db.values.update(uid, { deleted_: true })
-   await horseDB.horses.where("group_uid").equals(uid).modify({ deleted_: true }) // delete on cascade
    // perform request on backend (if connection is active)
    await app.service('group', { volatile: true }).delete({ where: { uid }})
 }

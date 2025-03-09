@@ -2,31 +2,14 @@ generator client {
    provider = "prisma-client-js"
 }
 
-model stable {
-   uid            String     @unique
-   createdAt      DateTime   @default(now()) @db.Timestamptz(6)
-   updatedAt      DateTime   @updatedAt @db.Timestamptz(6)
-   name           String
-
-   horses         horse[]
-}
-
-model horse {
-   uid            String     @unique
-   createdAt      DateTime   @default(now()) @db.Timestamptz(6)
-   updatedAt      DateTime   @updatedAt @db.Timestamptz(6)
-   name           String
-   stable_uid     String
-
-   stable         stable    @relation(fields: [stable_uid], references: [uid], onDelete: Cascade)
-}
-
 
 model user {
    uid            String     @unique
    createdAt      DateTime   @default(now()) @db.Timestamptz(6)
    updatedAt      DateTime   @updatedAt @db.Timestamptz(6)
    name           String
+
+   relations      relation[]
 }
 
 model group {
@@ -34,6 +17,8 @@ model group {
    createdAt      DateTime   @default(now()) @db.Timestamptz(6)
    updatedAt      DateTime   @updatedAt @db.Timestamptz(6)
    name           String
+
+   relations      relation[]
 }
 
 model relation {
@@ -43,7 +28,9 @@ model relation {
    user_uid        String
    group_uid       String
 
-  @@unique([user_uid, group_uid])
+   user user @relation(fields: [user_uid], references: [uid], onDelete: Cascade, onUpdate: NoAction)
+   group group @relation(fields: [group_uid], references: [uid], onDelete: Cascade, onUpdate: NoAction)
+   @@unique([user_uid, group_uid])
 }
 
 datasource db {

@@ -2,10 +2,9 @@ import { ref, computed } from 'vue'
 import { v4 as uuidv4 } from 'uuid'
 import Dexie from "dexie"
 import { liveQuery } from "dexie"
-import { useObservable } from "@vueuse/rxjs"
 
 import { app, offlineDate } from '/src/client-app.js'
-import { synchronize, addSynchroWhere, synchronizeAll } from '/src/lib/synchronize.js'
+import { wherePredicate, synchronize, addSynchroWhere, synchronizeAll } from '/src/lib/synchronize.js'
 
 
 export const db = new Dexie("relationDatabase")
@@ -14,6 +13,11 @@ db.version(1).stores({
    whereList: "id++",
    values: "uid, createdAt, updatedAt, user_uid, group_uid, deleted_"
 })
+
+export const resetUseRelation = async () => {
+   await db.values.clear()
+   await db.whereList.clear()
+}
 
 
 /////////////          PUB / SUB          /////////////
@@ -36,18 +40,15 @@ app.service('relation').on('delete', async relation => {
 
 /////////////          METHODS          /////////////
 
-export const getRelationRef = (uid) => {
-   // synchronize on this relation
-   addSynchroWhere({ uid })
-   // return reactive ref
-   return useObservable(liveQuery(() => db.values.get(uid)))
-}
-
 export const getRelationListObservable = () => {
    // synchronize on this perimeter
    addSynchroWhere({}, db.whereList)
-   // return reactive ref
+   // return observable
    return liveQuery(() => db.values.filter(relation => !relation.deleted_).toArray())
+}
+
+export const getRelationListFrom = async (user_id) => {
+   return await db.values.filter(relation => !relation.deleted_ && relation.user_id === user_id).toArray()
 }
 
 export async function addRelation(data) {
@@ -87,6 +88,9 @@ export async function addRelationSynchro(where) {
    if (addSynchroWhere(where, db.whereList)) {
       await synchronize(app, 'relation', db.values, where, offlineDate.value)
    }
+   const predicate = wherePredicate(where)
+   const values = db.values.filter(value => !value.deleted_ && predicate(value)).toArray()
+   return values
 }
 
 app.addConnectListener(async (socket) => {
