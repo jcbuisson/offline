@@ -42,14 +42,6 @@ app.service('user').on('delete', async user => {
 
 /////////////          METHODS          /////////////
 
-// export const getUserListObservable = (where) => {
-//    // synchronize on `where` perimeter
-//    addSynchroWhere(where, db.whereList)
-//    // return observable
-//    const predicate = wherePredicate(where)
-//    return liveQuery(() => db.values.filter(user => !user.deleted_ && predicate(user)).toArray())
-// }
-
 export const getUserListObservable = () => {
    // return observable
    return liveQuery(() => db.values.filter(user => !user.deleted_).toArray())

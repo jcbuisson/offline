@@ -41,8 +41,6 @@ app.service('group').on('delete', async group => {
 /////////////          METHODS          /////////////
 
 export const getGroupListObservable = () => {
-   // synchronize on this perimeter
-   addSynchroWhere({}, db.whereList)
    // return observable
    return liveQuery(() => db.values.filter(group => !group.deleted_).toArray())
 }

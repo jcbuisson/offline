@@ -41,8 +41,6 @@ app.service('relation').on('delete', async relation => {
 /////////////          METHODS          /////////////
 
 export const getRelationListObservable = () => {
-   // synchronize on this perimeter
-   addSynchroWhere({}, db.whereList)
    // return observable
    return liveQuery(() => db.values.filter(relation => !relation.deleted_).toArray())
 }
