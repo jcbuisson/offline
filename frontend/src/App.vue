@@ -33,14 +33,14 @@
                </div>
 
                <v-text-field style="max-width: 150px;" type="text" variant="underlined" density="compact"
-                  v-model="searchUser"
+                  v-model="searchUser" @keydown="ev => ev.key === 'Enter' && onSearchUser()"
                   append-inner-icon="mdi-magnify"
                   label="search user"
                   @click:append-inner="onSearchUser"
                ></v-text-field>
 
                <v-text-field style="max-width: 150px;" type="text" variant="underlined" density="compact"
-                  v-model="searchGroup"
+                  v-model="searchGroup" @keydown="ev => ev.key === 'Enter' && onSearchGroup()"
                   append-inner-icon="mdi-magnify"
                   label="search group"
                   @click:append-inner="onSearchGroup"
@@ -92,8 +92,10 @@ getUserListObservable().subscribe(users => {
 
 const searchUser = ref()
 const onSearchUser = async () => {
-   if (searchUser.value) {
-      const [user] = await addUserSynchro({ name: searchUser.value })
+   const searchText = searchUser.value
+   searchUser.value = ''
+   if (searchText) {
+      const [user] = await addUserSynchro({ name: searchText })
       console.log('user', user)
       if (!user) return
       const relations = await addRelationSynchro({ user_uid: user.uid })
@@ -139,8 +141,10 @@ getGroupListObservable().subscribe(groups => {
 
 const searchGroup = ref()
 const onSearchGroup = async () => {
-   if (searchGroup.value) {
-      const [group] = await addGroupSynchro({ name: searchGroup.value })
+   const searchText = searchGroup.value
+   searchGroup.value = ''
+   if (searchText) {
+      const [group] = await addGroupSynchro({ name: searchText })
       console.log('group', group)
       if (!group) return
       const relations = await addRelationSynchro({ group_uid: group.uid })
