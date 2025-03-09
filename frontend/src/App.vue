@@ -57,7 +57,7 @@
 </template>
 
 <script setup>
-import { ref, computed, watchEffect } from "vue"
+import { ref, computed, watchEffect, onMounted, onUnmounted } from "vue"
 import { format } from 'date-fns'
 import * as d3 from "d3"
 import { useDebounceFn } from '@vueuse/core'
@@ -76,6 +76,18 @@ import ReloadPrompt from '/src/components/ReloadPrompt.vue'
 import GithubLink from '/src/components/GithubLink.vue'
 import OnlineStatus from '/src/components/OnlineStatus.vue'
 
+const userListObservable = getUserListObservable()
+
+onMounted(() => {
+   userListObservable.subscribe(users => {
+      userList.value = users
+   })
+})
+
+onUnmounted(() => {
+   userListObservable.unsubscribe()
+})
+
 const isOnline = computed(() => !!onlineDate.value)
 
 function clear() {
@@ -85,10 +97,6 @@ function clear() {
 }
 
 const userList = ref([])
-
-getUserListObservable().subscribe(users => {
-   userList.value = users
-})
 
 const searchUser = ref()
 const onSearchUser = async () => {

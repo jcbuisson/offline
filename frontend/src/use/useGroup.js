@@ -88,6 +88,6 @@ export async function addGroupSynchro(where) {
 }
 
 app.addConnectListener(async (socket) => {
-   console.log('online! synchronizing...')
+   console.log('online! synchronizing groups...')
    await synchronizeAll(app, 'group', db.values, offlineDate.value, db.whereList)
 })

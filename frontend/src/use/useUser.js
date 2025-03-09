@@ -21,7 +21,6 @@ export const resetUseUser = async () => {
    await db.whereList.clear()
 }
 
-
 /////////////          PUB / SUB          /////////////
 
 app.service('user').on('create', async user => {
@@ -92,6 +91,6 @@ export async function addUserSynchro(where) {
 }
 
 app.addConnectListener(async (socket) => {
-   console.log('online! synchronizing...')
+   console.log('online! synchronizing users...')
    await synchronizeAll(app, 'user', db.values, offlineDate.value, db.whereList)
 })

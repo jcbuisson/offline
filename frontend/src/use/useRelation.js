@@ -92,6 +92,6 @@ export async function addRelationSynchro(where) {
 }
 
 app.addConnectListener(async (socket) => {
-   console.log('online! synchronizing...')
+   console.log('online! synchronizing relations...')
    await synchronizeAll(app, 'relation', db.values, offlineDate.value, db.whereList)
 })
