@@ -91,7 +91,6 @@ export const getWhereListObservable = () => {
    return liveQuery(() => db.whereList.toArray())
 }
 
-app.addConnectListener(async (socket) => {
-   console.log('online! synchronizing groups...')
-   await synchronizeAll(app, 'group', db.values, offlineDate.value, db.whereList)
-})
+export const synchronizeWhereList = async () => {
+   await synchronizeAll(app, 'user', db.values, offlineDate.value, db.whereList)
+}

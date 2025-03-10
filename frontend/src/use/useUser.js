@@ -95,7 +95,6 @@ export const getWhereListObservable = () => {
 }
 
 
-app.addConnectListener(async (socket) => {
-   console.log('online! synchronizing users...')
+export const synchronizeWhereList = async () => {
    await synchronizeAll(app, 'user', db.values, offlineDate.value, db.whereList)
-})
+}

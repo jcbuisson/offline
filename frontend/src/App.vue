@@ -73,9 +73,9 @@ import { format } from 'date-fns'
 import * as d3 from "d3"
 import { useDebounceFn } from '@vueuse/core'
 
-import { resetUseUser, getUserListObservable, addUserSynchro, addUser, patchUser, deleteUser, getWhereListObservable as getUserWhereListObservable } from "/src/use/useUser"
-import { resetUseGroup, getGroupListObservable, addGroupSynchro, addGroup, patchGroup, deleteGroup, getWhereListObservable as getGroupWhereListObservable } from "/src/use/useGroup"
-import { resetUseRelation, getRelationListObservable, addRelationSynchro, addRelation, deleteRelation, getWhereListObservable as getRelationWhereListObservable } from "/src/use/useRelation"
+import { resetUseUser, getUserListObservable, addUserSynchro, addUser, patchUser, deleteUser, getWhereListObservable as getUserWhereListObservable, synchronizeWhereList as synchronizeUsers } from "/src/use/useUser"
+import { resetUseGroup, getGroupListObservable, addGroupSynchro, addGroup, patchGroup, deleteGroup, getWhereListObservable as getGroupWhereListObservable, synchronizeWhereList as synchronizeGroups } from "/src/use/useGroup"
+import { resetUseRelation, getRelationListObservable, addRelationSynchro, addRelation, deleteRelation, getWhereListObservable as getRelationWhereListObservable, synchronizeWhereList as synchronizeRelations } from "/src/use/useRelation"
 
 import { onlineDate } from '/src/client-app.js'
 
@@ -126,6 +126,17 @@ function clear() {
    resetUseGroup()
    resetUseRelation()
 }
+
+// order matters!
+app.addConnectListener(async () => {
+   console.log('online! synchronizing users...')
+   await synchronizeUsers()
+   console.log('online! synchronizing groups...')
+   await synchronizeGroups()
+   console.log('online! synchronizing relations...')
+   await synchronizeRelations()
+})
+
 
 
 const searchUser = ref()
