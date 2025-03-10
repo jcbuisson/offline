@@ -48,6 +48,17 @@
 
                <div ref="svgContainer" class="graph-container"></div>
 
+               <h3>Synchronization scope</h3>
+               <ul v-for="where of userWhereList">
+                  <li>user: {{ where.where }}</li>
+               </ul>
+               <ul v-for="where of groupWhereList">
+                  <li>group: {{ where.where }}</li>
+               </ul>
+               <ul v-for="where of relationWhereList">
+                  <li>relation: {{ where.where }}</li>
+               </ul>
+
             </v-container>
          </v-main>
       </v-app>
@@ -62,9 +73,9 @@ import { format } from 'date-fns'
 import * as d3 from "d3"
 import { useDebounceFn } from '@vueuse/core'
 
-import { resetUseUser, getUserListObservable, addUserSynchro, addUser, patchUser, deleteUser } from "/src/use/useUser"
-import { resetUseGroup, getGroupListObservable, addGroupSynchro, addGroup, patchGroup, deleteGroup } from "/src/use/useGroup"
-import { resetUseRelation, getRelationListObservable, addRelationSynchro, addRelation, deleteRelation } from "/src/use/useRelation"
+import { resetUseUser, getUserListObservable, addUserSynchro, addUser, patchUser, deleteUser, getWhereListObservable as getUserWhereListObservable } from "/src/use/useUser"
+import { resetUseGroup, getGroupListObservable, addGroupSynchro, addGroup, patchGroup, deleteGroup, getWhereListObservable as getGroupWhereListObservable } from "/src/use/useGroup"
+import { resetUseRelation, getRelationListObservable, addRelationSynchro, addRelation, deleteRelation, getWhereListObservable as getRelationWhereListObservable } from "/src/use/useRelation"
 
 import { onlineDate } from '/src/client-app.js'
 
@@ -77,15 +88,35 @@ import GithubLink from '/src/components/GithubLink.vue'
 import OnlineStatus from '/src/components/OnlineStatus.vue'
 
 const userListObservable = getUserListObservable()
+const userWhereListObservable = getUserWhereListObservable()
+const groupWhereListObservable = getGroupWhereListObservable()
+const relationWhereListObservable = getRelationWhereListObservable()
+
+const userList = ref([])
+const userWhereList = ref()
+const groupWhereList = ref()
+const relationWhereList = ref()
 
 onMounted(() => {
    userListObservable.subscribe(users => {
       userList.value = users
    })
+   userWhereListObservable.subscribe(whereList => {
+      userWhereList.value = whereList
+   })
+   groupWhereListObservable.subscribe(whereList => {
+      groupWhereList.value = whereList
+   })
+   relationWhereListObservable.subscribe(whereList => {
+      relationWhereList.value = whereList
+   })
 })
 
 onUnmounted(() => {
    userListObservable.unsubscribe()
+   // userWhereListObservable.unsubscribe()
+   // groupWhereListObservable.unsubscribe()
+   // relationWhereListObservable.unsubscribe()
 })
 
 const isOnline = computed(() => !!onlineDate.value)
@@ -96,7 +127,6 @@ function clear() {
    resetUseRelation()
 }
 
-const userList = ref([])
 
 const searchUser = ref()
 const onSearchUser = async () => {
@@ -334,20 +364,6 @@ watchEffect(() => {
 
 
 
-
-
-
-
-
-
-
-
-
-
-// async function getWhere() {
-//    whereStables.value = await stableDB.whereList.toArray()
-//    whereHorses.value = await horseDB.whereList.toArray()
-// }
 
 // function formatStable(stable) {
 //    return {

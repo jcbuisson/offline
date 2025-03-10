@@ -91,6 +91,10 @@ export async function addRelationSynchro(where) {
    return values
 }
 
+export const getWhereListObservable = () => {
+   return liveQuery(() => db.whereList.toArray())
+}
+
 app.addConnectListener(async (socket) => {
    console.log('online! synchronizing relations...')
    await synchronizeAll(app, 'relation', db.values, offlineDate.value, db.whereList)
