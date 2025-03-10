@@ -96,5 +96,5 @@ export const getWhereListObservable = () => {
 }
 
 export const synchronizeWhereList = async () => {
-   await synchronizeAll(app, 'user', db.values, offlineDate.value, db.whereList)
+   await synchronizeAll(app, 'relation', db.values, offlineDate.value, db.whereList)
 }
