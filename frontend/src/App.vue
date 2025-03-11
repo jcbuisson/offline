@@ -59,6 +59,17 @@
                   <li>relation: {{ where.where }}</li>
                </ul>
 
+               <h3>Local state</h3>
+               <ul v-for="user of userList">
+                  <li>user: {{ user }}</li>
+               </ul>
+               <ul v-for="group of groupList">
+                  <li>group: {{ group }}</li>
+               </ul>
+               <ul v-for="relation of relationList">
+                  <li>relation: {{ relation }}</li>
+               </ul>
+
             </v-container>
          </v-main>
       </v-app>
@@ -69,19 +80,16 @@
 
 <script setup>
 import { ref, computed, watchEffect, onMounted, onUnmounted } from "vue"
-import { format } from 'date-fns'
 import * as d3 from "d3"
 import { useDebounceFn } from '@vueuse/core'
 
-import { resetUseUser, getUserListObservable, addUserSynchro, addUser, patchUser, deleteUser, getWhereListObservable as getUserWhereListObservable, synchronizeWhereList as synchronizeUsers } from "/src/use/useUser"
-import { resetUseGroup, getGroupListObservable, addGroupSynchro, addGroup, patchGroup, deleteGroup, getWhereListObservable as getGroupWhereListObservable, synchronizeWhereList as synchronizeGroups } from "/src/use/useGroup"
-import { resetUseRelation, getRelationListObservable, addRelationSynchro, addRelation, deleteRelation, getWhereListObservable as getRelationWhereListObservable, synchronizeWhereList as synchronizeRelations } from "/src/use/useRelation"
+import { resetUseUser, getUserListObservable, selectValues as selectUserValues, addUser, patchUser, deleteUser, getWhereListObservable as getUserWhereListObservable, synchronizePerimeter as synchronizeUserPerimeter } from "/src/use/useUser"
+import { resetUseGroup, getGroupListObservable, selectValues as selectGroupValues, addGroup, patchGroup, deleteGroup, getWhereListObservable as getGroupWhereListObservable, synchronizePerimeter as synchronizeGroupPerimeter } from "/src/use/useGroup"
+import { resetUseRelation, getRelationListObservable, selectValues as selectRelationValues, addRelation, deleteRelation, getWhereListObservable as getRelationWhereListObservable, synchronizePerimeter as synchronizeRelationPerimeter } from "/src/use/useRelation"
 
 import { onlineDate } from '/src/client-app.js'
 
-import { synchronizeAll } from '/src/lib/synchronize.js'
-
-import { app, offlineDate, socket } from '/src/client-app.js'
+import { app, offlineDate } from '/src/client-app.js'
 
 import ReloadPrompt from '/src/components/ReloadPrompt.vue'
 import GithubLink from '/src/components/GithubLink.vue'
@@ -130,11 +138,11 @@ function clear() {
 // order matters!
 app.addConnectListener(async () => {
    console.log('online! synchronizing users...')
-   await synchronizeUsers()
+   await synchronizeUserPerimeter()
    console.log('online! synchronizing groups...')
-   await synchronizeGroups()
+   await synchronizeGroupPerimeter()
    console.log('online! synchronizing relations...')
-   await synchronizeRelations()
+   await synchronizeRelationPerimeter()
 })
 
 
@@ -144,13 +152,13 @@ const onSearchUser = async () => {
    const searchText = searchUser.value
    searchUser.value = ''
    if (searchText) {
-      const [user] = await addUserSynchro({ name: searchText })
+      const [user] = await selectUserValues({ name: searchText })
       console.log('user', user)
       if (!user) return
-      const relations = await addRelationSynchro({ user_uid: user.uid })
+      const relations = await selectRelationValues({ user_uid: user.uid })
       console.log('relations', relations)
       for (const relation of relations) {
-         const [group] = await addGroupSynchro({ uid: relation.group_uid })
+         const [group] = await selectGroupValues({ uid: relation.group_uid })
          console.log('group', group)
       }
    } else {
@@ -193,13 +201,13 @@ const onSearchGroup = async () => {
    const searchText = searchGroup.value
    searchGroup.value = ''
    if (searchText) {
-      const [group] = await addGroupSynchro({ name: searchText })
+      const [group] = await selectGroupValues({ name: searchText })
       console.log('group', group)
       if (!group) return
-      const relations = await addRelationSynchro({ group_uid: group.uid })
+      const relations = await selectRelationValues({ group_uid: group.uid })
       console.log('relations', relations)
       for (const relation of relations) {
-         const [user] = await addUserSynchro({ uid: relation.user_uid })
+         const [user] = await selectUserValues({ uid: relation.user_uid })
          console.log('user', user)
       }
    } else {
@@ -372,48 +380,6 @@ function drawGraph() {
 watchEffect(() => {
    drawGraph()
 })
-
-
-
-
-// function formatStable(stable) {
-//    return {
-//       name: stable.name,
-//       uid: stable.uid.substring(0, 8),
-//       created: format(new Date(stable.createdAt), 'dd/MM/yyyy HH:mm:ss'),
-//       updated: format(new Date(stable.updatedAt), 'dd/MM/yyyy HH:mm:ss'),
-//    }
-// }
-
-// function formatHorse(horse) {
-//    return {
-//       name: horse.name,
-//       uid: horse.uid.substring(0, 8),
-//       stable_uid: horse.stable_uid.substring(0, 8),
-//       created: format(new Date(horse.createdAt), 'dd/MM/yyyy HH:mm:ss'),
-//       updated: format(new Date(horse.updatedAt), 'dd/MM/yyyy HH:mm:ss'),
-//    }
-// }
-
-// async function getDatabaseData() {
-//    databaseStables.value = (await app.service('stable').findMany({})).map(formatStable)
-//    databaseHorses.value = (await app.service('horse').findMany({})).map(formatHorse)
-// }
-
-// async function getLocalData() {
-//    localStables.value = (await stableDB.stables.toArray()).map(formatStable)
-//    localHorses.value = (await horseDB.horses.toArray()).map(formatHorse)
-// }
-
-// async function sync() {
-//    console.log('sync...')
-//    await synchronizeAll(app, 'stable', stableDB.stables, offlineDate.value, stableDB.whereList)
-//    await synchronizeAll(app, 'horse', horseDB.horses, offlineDate.value, horseDB.whereList)
-// }
-
-// function disconnect() {
-//    socket.disconnect()
-// }
 </script>
 
 <style scoped>

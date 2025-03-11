@@ -78,7 +78,7 @@ export async function deleteGroup(uid) {
 
 /////////////          SYNCHRONIZATION          /////////////
 
-export async function addGroupSynchro(where) {
+export async function selectValues(where) {
    if (addSynchroWhere(where, db.whereList)) {
       await synchronize(app, 'group', db.values, where, offlineDate.value)
    }
@@ -91,6 +91,6 @@ export const getWhereListObservable = () => {
    return liveQuery(() => db.whereList.toArray())
 }
 
-export const synchronizeWhereList = async () => {
+export const synchronizePerimeter = async () => {
    await synchronizeAll(app, 'group', db.values, offlineDate.value, db.whereList)
 }

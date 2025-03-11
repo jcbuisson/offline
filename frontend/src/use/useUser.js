@@ -47,19 +47,19 @@ export const getUserListObservable = () => {
 }
 
 export async function addUser(data) {
-   // // synchronize on this perimeter
-   // addSynchroWhere({ uid: data.uid }, db.whereList)
-   const uuid = uuidv4()
-   console.log('create user', uuid)
+   const uid = uuidv4()
+   console.log('create user', uid)
+   // enlarge perimeter
+   addSynchroWhere({ uid }, db.whereList)
    // optimistic update
    const now = new Date()
-   await db.values.add({ uid: uuid, createdAt: now, updatedAt: now, ...data })
+   await db.values.add({ uid, createdAt: now, updatedAt: now, ...data })
    // perform request on backend (if connection is active)
-   await app.service('user', { volatile: true }).create({ data: { uid: uuid, ...data } })
+   await app.service('user', { volatile: true }).create({ data: { uid, ...data } })
 }
 
 export async function patchUser(uid, data) {
-   // synchronize on this perimeter
+   // enlarge perimeter (normally useless for patch)
    addSynchroWhere({ uid }, db.whereList)
    // optimistic update
    await db.values.update(uid, { name: data.name, updatedAt: new Date() })
@@ -81,7 +81,7 @@ export async function deleteUser(uid) {
 
 /////////////          SYNCHRONIZATION          /////////////
 
-export async function addUserSynchro(where) {
+export async function selectValues(where) {
    if (addSynchroWhere(where, db.whereList)) {
       await synchronize(app, 'user', db.values, where, offlineDate.value)
    }
@@ -95,6 +95,6 @@ export const getWhereListObservable = () => {
 }
 
 
-export const synchronizeWhereList = async () => {
+export const synchronizePerimeter = async () => {
    await synchronizeAll(app, 'user', db.values, offlineDate.value, db.whereList)
 }

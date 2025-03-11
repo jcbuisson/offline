@@ -82,7 +82,7 @@ export async function deleteRelation(uid) {
 
 /////////////          SYNCHRONIZATION          /////////////
 
-export async function addRelationSynchro(where) {
+export async function selectValues(where) {
    if (addSynchroWhere(where, db.whereList)) {
       await synchronize(app, 'relation', db.values, where, offlineDate.value)
    }
@@ -95,6 +95,6 @@ export const getWhereListObservable = () => {
    return liveQuery(() => db.whereList.toArray())
 }
 
-export const synchronizeWhereList = async () => {
+export const synchronizePerimeter = async () => {
    await synchronizeAll(app, 'relation', db.values, offlineDate.value, db.whereList)
 }
