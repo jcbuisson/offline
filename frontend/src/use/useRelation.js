@@ -45,8 +45,12 @@ export const getRelationListObservable = () => {
    return liveQuery(() => db.values.filter(relation => !relation.deleted_).toArray())
 }
 
-export const getRelationListFrom = async (user_id) => {
-   return await db.values.filter(relation => !relation.deleted_ && relation.user_id === user_id).toArray()
+export const getRelationListFromUser = async (user_uid) => {
+   return await db.values.filter(relation => !relation.deleted_ && relation.user_uid === user_uid).toArray()
+}
+
+export const getRelationListFromGroup = async (group_uid) => {
+   return await db.values.filter(relation => !relation.deleted_ && relation.group_uid === group_uid).toArray()
 }
 
 export async function addRelation(data) {

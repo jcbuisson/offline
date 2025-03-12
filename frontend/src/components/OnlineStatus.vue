@@ -16,9 +16,6 @@ const props = defineProps({
 .offline {
    font-size: 14px;
    padding: 5px 15px 5px 15px;
-   position: absolute;
-   top: 1rem;
-   right: 6rem;
    border-style: solid;
    border-radius: 10px;
    border-width: 0;

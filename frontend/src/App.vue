@@ -2,16 +2,17 @@
    <v-responsive>
       <v-app>
          <v-app-bar title="Offline-first webapps">
-            <GithubLink url="https://github.com/jcbuisson/offline" svgPath="M12 2A10 10 0 0 0 2 12c0 4.42 2.87 8.17 6.84 9.5c.5.08.66-.23.66-.5v-1.69c-2.77.6-3.36-1.34-3.36-1.34c-.46-1.16-1.11-1.47-1.11-1.47c-.91-.62.07-.6.07-.6c1 .07 1.53 1.03 1.53 1.03c.87 1.52 2.34 1.07 2.91.83c.09-.65.35-1.09.63-1.34c-2.22-.25-4.55-1.11-4.55-4.92c0-1.11.38-2 1.03-2.71c-.1-.25-.45-1.29.1-2.64c0 0 .84-.27 2.75 1.02c.79-.22 1.65-.33 2.5-.33s1.71.11 2.5.33c1.91-1.29 2.75-1.02 2.75-1.02c.55 1.35.2 2.39.1 2.64c.65.71 1.03 1.6 1.03 2.71c0 3.82-2.34 4.66-4.57 4.91c.36.31.69.92.69 1.85V21c0 .27.16.59.67.5C19.14 20.16 22 16.42 22 12A10 10 0 0 0 12 2"></GithubLink>
-            <OnlineStatus :isOnline="isOnline"></OnlineStatus>
             <v-btn size="small" @click="clear">clear</v-btn>
+            <OnlineStatus :isOnline="isOnline"></OnlineStatus>
+            <GithubLink url="https://github.com/jcbuisson/offline" svgPath="M12 2A10 10 0 0 0 2 12c0 4.42 2.87 8.17 6.84 9.5c.5.08.66-.23.66-.5v-1.69c-2.77.6-3.36-1.34-3.36-1.34c-.46-1.16-1.11-1.47-1.11-1.47c-.91-.62.07-.6.07-.6c1 .07 1.53 1.03 1.53 1.03c.87 1.52 2.34 1.07 2.91.83c.09-.65.35-1.09.63-1.34c-2.22-.25-4.55-1.11-4.55-4.92c0-1.11.38-2 1.03-2.71c-.1-.25-.45-1.29.1-2.64c0 0 .84-.27 2.75 1.02c.79-.22 1.65-.33 2.5-.33s1.71.11 2.5.33c1.91-1.29 2.75-1.02 2.75-1.02c.55 1.35.2 2.39.1 2.64c.65.71 1.03 1.6 1.03 2.71c0 3.82-2.34 4.66-4.57 4.91c.36.31.69.92.69 1.85V21c0 .27.16.59.67.5C19.14 20.16 22 16.42 22 12A10 10 0 0 0 12 2"></GithubLink>
          </v-app-bar>
    
          <v-main>
             <v-container>
 
-               <v-text-field style="max-width: 150px;" type="text" variant="underlined" density="compact" ref="userTF"
+               <v-text-field style="max-width: 150px;" type="text" variant="underlined" density="compact" ref="userTextFieldElt"
                   v-model="userName" @input="ev => debouncedChangeUserName(ev.target.value)"
+                  @keydown="ev => ev.key === 'Enter' && onAddEditUser()"
                   :append-inner-icon="!selectedUserNode && 'mdi-plus'"
                   :append-icon="selectedUserNode && 'mdi-delete'"
                   label="user"
@@ -19,7 +20,7 @@
                   @click:append="onDeleteUser"
                ></v-text-field>
 
-               <v-text-field style="max-width: 150px;" type="text" variant="underlined" density="compact" ref="groupTF"
+               <v-text-field style="max-width: 150px;" type="text" variant="underlined" density="compact" ref="groupTextFieldElt"
                   v-model="groupName" @input="ev => debouncedChangeGroupName(ev.target.value)"
                   :append-inner-icon="selectedGroupNode ? 'mdi-pencil' : 'mdi-plus'"
                   :append-icon="selectedGroupNode && 'mdi-delete'"
@@ -33,7 +34,8 @@
                </div>
 
                <v-text-field style="max-width: 150px;" type="text" variant="underlined" density="compact"
-                  v-model="searchUser" @keydown="ev => ev.key === 'Enter' && onSearchUser()"
+                  v-model="searchUser"
+                  @keydown="ev => ev.key === 'Enter' && onSearchUser()"
                   append-inner-icon="mdi-magnify"
                   label="search user"
                   @click:append-inner="onSearchUser"
@@ -168,13 +170,15 @@ const onSearchUser = async () => {
 
 
 const selectedUserNode = ref()
-const userTF = ref(null)
+const userTextFieldElt = ref(null)
 const userName = ref('')
 
 const onAddEditUser = async () => {
    if (!selectedUserNode.value) {
       if (userName.value.length > 0) {
          await addUser({ name: userName.value })
+         selectedUserNode.value = null
+         userName.value = ''
       } else {
          alert("Entrez le nom d'abord")
       }
@@ -187,6 +191,7 @@ const debouncedChangeUserName = useDebounceFn(async (name) => {
 const onDeleteUser = async () => {
    await deleteUser(selectedUserNode.value.id)
    selectedUserNode.value = null
+   userName.value = ''
 }
 
 
@@ -216,13 +221,15 @@ const onSearchGroup = async () => {
 }
 
 const selectedGroupNode = ref()
-const groupTF = ref(null)
+const groupTextFieldElt = ref(null)
 const groupName = ref('')
 
 const onAddEditGroup = async () => {
    if (!selectedGroupNode.value) {
       if (groupName.value.length > 0) {
          await addGroup({ name: groupName.value })
+         selectedGroupNode.value = null
+         groupName.value = ''
       } else {
          alert("Entrez le nom d'abord")
       }
@@ -235,6 +242,7 @@ const debouncedChangeGroupName = useDebounceFn(async (name) => {
 const onDeleteGroup = async () => {
    await deleteGroup(selectedGroupNode.value.id)
    selectedGroupNode.value = null
+   groupName.value = ''
 }
 
 const createLink = async () => {
@@ -350,7 +358,7 @@ function drawGraph() {
          } else {
             selectedUserNode.value = node
             userName.value = node.name
-            userTF.value.focus()
+            userTextFieldElt.value.focus()
             d3.select(this).attr("stroke", "red").attr("stroke-width", 3)
          }
       })
@@ -364,7 +372,7 @@ function drawGraph() {
          } else {
             selectedGroupNode.value = node
             groupName.value = node.name
-            groupTF.value.focus()
+            groupTextFieldElt.value.focus()
             d3.select(this).attr("stroke", "red").attr("stroke-width", 3)
          }
       })

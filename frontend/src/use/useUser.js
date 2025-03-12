@@ -5,8 +5,7 @@ import { liveQuery } from "dexie"
 
 import { app, offlineDate } from '/src/client-app.js'
 import { wherePredicate, synchronize, addSynchroWhere, synchronizeAll } from '/src/lib/synchronize.js'
-
-import { deleteRelation, getRelationListFrom } from "/src/use/useRelation"
+import { deleteRelation, getRelationListFromUser } from "/src/use/useRelation"
 
 
 export const db = new Dexie("userDatabase")
@@ -71,9 +70,11 @@ export async function deleteUser(uid) {
    // // stop synchronizing on this perimeter
    // removeSynchroWhere({ uid }, db.whereList)
    // optimistic update
-   await db.values.update(uid, { deleted_: true })
-   const relations = await getRelationListFrom(uid)
+   // cascade-delete associated relations
+   const relations = await getRelationListFromUser(uid)
    await Promise.all(relations.map(relation => deleteRelation(relation)))
+   // delete user
+   await db.values.update(uid, { deleted_: true })
    // perform request on backend (if connection is active)
    await app.service('user', { volatile: true }).delete({ where: { uid }})
 }

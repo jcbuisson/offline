@@ -18,8 +18,5 @@ const props = defineProps({
   color: black;
   width: 2rem /* 32px */;
   height: 2rem /* 32px */;
-  position: absolute;
-  top: 1rem;
-  right: 1rem;
 }
 </style>

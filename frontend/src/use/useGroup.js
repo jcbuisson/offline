@@ -5,6 +5,7 @@ import { liveQuery } from "dexie"
 
 import { app, offlineDate } from '/src/client-app.js'
 import { wherePredicate, synchronize, addSynchroWhere, synchronizeAll } from '/src/lib/synchronize.js'
+import { deleteRelation, getRelationListFromGroup } from "/src/use/useRelation"
 
 
 export const db = new Dexie("groupDatabase")
@@ -46,15 +47,15 @@ export const getGroupListObservable = () => {
 }
 
 export async function addGroup(data) {
-   // // synchronize on this perimeter
-   // addSynchroWhere({ uid: data.uid }, db.whereList)
-   const uuid = uuidv4()
-   console.log('create group', uuid)
+   const uid = uuidv4()
+   console.log('create group', uid)
+   // synchronize on this perimeter
+   addSynchroWhere({ uid }, db.whereList)
    // optimistic update
    const now = new Date()
-   await db.values.add({ uid: uuid, createdAt: now, updatedAt: now, ...data })
+   await db.values.add({ uid, createdAt: now, updatedAt: now, ...data })
    // perform request on backend (if connection is active)
-   await app.service('group', { volatile: true }).create({ data: { uid: uuid, ...data } })
+   await app.service('group', { volatile: true }).create({ data: { uid, ...data } })
 }
 
 export async function patchGroup(uid, data) {
@@ -70,6 +71,10 @@ export async function deleteGroup(uid) {
    // // stop synchronizing on this perimeter
    // removeSynchroWhere({ uid }, db.whereList)
    // optimistic update
+   // cascade-delete associated relations
+   const relations = await getRelationListFromGroup(uid)
+   await Promise.all(relations.map(relation => deleteRelation(relation)))
+   // remove group
    await db.values.update(uid, { deleted_: true })
    // perform request on backend (if connection is active)
    await app.service('group', { volatile: true }).delete({ where: { uid }})
