@@ -2,7 +2,6 @@ import Dexie from "dexie"
 import { liveQuery } from "dexie"
 import { uid as uid16 } from 'uid'
 
-import { getRelationListOfUser as getTabRelationListOfUser, remove as removeTabRelation } from '/src/use/useUserTabRelation'
 import { getRelationListOfUser as getGroupRelationListOfUser, remove as removeGroupRelation } from '/src/use/useUserGroupRelation'
 import { wherePredicate, synchronize, addSynchroWhere, removeSynchroWhere, synchronizeModelWhereList } from '/src/lib/synchronize.js'
 import { app, isConnected, disconnectedDate } from '/src/client-app.js'
@@ -80,9 +79,6 @@ export const remove = async (uid) => {
    await removeSynchroWhere({ uid }, db.whereList)
    const deleted_at = new Date()
    // optimistic update of cache
-   // soft-delete associated user-tab relations in cache
-   const userTabRelations = await getTabRelationListOfUser(uid)
-   await Promise.all(userTabRelations.map(relation => removeTabRelation(relation)))
    // soft-delete associated user-group relations in cache
    const userGroupRelations = await getGroupRelationListOfUser(uid)
    await Promise.all(userGroupRelations.map(relation => removeGroupRelation(relation)))
@@ -91,13 +87,6 @@ export const remove = async (uid) => {
 
    // soft-delete in database, if connected
    if (isConnected.value) {
-      // soft-delete associated user-tab relations in database
-      for (const relation of userTabRelations) {
-         app.service('user_tab_relation').update({
-            where: { uid: relation.uid },
-            data: { deleted_at }
-         })
-      }
       // soft-delete associated user-group relations in database
       for (const relation of userGroupRelations) {
          app.service('user_group_relation').update({

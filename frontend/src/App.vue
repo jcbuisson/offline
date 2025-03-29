@@ -12,7 +12,7 @@
          <v-main>
             <v-container>
 
-               <router-view></router-view>
+               <ManageUsers></ManageUsers>
 
             </v-container>
          </v-main>
@@ -35,6 +35,8 @@ import { snackbar } from '/src/use/useSnackbar'
 import ReloadPrompt from '/src/components/ReloadPrompt.vue'
 import GithubLink from '/src/components/GithubLink.vue'
 import OnlineStatus from '/src/components/OnlineStatus.vue'
+
+import ManageUsers from '/src/views/ManageUsers.vue'
 
 import { isConnected } from '/src/client-app.js'
 </script>
