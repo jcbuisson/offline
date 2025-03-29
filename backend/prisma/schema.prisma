@@ -2,38 +2,44 @@ generator client {
    provider = "prisma-client-js"
 }
 
+datasource db {
+   provider = "postgresql"
+   url = env("DATABASE_URL")
+}
+
 
 model user {
-   uid            String     @unique
-   createdAt      DateTime   @default(now()) @db.Timestamptz(6)
-   updatedAt      DateTime   @updatedAt @db.Timestamptz(6)
-   name           String
+   uid                     String     @unique
+   created_at              DateTime   @default(now()) @db.Timestamptz(6)
+   updated_at              DateTime   @updatedAt @db.Timestamptz(6)
+   deleted_at              DateTime?
+   email                   String?    @unique(map: "user_sub_unique")
+   firstname               String?
+   lastname                String?
 
-   relations      relation[]
+   user_group_relations    user_group_relation[]
 }
 
+// 'Enseignants', '1SN24D', '1APP24', 'Binôme X & Y'
 model group {
-   uid            String     @unique
-   createdAt      DateTime   @default(now()) @db.Timestamptz(6)
-   updatedAt      DateTime   @updatedAt @db.Timestamptz(6)
-   name           String
+   uid                     String     @unique
+   created_at              DateTime   @default(now()) @db.Timestamptz(6)
+   updated_at              DateTime   @updatedAt @db.Timestamptz(6)
+   deleted_at              DateTime?
+   name                    String     @unique(map: "group_name_unique")
 
-   relations      relation[]
+   user_group_relations    user_group_relation[]
 }
 
-model relation {
-   uid            String     @unique
-   createdAt      DateTime   @default(now()) @db.Timestamptz(6)
-   updatedAt      DateTime   @updatedAt @db.Timestamptz(6)
+model user_group_relation {
+   uid             String     @unique
+   created_at      DateTime   @default(now()) @db.Timestamptz(6)
+   updated_at      DateTime   @updatedAt @db.Timestamptz(6)
+   deleted_at              DateTime?
    user_uid        String
    group_uid       String
 
    user user @relation(fields: [user_uid], references: [uid], onDelete: Cascade, onUpdate: NoAction)
    group group @relation(fields: [group_uid], references: [uid], onDelete: Cascade, onUpdate: NoAction)
    @@unique([user_uid, group_uid])
-}
-
-datasource db {
-   provider = "postgresql"
-   url = env("DATABASE_URL")
 }

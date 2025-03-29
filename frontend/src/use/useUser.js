@@ -1,24 +1,24 @@
-import { ref } from 'vue'
-import { v4 as uuidv4 } from 'uuid'
 import Dexie from "dexie"
 import { liveQuery } from "dexie"
+import { uid as uid16 } from 'uid'
 
-import { app, offlineDate } from '/src/client-app.js'
-import { wherePredicate, synchronize, addSynchroWhere, synchronizeAll } from '/src/lib/synchronize.js'
-import { deleteRelation, getRelationListFromUser } from "/src/use/useRelation"
+import { getRelationListOfUser as getTabRelationListOfUser, remove as removeTabRelation } from '/src/use/useUserTabRelation'
+import { getRelationListOfUser as getGroupRelationListOfUser, remove as removeGroupRelation } from '/src/use/useUserGroupRelation'
+import { wherePredicate, synchronize, addSynchroWhere, removeSynchroWhere, synchronizeModelWhereList } from '/src/lib/synchronize.js'
+import { app, isConnected, disconnectedDate } from '/src/client-app.js'
 
-
-export const db = new Dexie("userDatabase")
+export const db = new Dexie("userDatabaseOFFLINE")
 
 db.version(1).stores({
-   whereList: "id++",
-   values: "uid, createdAt, updatedAt, name, deleted_"
+   whereList: "sortedjson, where",
+   values: "uid, created_at, updated_at, deleted_at, email, firstname, lastname"
 })
 
-export const resetUseUser = async () => {
-   await db.values.clear()
+export const reset = async () => {
    await db.whereList.clear()
+   await db.values.clear()
 }
+
 
 /////////////          PUB / SUB          /////////////
 
@@ -38,64 +38,99 @@ app.service('user').on('delete', async user => {
 })
 
 
-/////////////          METHODS          /////////////
+/////////////          CRUD METHODS WITH SYNC          /////////////
 
-export const getUserListObservable = () => {
-   // return observable
-   return liveQuery(() => db.values.filter(user => !user.deleted_).toArray())
-}
-
-export async function addUser(data) {
-   const uid = uuidv4()
-   console.log('create user', uid)
-   // enlarge perimeter
-   addSynchroWhere({ uid }, db.whereList)
-   // optimistic update
-   const now = new Date()
-   await db.values.add({ uid, createdAt: now, updatedAt: now, ...data })
-   // perform request on backend (if connection is active)
-   await app.service('user', { volatile: true }).create({ data: { uid, ...data } })
-}
-
-export async function patchUser(uid, data) {
-   // enlarge perimeter (normally useless for patch)
-   addSynchroWhere({ uid }, db.whereList)
-   // optimistic update
-   await db.values.update(uid, { name: data.name, updatedAt: new Date() })
-   // perform request on backend (if connection is active)
-   await app.service('user', { volatile: true }).update({ where: { uid }, data})
-}
-
-export async function deleteUser(uid) {
-   // // stop synchronizing on this perimeter
-   // removeSynchroWhere({ uid }, db.whereList)
-   // optimistic update
-   // cascade-delete associated relations
-   const relations = await getRelationListFromUser(uid)
-   await Promise.all(relations.map(relation => deleteRelation(relation)))
-   // delete user
-   await db.values.update(uid, { deleted_: true })
-   // perform request on backend (if connection is active)
-   await app.service('user', { volatile: true }).delete({ where: { uid }})
-}
-
-
-/////////////          SYNCHRONIZATION          /////////////
-
-export async function selectValues(where) {
-   if (addSynchroWhere(where, db.whereList)) {
-      await synchronize(app, 'user', db.values, where, offlineDate.value)
+// return an Observable
+export async function findMany(where) {
+   const isNew = await addSynchroWhere(where, db.whereList)
+   // run synchronization if connected and if `where` is new
+   if (isNew && isConnected.value) {
+      synchronize(app, 'user', db.values, where, disconnectedDate.value)
    }
+   // return observable for `where` values
    const predicate = wherePredicate(where)
-   const values = db.values.filter(value => !value.deleted_ && predicate(value)).toArray()
-   return values
+   return liveQuery(() => db.values.filter(value => !value.deleted_at && predicate(value)).toArray())
 }
 
-export const getWhereListObservable = () => {
-   return liveQuery(() => db.whereList.toArray())
+export async function create(data) {
+   const uid = uid16(16)
+   // enlarge perimeter
+   await addSynchroWhere({ uid }, db.whereList)
+   // optimistic update
+   await db.values.add({ uid, ...data, created_at: new Date(), updated_at: new Date() })
+   // execute on server, asynchronously, if connection is active
+   if (isConnected.value) {
+      app.service('user').create({ data: { uid, ...data } })
+   }
+   return await db.values.get(uid)
 }
 
+export const update = async (uid, data) => {
+   // optimistic update of cache
+   await db.values.update(uid, { ...data, updated_at: new Date() })
+   // execute on server, asynchronously, if connection is active
+   if (isConnected.value) {
+      app.service('user').update({ where: { uid }, data })
+   }
+   return await db.values.get(uid)
+}
 
-export const synchronizePerimeter = async () => {
-   await synchronizeAll(app, 'user', db.values, offlineDate.value, db.whereList)
+export const remove = async (uid) => {
+   // stop synchronizing on this perimeter
+   await removeSynchroWhere({ uid }, db.whereList)
+   const deleted_at = new Date()
+   // optimistic update of cache
+   // soft-delete associated user-tab relations in cache
+   const userTabRelations = await getTabRelationListOfUser(uid)
+   await Promise.all(userTabRelations.map(relation => removeTabRelation(relation)))
+   // soft-delete associated user-group relations in cache
+   const userGroupRelations = await getGroupRelationListOfUser(uid)
+   await Promise.all(userGroupRelations.map(relation => removeGroupRelation(relation)))
+   // soft-delete user in cache
+   await db.values.update(uid, { deleted_at })
+
+   // soft-delete in database, if connected
+   if (isConnected.value) {
+      // soft-delete associated user-tab relations in database
+      for (const relation of userTabRelations) {
+         app.service('user_tab_relation').update({
+            where: { uid: relation.uid },
+            data: { deleted_at }
+         })
+      }
+      // soft-delete associated user-group relations in database
+      for (const relation of userGroupRelations) {
+         app.service('user_group_relation').update({
+            where: { uid: relation.uid },
+            data: { deleted_at }
+         })
+      }
+      // soft-delete user in database
+      app.service('user').update({
+         where: { uid },
+         data: { deleted_at }
+      })
+   }
+}
+
+// app.addConnectListener(async () => {
+//    await synchronizeWhereList(app, 'user', db.values, disconnectedDate.value, db.whereList)
+// })
+
+export async function synchronizeWhereList() {
+   await synchronizeModelWhereList(app, 'user', db.values, disconnectedDate.value, db.whereList)
+}
+
+/////////////          UTILITIES          /////////////
+
+// special case of signin: create/update record of user
+export const put = async (value) => {
+   // put: create (if new) or update
+   return await db.values.put(value)
+}
+
+export function getFullname(user) {
+   if (!user) return ''
+   if (user.firstname && user.lastname) return user.lastname + ' ' + user.firstname
+   return user.lastname || user.firstname
 }

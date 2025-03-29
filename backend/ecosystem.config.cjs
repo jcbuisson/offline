@@ -1,6 +1,4 @@
 
-// DO NOT COMMIT
-
 module.exports = {
    apps : [
 

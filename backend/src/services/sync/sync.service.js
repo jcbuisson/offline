@@ -3,8 +3,8 @@ export default function (app) {
 
    app.createService('sync', {
 
-      go: async (modelName, where, cutoffDate, clientValuesDict) => {
-
+      go: async (modelName, where, cutoffDate, clientMetadataDict) => {
+         console.log('>>>>> SYNC', modelName, where, cutoffDate)
          const databaseService = app.service(modelName)
    
          // STEP 1: get existing database `where` values
@@ -14,7 +14,7 @@ export default function (app) {
             accu[value.uid] = value
             return accu
          }, {})
-         console.log('clientValuesDict', clientValuesDict)
+         console.log('clientMetadataDict', clientMetadataDict)
          console.log('databaseValuesDict', databaseValuesDict)
       
          // STEP 2: compute intersections between client and database uids
@@ -23,14 +23,14 @@ export default function (app) {
          const databaseAndClientIds = new Set()
       
          for (const uid in databaseValuesDict) {
-            if (uid in clientValuesDict) {
+            if (uid in clientMetadataDict) {
                databaseAndClientIds.add(uid)
             } else {
                onlyDatabaseIds.add(uid)
             }
          }
       
-         for (const uid in clientValuesDict) {
+         for (const uid in clientMetadataDict) {
             if (uid in databaseValuesDict) {
                databaseAndClientIds.add(uid)
             } else {
@@ -56,23 +56,24 @@ export default function (app) {
          }
       
          for (const uid of onlyClientIds) {
-            const clientValue = clientValuesDict[uid]
-            if (clientValue.deleted_) continue
-            if (new Date(clientValue.createdAt) > cutoffDate) {
+            const clientValue = clientMetadataDict[uid]
+            if (clientValue.deleted_at) {
+               deleteClient.push(uid)
+            } else if (new Date(clientValue.created_at) > cutoffDate) {
                addDatabase.push(clientValue)
             } else {
-               deleteClient.push(uid)
+               // deleteClient.push(uid)
             }
          }
       
          for (const uid of databaseAndClientIds) {
             const databaseValue = databaseValuesDict[uid]
-            const clientValue = clientValuesDict[uid]
-            if (clientValue.deleted_) {
+            const clientValue = clientMetadataDict[uid]
+            if (clientValue.deleted_at) {
                deleteDatabase.push(uid)
                deleteClient.push(uid) // also ask the client to remove the record with deleted_=true
             } else {
-               const dateDifference = new Date(clientValue.updatedAt) - databaseValue.updatedAt
+               const dateDifference = new Date(clientValue.updated_at) - databaseValue.updated_at
                if (dateDifference > 0) {
                   updateDatabase.push(clientValue)
                } else if (dateDifference < 0) {
@@ -88,25 +89,23 @@ export default function (app) {
          console.log('deleteClient', deleteClient)
          console.log('updateClient', updateClient)
       
-         // STEP4: execute database changes and publish related events for connected clients
-         for (const data of addDatabase) {
-            await databaseService.create({ data })
-         }
-         for (const data of updateDatabase) {
+         // STEP4: execute database soft-deletions
+         // database creations & updates are done later by the client with complete data (this function only has client values's meta-data)
+         for (const uid of deleteDatabase) {
             await databaseService.update({
-               where: { uid: data.uid },
-               data: { name: data.name }
+               where: { uid },
+               data: { deleted_at: new Date() }
             })
          }
-         for (const uid of deleteDatabase) {
-            await databaseService.delete({ where: { uid } })
-         }
       
-         // STEP5: return to client changes to perform on its cache
+         // STEP5: return to client the changes to perform on its cache, and create/update to perform on database with full data
          return {
             toAdd: addClient,
             toUpdate: updateClient,
             toDelete: deleteClient,
+
+            addDatabase,
+            updateDatabase,
          }
       },
    })
