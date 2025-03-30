@@ -9,7 +9,7 @@ export default function(app) {
       return ['anonymous']
    })
       
-   app.service('relation').publish(async (context) => {
+   app.service('user_group_relation').publish(async (context) => {
       return ['anonymous']
    })
 }
