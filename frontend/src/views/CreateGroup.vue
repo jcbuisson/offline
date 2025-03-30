@@ -24,8 +24,6 @@ import { ref } from 'vue'
 
 import { create as createGroup } from '/src/use/useGroup'
 
-import 'jcb-upload'
-
 
 const group = ref({})
 

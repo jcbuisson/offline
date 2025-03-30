@@ -2,6 +2,7 @@ import Dexie from "dexie"
 import { liveQuery } from "dexie"
 import { uid as uid16 } from 'uid'
 
+import { getRelationListOfUser as getGroupRelationListOfUser } from '/src/use/useUserGroupRelation'
 import { wherePredicate, synchronize, addSynchroWhere, removeSynchroWhere, synchronizeModelWhereList } from '/src/lib/synchronize.js'
 import { app, isConnected, disconnectedDate } from '/src/client-app.js'
 
@@ -61,7 +62,7 @@ export async function create(data) {
    const value = await db.values.add({ uid, ...data, created_at: new Date(), updated_at: new Date() })
    // execute on server, asynchronously, if connection is active
    if (isConnected.value) {
-      app.service('user').create({ data: { uid, ...data } })
+      app.service('group').create({ data: { uid, ...data } })
    }
    return value
 }
@@ -71,7 +72,7 @@ export const update = async (uid, data) => {
    const value = await db.values.update(uid, {...data, updated_at: new Date()})
    // execute on server, asynchronously, if connection is active
    if (isConnected.value) {
-      app.service('user').update({ where: { uid }, data })
+      app.service('group').update({ where: { uid }, data })
    }
    return value
 }

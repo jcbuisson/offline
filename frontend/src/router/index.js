@@ -35,7 +35,7 @@ const routes = [
                   component: () => import('/src/views/CreateGroup.vue'),
                },
                {
-                  path: ':user_uid',
+                  path: ':group_uid',
                   props: true,
                   component: () => import('/src/views/EditGroup.vue'),
                },
