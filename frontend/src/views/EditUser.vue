@@ -63,8 +63,6 @@ import { findMany as findManyGroup } from '/src/use/useGroup'
 import { findMany as findManyUserGroupRelation, updateUserGroups } from '/src/use/useUserGroupRelation'
 import { displaySnackbar } from '/src/use/useSnackbar'
 
-import { app } from '/src/client-app.js'
-
 
 const props = defineProps({
    user_uid: {
@@ -112,7 +110,6 @@ watch(() => props.user_uid, async (user_uid) => {
 
 const onFieldInput = async (field, value) => {
    try {
-      extendExpiration()
       await updateUser(props.user_uid, { [field]: value })
       displaySnackbar({ text: "Modification effectuée avec succès !", color: 'success', timeout: 2000 })
    } catch(err) {
@@ -129,12 +126,10 @@ const groupList = ref([])
 
 const onGroupChange = async (groupUIDs) => {
    try {
-      extendExpiration()
       await updateUserGroups(props.user_uid, groupUIDs)
       displaySnackbar({ text: "Modification effectuée avec succès !", color: 'success', timeout: 2000 })
    } catch(err) {
       displaySnackbar({ text: "Erreur lors de la sauvegarde...", color: 'error', timeout: 4000 })
    }
 }
-
 </script>

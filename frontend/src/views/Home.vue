@@ -9,8 +9,6 @@
 </template>
 
 <script setup>
-import { onMounted, onUnmounted } from 'vue'
-
 import NavigationBar from '/src/components/NavigationBar.vue'
 
 import { app } from '/src/client-app.js'

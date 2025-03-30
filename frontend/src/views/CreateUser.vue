@@ -11,16 +11,6 @@
                      variant="underlined"
                   ></v-text-field>
                </v-col>
-               <v-col cols="12" sm="6">
-                  <div style="display: flex; width: 100%; justify-content: space-between; align-items: center; gap: 10px;">
-                     <v-avatar size="80" @click="onAvatarClick(user)">
-                        <v-img :src="user?.pict"></v-img>
-                     </v-avatar>
-                     <jcb-upload ref="upload" chunksize="32768" accept="image/*" @upload-start="onUploadStart" @upload-chunk="onUploadChunk" @upload-end="onUploadEnd">
-                        Cliquez ici ou glissez-déposez une photo
-                     </jcb-upload>
-                  </div>
-               </v-col>
             </v-row>
 
             <v-row>
