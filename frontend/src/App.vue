@@ -12,7 +12,7 @@
          <v-main>
             <v-container>
 
-               <ManageUsers></ManageUsers>
+               <router-view></router-view>
 
             </v-container>
          </v-main>

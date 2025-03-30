@@ -87,13 +87,13 @@ const selectedUser = ref(null)
 
 function selectUser(user) {
    selectedUser.value = user
-   router.push(`/home/users/${user.uid}`)
+   router.push(`/users/${user.uid}`)
 }
 
 async function deleteUser(user) {
    if (window.confirm(`Supprimer ${getFullname(user)} ?`)) {
       await removeUser(user.uid)
-      router.push(`/home/users`)
+      router.push(`/users`)
    }
 }
 </script>

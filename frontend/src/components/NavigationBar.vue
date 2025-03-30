@@ -13,42 +13,25 @@
 </template>
 
 <script setup>
-import { ref, computed, onMounted } from 'vue'
+import { computed } from 'vue'
 import { useRoute } from 'vue-router'
 
 import router from '/src/router'
 
-import { findMany } from '/src/use/useUser.js'
-
-
-const props = defineProps({
-   signedinUid: {
-      type: String,
-   },
-})
-
-const signedinUser = ref()
-
-onMounted(async () => {
-   const userObservable = await findMany({ uid: props.signedinUid })
-   userObservable.subscribe(([user]) => signedinUser.value = user)
-})
 
 const route = useRoute()
 
 const tabs = [
-   { uid: "a", name: "Utilisateurs", path: `/home/users` },
-   { uid: "b", name: "Groupes", path: `/home/groups` },
+   { uid: "a", name: "Utilisateurs", path: `/users` },
+   { uid: "b", name: "Groupes", path: `/groups` },
 ]
 
 const currentTabIndex = computed(() => {
    const tabIndex = tabs.findIndex(tab => route.path.startsWith(tab.path))
-   console.log('tabIndex', tabIndex)
    return tabIndex
 })
 
 function onTabChange(tabIndex) {
-   extendExpiration()
    const tab = tabs[tabIndex]
    router.push(tab.path)
 }

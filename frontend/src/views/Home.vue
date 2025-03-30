@@ -1,7 +1,7 @@
 <template>
    <div style="display: flex; flex-direction: column; overflow: hidden; height: 100vh;">
 
-      <NavigationBar :signedinUid="signedinUid"></NavigationBar>
+      <NavigationBar></NavigationBar>
 
       <router-view></router-view>
 
@@ -13,17 +13,12 @@ import { onMounted, onUnmounted } from 'vue'
 
 import NavigationBar from '/src/components/NavigationBar.vue'
 
-import { app, isConnected } from '/src/client-app.js'
+import { app } from '/src/client-app.js'
 
 import { synchronizeWhereList as synchronizeUserWhereList } from '/src/use/useUser'
 import { synchronizeWhereList as synchronizeGroupWhereList } from '/src/use/useGroup'
 import { synchronizeWhereList as synchronizeUserGroupRelationWhereList } from '/src/use/useUserGroupRelation'
 
-const props = defineProps({
-   signedinUid: {
-      type: String,
-   },
-})
 
 // synchronize when connection starts or restarts
 // (situated here because of import circularity issues)
@@ -33,17 +28,5 @@ app.addConnectListener(async () => {
    await synchronizeUserWhereList()
    await synchronizeGroupWhereList()
    await synchronizeUserGroupRelationWhereList()
-})
-
-let interval
-
-onMounted(() => {
-   interval = setInterval(() => {
-      if (isConnected.value) app.service('auth').ping() // force backend to send `expireAt` even when user is inactive
-   }, 30000)
-})
-
-onUnmounted(() => {
-   clearInterval(interval)
 })
 </script>

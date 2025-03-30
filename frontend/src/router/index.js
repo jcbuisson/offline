@@ -4,8 +4,7 @@ import { createRouter, createWebHistory } from 'vue-router'
 
 const routes = [
    {
-      path: '/home',
-      props: true,
+      path: '/',
       component: () => import('/src/views/Home.vue'),
       children: [
          {
@@ -35,7 +34,7 @@ const routes = [
 
    {
       path: "/:catchAll(.*)",
-      redirect: '/login',
+      redirect: '/',
    },
 ]
 
@@ -47,17 +46,6 @@ const router = createRouter({
 
 router.beforeEach(async (to, from, next) => {
    console.log('from', from.path, 'to', to.path)
-
-   if (to.meta.requiresAuth) {
-      try {
-         // extends session at each route change
-         extendExpiration()
-      } catch(err) {
-         console.log('router.beforeEach err', err.code, err.message)
-         // restartApp()
-      }
-   }
-
    next()
 })
 
