@@ -5,7 +5,7 @@ import { uid as uid16 } from 'uid'
 import { wherePredicate, synchronize, addSynchroWhere, removeSynchroWhere, synchronizeModelWhereList } from '/src/lib/synchronize.js'
 import { app, isConnected, disconnectedDate } from '/src/client-app.js'
 
-export const db = new Dexie("userGroupRelationDatabaseSHDL")
+export const db = new Dexie("userGroupRelationDatabaseOFFLINE")
 
 db.version(1).stores({
    whereList: "sortedjson, where",

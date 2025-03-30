@@ -31,20 +31,6 @@
             </v-row>
 
             <v-row>
-               <v-col xs="12" sm="12">
-                  <v-autocomplete
-                     variant="underlined"
-                     v-model="user.tabs"
-                     :items="tabs"
-                     item-title="name"
-                     item-value="uid"
-                     label="Onglets"
-                     chips
-                     multiple
-                  ></v-autocomplete>
-               </v-col>
-            </v-row>
-
             <v-row>
                <v-col xs="12" sm="12">
                   <v-autocomplete
@@ -73,8 +59,6 @@ import { ref } from 'vue'
 import { create as createUser } from '/src/use/useUser.js'
 import { findMany as findManyGroup } from '/src/use/useGroup'
 
-import 'jcb-upload'
-
 
 const user = ref({})
 
@@ -84,17 +68,6 @@ const emailRules = [
    (v) => !!v || "L'email est obligatoire",
    (v) => /^([a-z0-9_.-]+)@([\da-z.-]+)\.([a-z.]{2,6})$/.test(v) || "l'email doit être valide"
 ]
-
-const tabs = [
-   { uid: 'user_management', name: "Gestion utilisateurs" },
-   { uid: 'group_management', name: "Gestion des groupes" },
-   { uid: 'test_management', name: "Gestion des tests" },
-   { uid: 'student_followup', name: "Suivi des étudiants" },
-   { uid: 'shdl_sandbox', name: "SHDL Sandbox" },
-   { uid: 'craps_sandbox', name: "CRAPS sandbox" },
-]
-
-// const groupList = getGroupListRef('all', {}, ()=>true)
 
 const groupList = ref([])
 

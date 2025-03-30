@@ -18,7 +18,7 @@
 </template>
 
 <script setup>
-import { ref, watch, onMounted, onUnmounted } from 'vue'
+import { ref, watch, onUnmounted } from 'vue'
 import { useDebounceFn } from '@vueuse/core'
 
 import { findMany as findManyGroup, update as updateGroup } from '/src/use/useGroup'
@@ -34,11 +34,6 @@ const props = defineProps({
 const group = ref()
 
 let groupSubscription
-
-onMounted(async () => {
-   const groupObservable = await findManyGroup({})
-   groupSubscription = groupObservable.subscribe(list => groupList.value = list)
-})
 
 onUnmounted(() => {
    if (groupSubscription) groupSubscription.unsubscribe()

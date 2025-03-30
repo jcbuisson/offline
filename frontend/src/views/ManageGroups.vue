@@ -30,7 +30,7 @@
 <script setup>
 import { ref, onMounted, onUnmounted } from 'vue'
 
-import { findMany as findManyGroup, getFullname, create as createGroup, remove as removeGroup } from '/src/use/useGroup'
+import { findMany as findManyGroup, create as createGroup, remove as removeGroup } from '/src/use/useGroup'
 import router from '/src/router'
 
 import SplitPanel from '/src/components/SplitPanel.vue'
@@ -71,7 +71,7 @@ function selectGroup(group) {
 }
 
 async function deleteGroup(group) {
-   if (window.confirm(`Supprimer ${getFullname(group)} ?`)) {
+   if (window.confirm(`Supprimer ${group.name} ?`)) {
       await removeGroup(group.uid)
       router.push(`/groups`)
    }
