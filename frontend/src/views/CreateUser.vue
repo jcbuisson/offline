@@ -31,7 +31,6 @@
             </v-row>
 
             <v-row>
-            <v-row>
                <v-col xs="12" sm="12">
                   <v-autocomplete
                      variant="underlined"
