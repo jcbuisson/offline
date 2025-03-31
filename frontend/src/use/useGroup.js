@@ -64,7 +64,7 @@ export async function create(data) {
    if (isConnected.value) {
       app.service('group').create({ data: { uid, ...data } })
    }
-   return value
+   return await db.values.get(uid)
 }
 
 export const update = async (uid, data) => {
@@ -74,7 +74,7 @@ export const update = async (uid, data) => {
    if (isConnected.value) {
       app.service('group').update({ where: { uid }, data })
    }
-   return value
+   return await db.values.get(uid)
 }
 
 export const remove = async (uid) => {

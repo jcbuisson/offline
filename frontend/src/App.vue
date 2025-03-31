@@ -1,6 +1,6 @@
 <template>
    <v-toolbar extended>
-      <v-toolbar-title text="Offline-first, real-time app with relational database"></v-toolbar-title>
+      <v-toolbar-title text="Application offline-first, temps-réel, avec backend relationnel"></v-toolbar-title>
 
       <template v-slot:append>
          <div class="d-flex ga-2">
