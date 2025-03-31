@@ -8,7 +8,7 @@
             </div>
 
             <!-- Draggable Splitter -->
-            <div class="splitter" @mousedown="startResize"></div>
+            <div ref="splitter" class="splitter" @mousedown="startResize" @touchstart="startResize"></div>
 
             <!-- Right Panel with Slot -->
             <div class="right-panel" :style="{ width: `calc(100% - ${leftWidth}px)` }">
@@ -25,15 +25,21 @@ import { ref } from 'vue'
 const leftWidth = ref(300) // Initial width of the left panel
 const isResizing = ref(false)
 
+const splitter = ref(null)
+
 function startResize(e) {
+   console.log('startResize')
    isResizing.value = true
    window.addEventListener('mousemove', resize)
    window.addEventListener('mouseup', stopResize)
+   window.addEventListener('touchmove', resize)
+   window.addEventListener('touchend', stopResize)
 }
 
 function resize(e) {
+   const x = e.clientX || e.changedTouches[0].clientX
    if (isResizing.value) {
-      leftWidth.value = e.clientX
+      leftWidth.value = x
    }
 }
 
@@ -41,6 +47,8 @@ function stopResize() {
    isResizing.value = false
    window.removeEventListener('mousemove', resize)
    window.removeEventListener('mouseup', stopResize)
+   window.removeEventListener('touchmove', resize)
+   window.removeEventListener('touchend', stopResize)
 }
 </script>
  
@@ -48,7 +56,6 @@ function stopResize() {
 .split-container {
    display: flex;
    width: 100%;
-   height: 100%; /* Adjust height as needed */
    position: relative;
 }
 
@@ -59,10 +66,10 @@ function stopResize() {
 }
 
 .splitter {
-   width: 3px;
-   background-color: #ccc;
+   width: 5px;
+   background-color: #ddd;
    cursor: col-resize;
-   height: 100%;
+   height: 100vh;
 }
 
 .left-panel {
