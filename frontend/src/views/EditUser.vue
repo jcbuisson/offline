@@ -23,7 +23,7 @@
 
             <v-row>
                <v-col xs="12" sm="12">
-                  <v-autocomplete
+                  <v-select
                      variant="underlined"
                      v-model="userGroups"
                      @update:modelValue="onGroupChange"
@@ -33,7 +33,7 @@
                      label="Groupes"
                      chips
                      multiple
-                  ></v-autocomplete>
+                  ></v-select>
                </v-col>
             </v-row>
 
