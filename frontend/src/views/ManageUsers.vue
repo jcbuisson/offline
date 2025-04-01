@@ -40,6 +40,7 @@ import { findMany as findManyUser, getFullname, create as createUser, remove as 
 import { findMany as findManyGroup, getFromCache as getGroupFromCache } from '/src/use/useGroup'
 import { findMany as findManyUserGroupRelation } from '/src/use/useUserGroupRelation'
 import router from '/src/router'
+import { displaySnackbar } from '/src/use/useSnackbar'
 
 import SplitPanel from '/src/components/SplitPanel.vue'
 
@@ -79,8 +80,13 @@ onUnmounted(() => {
 })
 
 async function addUser() {
-   const user = await createUser({})
-   selectUser(user)
+   try {
+      const user = await createUser({})
+      selectUser(user)
+      displaySnackbar({ text: "Ajout effectuée avec succès !", color: 'success', timeout: 2000 })
+   } catch(err) {
+      displaySnackbar({ text: "Erreur lors de l'ajout...", color: 'error', timeout: 4000 })
+   }
 }
 
 const selectedUser = ref(null)
@@ -92,8 +98,13 @@ function selectUser(user) {
 
 async function deleteUser(user) {
    if (window.confirm(`Supprimer ${getFullname(user)} ?`)) {
-      await removeUser(user.uid)
-      router.push(`/users`)
+      try {
+         await removeUser(user.uid)
+         router.push(`/users`)
+         displaySnackbar({ text: "Suppression effectuée avec succès !", color: 'success', timeout: 2000 })
+      } catch(err) {
+         displaySnackbar({ text: "Erreur lors de la suppression...", color: 'error', timeout: 4000 })
+      }
    }
 }
 </script>
