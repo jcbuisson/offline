@@ -41,17 +41,17 @@ import { isConnected, connect, disconnect } from '/src/client-app.js'
 import { app } from '/src/client-app.js'
 import router from '/src/router'
 
-import { synchronizeWhereList as synchronizeUserWhereList, reset as resetUser } from '/src/use/useUser'
-import { synchronizeWhereList as synchronizeGroupWhereList, reset as resetGroup } from '/src/use/useGroup'
-import { synchronizeWhereList as synchronizeUserGroupRelationWhereList, reset as resetUserGroupRelation } from '/src/use/useUserGroupRelation'
+import { synchronizeAll as synchronizeAllUser, reset as resetUser } from '/src/use/useUser'
+import { synchronizeAll as synchronizeAllGroup, reset as resetGroup } from '/src/use/useGroup'
+import { synchronizeAll as synchronizeAllUserGroupRelation, reset as resetUserGroupRelation } from '/src/use/useUserGroupRelation'
 
 // synchronize when connection starts or restarts
 app.addConnectListener(async () => {
    console.log(">>>>>>>>>>>>>>>> SYNC ALL")
    // order matters
-   await synchronizeUserWhereList()
-   await synchronizeGroupWhereList()
-   await synchronizeUserGroupRelationWhereList()
+   await synchronizeAllUser()
+   await synchronizeAllGroup()
+   await synchronizeAllUserGroupRelation()
 })
 
 async function clearCaches() {

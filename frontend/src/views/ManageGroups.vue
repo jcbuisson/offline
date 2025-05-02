@@ -30,7 +30,7 @@
 <script setup>
 import { ref, onMounted, onUnmounted } from 'vue'
 
-import { findMany as findManyGroup, create as createGroup, remove as removeGroup } from '/src/use/useGroup'
+import { findMany$ as findManyGroup$, remove as removeGroup } from '/src/use/useGroup'
 import router from '/src/router'
 
 import SplitPanel from '/src/components/SplitPanel.vue'
@@ -42,14 +42,14 @@ const groupList = ref([])
 const subscriptions = []
 
 onMounted(async () => {
-   const groupObservable = await findManyGroup({})
+   const groupObservable = await findManyGroup$({})
    const groupSubscription = groupObservable.subscribe(async list => {
       groupList.value = list.toSorted((u1, u2) => (u1.name > u2.name) ? 1 : (u1.name < u2.name) ? -1 : 0)
    })
    subscriptions.push(groupSubscription)
 
    // enough to ensure that `group` objects are in cache
-   await findManyGroup({})
+   await findManyGroup$({})
 })
 
 onUnmounted(() => {

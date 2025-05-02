@@ -56,7 +56,7 @@
 import { ref } from 'vue'
 
 import { create as createUser } from '/src/use/useUser.js'
-import { findMany as findManyGroup } from '/src/use/useGroup'
+import { findMany$ as findManyGroup$ } from '/src/use/useGroup'
 
 
 const user = ref({})
@@ -70,7 +70,7 @@ const emailRules = [
 
 const groupList = ref([])
 
-const groupListObservable = findManyGroup({})
+const groupListObservable = findManyGroup$({})
 groupListObservable.subscribe(list => {
    groupList.value = list.toSorted((u1, u2) => (u1.name > u2.name) ? 1 : (u1.name < u2.name) ? -1 : 0)
 })

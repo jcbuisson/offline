@@ -5,7 +5,7 @@ import { uid as uid16 } from 'uid'
 import { wherePredicate, synchronize, addSynchroWhere, removeSynchroWhere, synchronizeModelWhereList } from '/src/lib/synchronize.js'
 import { app, isConnected, disconnectedDate } from '/src/client-app.js'
 
-export const db = new Dexie("userGroupRelationDatabaseOFFLINE")
+export const db = new Dexie("userGroupRelationDatabaseSHDL")
 
 db.version(1).stores({
    whereList: "sortedjson, where",
@@ -35,10 +35,17 @@ app.service('user_group_relation').on('delete', async value => {
 })
 
 
+/////////////          CACHE METHODS          /////////////
+
+export async function getMany(where) {
+   const predicate = wherePredicate(where)
+   return await db.values.filter(value => !value.deleted_at && predicate(value)).toArray()
+}
+
 /////////////          CRUD METHODS WITH SYNC          /////////////
 
 // return an Observable
-export async function findMany(where) {
+export async function findMany$(where) {
    const isNew = await addSynchroWhere(where, db.whereList)
    // run synchronization if connected and if `where` is new
    if (isNew && isConnected.value) {
@@ -94,15 +101,6 @@ export async function remove(uid) {
    }
 }
 
-// app.addConnectListener(async () => {
-//    await synchronizeWhereList(app, 'user_group_relation', db.values, disconnectedDate.value, db.whereList)
-// })
-
-export async function synchronizeWhereList() {
+export async function synchronizeAll() {
    await synchronizeModelWhereList(app, 'user_group_relation', db.values, disconnectedDate.value, db.whereList)
-}
-
-
-export const getRelationListOfUser = async (user_uid) => {
-   return await db.values.filter(relation => !relation.deleted_at && relation.user_uid === user_uid).toArray()
 }

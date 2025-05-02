@@ -46,9 +46,9 @@
 import { ref, watch, onMounted, onUnmounted } from 'vue'
 import { useDebounceFn } from '@vueuse/core'
 
-import { findMany as findManyUser, update as updateUser } from '/src/use/useUser'
-import { findMany as findManyGroup } from '/src/use/useGroup'
-import { findMany as findManyUserGroupRelation, updateUserGroups } from '/src/use/useUserGroupRelation'
+import { findMany$ as findManyUser$, update as updateUser } from '/src/use/useUser'
+import { findMany$ as findManyGroup$ } from '/src/use/useGroup'
+import { findMany$ as findManyUserGroupRelation$, updateUserGroups } from '/src/use/useUserGroupRelation'
 import { displaySnackbar } from '/src/use/useSnackbar'
 
 
@@ -71,7 +71,7 @@ let userGroupRelationListSubscription
 
 
 onMounted(async () => {
-   const groupObservable = await findManyGroup({})
+   const groupObservable = await findManyGroup$({})
    groupSubscription = groupObservable.subscribe(list => groupList.value = list)
 })
 
@@ -83,11 +83,11 @@ onUnmounted(() => {
 
 watch(() => props.user_uid, async (user_uid) => {
    if (userSubscription) userSubscription.unsubscribe()
-   const userObservable = await findManyUser({ uid: user_uid})
+   const userObservable = await findManyUser$({ uid: user_uid})
    userSubscription = userObservable.subscribe(([user_]) => user.value = user_)
 
    if (userGroupRelationListSubscription) userGroupRelationListSubscription.unsubscribe()
-   const userGroupRelationObservable = await findManyUserGroupRelation({ user_uid })
+   const userGroupRelationObservable = await findManyUserGroupRelation$({ user_uid })
    userGroupRelationListSubscription = userGroupRelationObservable.subscribe(relationList => {
       userGroups.value = relationList.map(relation => relation.group_uid)
    })
