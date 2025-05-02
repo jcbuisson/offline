@@ -59,7 +59,7 @@ export async function create(data) {
    // enlarge perimeter
    await addSynchroWhere({ uid }, db.whereList)
    // optimistic update
-   const value = await db.values.add({ uid, ...data, created_at: new Date(), updated_at: new Date() })
+   await db.values.add({ uid, ...data, created_at: new Date(), updated_at: new Date() })
    // execute on server, asynchronously, if connection is active
    if (isConnected.value) {
       app.service('group').create({ data: { uid, ...data } })

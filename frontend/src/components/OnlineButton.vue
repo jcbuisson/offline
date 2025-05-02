@@ -1,5 +1,5 @@
 <template>
-   <div class="offline" :class="{ on: isOnline, off: !isOnline }">
+   <div class="button" :class="{ on: isOnline, off: !isOnline }" @click="onClick">
       {{ isOnline ? "ON-LINE" : "OFF-LINE" }}
    </div>
 </template>
@@ -9,17 +9,28 @@
 const props = defineProps({
    isOnline: Boolean,
 })
+
+const emit = defineEmits(['connect', 'disconnect'])
+
+function onClick() {
+   emit(props.isOnline ? 'disconnect': 'connect')
+}
 </script>
 
 
 <style scoped>
-.offline {
+.button {
    font-size: 14px;
    padding: 5px 15px 5px 15px;
    border-style: solid;
    border-radius: 10px;
    border-width: 0;
    text-align: center;
+   cursor: pointer;
+}
+
+.button:active {
+   background-color: grey;
 }
 
 .off {

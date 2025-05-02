@@ -72,7 +72,7 @@ const groupList = ref([])
 
 const groupListObservable = findManyGroup({})
 groupListObservable.subscribe(list => {
-   groupList.value = list.toSorted((u1, u2) => (u1.lastname > u2.lastname) ? 1 : (u1.lastname < u2.lastname) ? -1 : 0)
+   groupList.value = list.toSorted((u1, u2) => (u1.name > u2.name) ? 1 : (u1.name < u2.name) ? -1 : 0)
 })
 
 function submit() {
