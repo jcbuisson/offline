@@ -80,14 +80,7 @@ onUnmounted(() => {
 })
 
 async function addUser() {
-   router.push(`/home/${props.signedinUid}/users/create`)
-   // try {
-   //    const user = await createUser({})
-   //    selectUser(user)
-   //    displaySnackbar({ text: "Ajout effectuée avec succès !", color: 'success', timeout: 2000 })
-   // } catch(err) {
-   //    displaySnackbar({ text: "Erreur lors de l'ajout...", color: 'error', timeout: 4000 })
-   // }
+   router.push(`/users/create`)
 }
 
 const selectedUser = ref(null)

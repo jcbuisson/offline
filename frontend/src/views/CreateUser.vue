@@ -70,7 +70,7 @@ const emailRules = [
 
 const groupList = ref([])
 
-const groupListObservable = findManyGroup$({})
+const groupListObservable = await findManyGroup$({})
 groupListObservable.subscribe(list => {
    groupList.value = list.toSorted((u1, u2) => (u1.name > u2.name) ? 1 : (u1.name < u2.name) ? -1 : 0)
 })

@@ -59,9 +59,7 @@ onUnmounted(() => {
 })
 
 async function addGroup() {
-   router.push(`/home/${props.signedinUid}/groups/create`)
-   // const group = await createGroup({})
-   // selectGroup(group)
+   router.push(`/groups/create`)
 }
 
 const selectedGroup = ref(null)
