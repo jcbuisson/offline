@@ -69,6 +69,7 @@ import { synchronizeAll as synchronizeAllGroup, reset as resetGroup } from '/src
 import { synchronizeAll as synchronizeAllUserGroupRelation, reset as resetUserGroupRelation } from '/src/use/useUserGroupRelation'
 
 // synchronize when connection starts or restarts
+// it is located here because of import circularity issues
 app.addConnectListener(async () => {
    console.log(">>>>>>>>>>>>>>>> SYNC ALL")
    // order matters

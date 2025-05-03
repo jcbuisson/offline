@@ -15,6 +15,7 @@ model user {
    deleted_at              DateTime?
    firstname               String?
    lastname                String?
+   email                   String?    @unique
 
    user_group_relations    user_group_relation[]
 }

@@ -53,14 +53,12 @@
 </template>
 
 <script setup>
-import { ref } from 'vue'
+import { ref, onMounted } from 'vue'
 
 import { create as createUser } from '/src/use/useUser.js'
 import { findMany$ as findManyGroup$ } from '/src/use/useGroup'
 
-
 const user = ref({})
-
 const valid = ref()
 
 const emailRules = [
@@ -70,9 +68,11 @@ const emailRules = [
 
 const groupList = ref([])
 
-const groupListObservable = await findManyGroup$({})
-groupListObservable.subscribe(list => {
-   groupList.value = list.toSorted((u1, u2) => (u1.name > u2.name) ? 1 : (u1.name < u2.name) ? -1 : 0)
+onMounted(async () => {
+   const groupListObservable = await findManyGroup$({})
+   groupListObservable.subscribe(list => {
+      groupList.value = list.toSorted((u1, u2) => (u1.name > u2.name) ? 1 : (u1.name < u2.name) ? -1 : 0)
+   })
 })
 
 function submit() {

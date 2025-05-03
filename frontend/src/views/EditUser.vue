@@ -5,6 +5,17 @@
             <v-row>
                <v-col cols="12" sm="6">
                   <v-text-field
+                     label="email"
+                     :modelValue="user?.email"
+                     :rules="emailRules"
+                     @input="(e) => onFieldInputDebounced('email', e.target.value)"
+                     variant="underlined"
+                  ></v-text-field>
+               </v-col>
+            </v-row>
+            <v-row>
+               <v-col cols="12" sm="6">
+                  <v-text-field
                      label="Nom"
                      :modelValue="user?.lastname"
                      @input="(e) => onFieldInputDebounced('lastname', e.target.value)"
