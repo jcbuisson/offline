@@ -5,7 +5,7 @@
             <v-row>
                <v-col cols="12" sm="6">
                   <v-text-field
-                     label="email"
+                     label="Email (unique)"
                      v-model="user.email"
                      :rules="emailRules"
                      variant="underlined"
@@ -58,6 +58,9 @@ import { ref, onMounted } from 'vue'
 import { create as createUser } from '/src/use/useUser.js'
 import { findMany$ as findManyGroup$ } from '/src/use/useGroup'
 
+import router from '/src/router'
+import { displaySnackbar } from '/src/use/useSnackbar'
+
 const user = ref({})
 const valid = ref()
 
@@ -75,8 +78,14 @@ onMounted(async () => {
    })
 })
 
-function submit() {
-   createUser(user.value)
+async function submit() {
+   try {
+      const createdUser = await createUser(user.value)
+      displaySnackbar({ text: "Création effectuée avec succès !", color: 'success', timeout: 2000 })
+      router.push(`/users/${createdUser.uid}`)
+   } catch(err) {
+      displaySnackbar({ text: "Erreur lors de la création...", color: 'error', timeout: 4000 })
+   }
 }
 
 </script>

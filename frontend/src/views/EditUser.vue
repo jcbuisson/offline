@@ -5,7 +5,7 @@
             <v-row>
                <v-col cols="12" sm="6">
                   <v-text-field
-                     label="email"
+                     label="Email (unique)"
                      :modelValue="user?.email"
                      :rules="emailRules"
                      @input="(e) => onFieldInputDebounced('email', e.target.value)"
@@ -112,7 +112,7 @@ const onFieldInput = async (field, value) => {
       await updateUser(props.user_uid, { [field]: value })
       displaySnackbar({ text: "Modification effectuée avec succès !", color: 'success', timeout: 2000 })
    } catch(err) {
-      displaySnackbar({ text: "Erreur lors de la sauvegarde...", color: 'error', timeout: 4000 })
+      displaySnackbar({ text: "Erreur lors de l'enregistrement...", color: 'error', timeout: 4000 })
    }
 }
 const onFieldInputDebounced = useDebounceFn(onFieldInput, 500)
@@ -128,7 +128,7 @@ const onGroupChange = async (groupUIDs) => {
       await updateUserGroups(props.user_uid, groupUIDs)
       displaySnackbar({ text: "Modification effectuée avec succès !", color: 'success', timeout: 2000 })
    } catch(err) {
-      displaySnackbar({ text: "Erreur lors de la sauvegarde...", color: 'error', timeout: 4000 })
+      displaySnackbar({ text: "Erreur lors de l'enregistrement...", color: 'error', timeout: 4000 })
    }
 }
 </script>

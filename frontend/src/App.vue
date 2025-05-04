@@ -31,16 +31,50 @@
       </template>
    </v-toolbar>
 
-   <div>Les clients ont des caches dénormalisés pour chaque table/modèle. Les caches implémentés avec IndexeDB ne sont pas limités en taille.</div>
-   <div>Ces caches permettent toutes les opérations relationnelles : accès aux objets, aux listes, jointures entre modèles, etc.</div>
-   <div>Les clés primaires de ces caches sont des uid, créés explicitement par les clients, pour ne pas avoir de conflit entre les identifiants créés offline par différents clients</div>
+   <!-- <v-sheet>
+      <v-row>         
+         <v-col cols="12" md="4">
+            <v-card>
+               <v-card-item>
+                  <v-card-title>Offline-first</v-card-title>
+               </v-card-item>
+               <v-card-text>
+                  C'est une fonctionalité critique pour les applications qui doivent continuer à fonctionner avec un réseau déficient ou inexistant.
+                  Faites des essais de création, modification etc. d'utilisateurs ou de groupes en coupant ou en rétablissant le réseau.
+               </v-card-text>
+               <v-card-actions>
+                  <v-btn
+                     color="deep-purple-accent-4"
+                     text="En savoir plus..."
+                     variant="text"
+                  ></v-btn>
+               </v-card-actions>
+            </v-card>
+         </v-col>
+         <v-col cols="12" md="4">
+            <v-card>
+               <v-card-item>
+                  <v-card-title>Temps-réel</v-card-title>
+               </v-card-item>
+               <v-card-text>
+                  Si vous ouvrez l'application dans deux onglets ou sur deux appareils, les changements faits sur l'un apparaissent immédiatement sur l'autre.
+               </v-card-text>
+               <v-card-actions>
+                  <v-btn
+                     color="deep-purple-accent-4"
+                     text="En savoir plus..."
+                     variant="text"
+                  ></v-btn>
+               </v-card-actions>
+            </v-card>
+         </v-col>
+      </v-row>
+   </v-sheet> -->
 
-   <!-- <v-toolbar> -->
-      <v-tabs>
-         <v-tab text="Utilisateurs" @click="router.push('/users')"></v-tab>
-         <v-tab text="Groupes" @click="router.push('/groups')"></v-tab>
-      </v-tabs>
-   <!-- </v-toolbar> -->
+   <v-tabs>
+      <v-tab text="Utilisateurs" @click="router.push('/users')"></v-tab>
+      <v-tab text="Groupes" @click="router.push('/groups')"></v-tab>
+   </v-tabs>
 
    <router-view></router-view>
 

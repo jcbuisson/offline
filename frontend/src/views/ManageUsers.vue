@@ -10,8 +10,8 @@
          
             <div :style="{ height: `calc(100vh - 160px)`, 'overflow-y': 'auto' }">
                <v-list-item three-line v-for="(user, index) in userList":key="index" :value="user" @click="selectUser(user)" :active="selectedUser?.uid === user?.uid">
-                  <v-list-item-title>{{ user.lastname }}</v-list-item-title>
-                  <v-list-item-subtitle>{{ user.firstname }}</v-list-item-subtitle>
+                  <v-list-item-title>{{ user.lastname }} {{ user.firstname }}</v-list-item-title>
+                  <v-list-item-subtitle>{{ user.email }}</v-list-item-subtitle>
                   <v-list-item-subtitle>
                      <template v-for="group in user.groups">
                         <v-chip size="x-small">{{ group?.name }}</v-chip>
