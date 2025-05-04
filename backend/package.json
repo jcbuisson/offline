@@ -11,7 +11,8 @@
   },
   "imports": {
     "#root/*": "./*",
-    "#lib/*": "./src/lib/*"
+    "#lib/*": "./src/lib/*",
+    "#config": "./config/index.mjs"
   },
   "homepage": "",
   "repository": {

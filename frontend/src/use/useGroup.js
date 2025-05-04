@@ -7,7 +7,7 @@ import { getMany as getManyUserGroupRelation, remove as removeGroupRelation } fr
 import { wherePredicate, synchronize, addSynchroWhere, removeSynchroWhere, synchronizeModelWhereList } from '/src/lib/synchronize.js'
 import { app, isConnected, disconnectedDate } from '/src/client-app.js'
 
-export const db = new Dexie("groupDatabaseSHDL")
+export const db = new Dexie(import.meta.env.VITE_APP_GROUP_IDB)
 
 db.version(1).stores({
    whereList: "sortedjson, where",

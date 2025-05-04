@@ -71,7 +71,7 @@ export default function (app) {
             const clientValue = clientMetadataDict[uid]
             if (clientValue.deleted_at) {
                deleteDatabase.push(uid)
-               deleteClient.push(uid) // also ask the client to remove the record with deleted_=true
+               deleteClient.push(uid) // also ask the client to remove the record with deleted_at != null
             } else {
                const dateDifference = new Date(clientValue.updated_at) - databaseValue.updated_at
                if (dateDifference > 0) {

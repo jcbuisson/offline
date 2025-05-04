@@ -23,5 +23,6 @@
 
 - Dans le cas de relations many-many, les tables intermédiaires doivent être explicites et les caches et modèles associés doivent être également explicitement synchronisés 
 
-- Lorsqu’un client supprime une donnée lorsqu’il est offline, il la marque avec deleted_=true sans la supprimer du cache, sinon le serveur ne pourrait pas savoir que le client a demandé à la supprimer (est-ce important ? À vérifier)
+- Lorsqu’un client supprime une donnée lorsqu’il est offline, il la marque avec deleted_at=now sans la supprimer du cache,
+sinon le serveur ne pourrait pas savoir que le client a demandé à la supprimer (est-ce important ? À vérifier)
 

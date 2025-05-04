@@ -58,6 +58,7 @@ onMounted(async () => {
       for (const user of userList.value) {
          const userGroupRelationObservable = await findManyUserGroupRelation$({ user_uid: user.uid })
          const groupRelationSubscription = userGroupRelationObservable.subscribe(async relationList => {
+            console.log('relationList', relationList)
             user.groups = []
             for (const group_uid of relationList.map(relation => relation.group_uid)) {
                const group = await getGroup(group_uid)

@@ -5,7 +5,7 @@ import { uid as uid16 } from 'uid'
 import { wherePredicate, synchronize, addSynchroWhere, removeSynchroWhere, synchronizeModelWhereList } from '/src/lib/synchronize.js'
 import { app, isConnected, disconnectedDate } from '/src/client-app.js'
 
-export const db = new Dexie("userGroupRelationDatabaseSHDL")
+export const db = new Dexie(import.meta.env.VITE_APP_USER_GROUP_RELATION_IDB)
 
 db.version(1).stores({
    whereList: "sortedjson, where",
@@ -61,18 +61,18 @@ export async function updateUserGroups(user_uid, newGroupUIDs) {
    await addSynchroWhere({ user_uid }, db.whereList)
 
    // optimistic update of cache
-   const currentRelations = await db.values.filter(value => !value.deleted_ && value.user_uid === user_uid).toArray()
+   const currentRelations = await db.values.filter(value => !value.deleted_at && value.user_uid === user_uid).toArray()
    const currentGroupUIDs = currentRelations.map(relation => relation.group_uid)
    const toAdd = newGroupUIDs.filter(group_uid => !currentGroupUIDs.includes(group_uid))
    const toRemove = currentGroupUIDs.filter(group_uid => !newGroupUIDs.includes(group_uid))
+   const now = new Date()
    for (const group_uid of toAdd) {
       const uid = uid16(16)
-      const now = new Date()
       await db.values.add({ uid, user_uid, group_uid, created_at: now, updated_at: now })
    }
    for (const group_uid of toRemove) {
       const uid = currentRelations.find(relation => relation.group_uid === group_uid).uid
-      await db.values.update(uid, { deleted_: true })
+      await db.values.update(uid, { deleted_at: now })
    }
    
    // execute on server, asynchronously, if connection is active
