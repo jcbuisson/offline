@@ -6,56 +6,58 @@ const mutex = new Mutex()
 // ex: where = { uid: 'azer' }
 export async function synchronize(app, modelName, clientCache, where, cutoffDate) {
    await mutex.acquire()
+   try {
+      const requestPredicate = wherePredicate(where)
 
-   const requestPredicate = wherePredicate(where)
+      // collect meta-data of local values
+      const allValues = await clientCache.toArray()
+      const clientMetadataDict = allValues.reduce((accu, elt) => {
+         if (requestPredicate(elt)) accu[elt.uid] = {
+            uid: elt.uid,
+            created_at: elt.created_at,
+            updated_at: elt.updated_at,
+            deleted_at: elt.deleted_at,
+         }
+         return accu
+      }, {})
+      
+      // call sync service on `where` perimeter
+      const { toAdd, toUpdate, toDelete, addDatabase, updateDatabase } = await app.service('sync').go(modelName, where, cutoffDate, clientMetadataDict)
+      console.log('synchronize', toAdd, toUpdate, toDelete, addDatabase, updateDatabase)
 
-   // collect meta-data of local values
-   const allValues = await clientCache.toArray()
-   const clientMetadataDict = allValues.reduce((accu, elt) => {
-      if (requestPredicate(elt)) accu[elt.uid] = {
-         uid: elt.uid,
-         created_at: elt.created_at,
-         updated_at: elt.updated_at,
-         deleted_at: elt.deleted_at,
+      // 1- add missing elements in cache
+      for (const elt of toAdd) {
+         await clientCache.add(elt)
       }
-      return accu
-   }, {})
-   
-   // call sync service on `where` perimeter
-   const { toAdd, toUpdate, toDelete, addDatabase, updateDatabase } = await app.service('sync').go(modelName, where, cutoffDate, clientMetadataDict)
-   console.log('synchronize', toAdd, toUpdate, toDelete, addDatabase, updateDatabase)
+      // 2- delete elements from cache
+      for (const uid of toDelete) {
+         await clientCache.delete(uid)
+      }
+      // 3- update elements of cache
+      for (const elt of toUpdate) {
+         // get full value of element to update
+         const fullElt = await app.service(modelName).findUnique({ where: { uid: elt.uid }})
+         await clientCache.update(elt.uid, fullElt)
+      }
 
-   // 1- add missing elements in cache
-   for (const elt of toAdd) {
-      await clientCache.add(elt)
-   }
-   // 2- delete elements from cache
-   for (const uid of toDelete) {
-      await clientCache.delete(uid)
-   }
-   // 3- update elements of cache
-   for (const elt of toUpdate) {
-      // get full value of element to update
-      const fullElt = await app.service(modelName).findUnique({ where: { uid: elt.uid }})
-      await clientCache.update(elt.uid, fullElt)
-   }
+      // 4- create elements of `addDatabase` with full data from cache
+      for (const elt of addDatabase) {
+         const fullValue = await clientCache.get(elt.uid)
+         await app.service(modelName).create({ data: fullValue })
+      }
 
-   // 4- create elements of `addDatabase` with full data from cache
-   for (const elt of addDatabase) {
-      const fullValue = await clientCache.get(elt.uid)
-      await app.service(modelName).create({ data: fullValue })
+      // 5- update elements of `updateDatabase` with full data from cache
+      for (const elt of updateDatabase) {
+         const fullValue = await clientCache.get(elt.uid)
+         await app.service(modelName).update({
+            where: { uid: elt.uid },
+            data: fullValue,
+         })
+      }
+   } catch(err) {
+   } finally {
+      await mutex.release()
    }
-
-   // 5- update elements of `updateDatabase` with full data from cache
-   for (const elt of updateDatabase) {
-      const fullValue = await clientCache.get(elt.uid)
-      await app.service(modelName).update({
-         where: { uid: elt.uid },
-         data: fullValue,
-      })
-   }
-   await mutex.release()
-   return clientCache
 }
 
 export function wherePredicate(where) {
