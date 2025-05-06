@@ -7,22 +7,19 @@ datasource db {
    url = env("DATABASE_URL")
 }
 
+// meta data for all elements of all models, even deleted ones. `uid` is unique across models
 model meta_data {
-   table                   String
-   uid                     String
-   created_at              DateTime   @default(now()) @db.Timestamptz(6)
+   uid                     String     @unique
+   created_at              DateTime?
    updated_at              DateTime?
    deleted_at              DateTime?
-
-   @@unique([table, uid])
 }
 
 
+//////////////        BUSINESS MODELS        //////////////
+
 model user {
    uid                     String     @unique
-   created_at              DateTime   @default(now()) @db.Timestamptz(6)
-   updated_at              DateTime   @updatedAt @db.Timestamptz(6)
-   deleted_at              DateTime?
    firstname               String?
    lastname                String?
    email                   String?    @unique
@@ -33,9 +30,6 @@ model user {
 // 'Enseignants', '1SN24D', '1APP24', 'Binôme X & Y'
 model group {
    uid                     String     @unique
-   created_at              DateTime   @default(now()) @db.Timestamptz(6)
-   updated_at              DateTime   @updatedAt @db.Timestamptz(6)
-   deleted_at              DateTime?
    name                    String?    @unique(map: "group_name_unique")
 
    user_group_relations    user_group_relation[]
@@ -43,9 +37,6 @@ model group {
 
 model user_group_relation {
    uid             String     @unique
-   created_at      DateTime   @default(now()) @db.Timestamptz(6)
-   updated_at      DateTime   @updatedAt @db.Timestamptz(6)
-   deleted_at              DateTime?
    user_uid        String
    group_uid       String
 

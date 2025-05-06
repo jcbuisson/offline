@@ -71,9 +71,10 @@ export async function create(data) {
    // optimistic update
    const now = new Date()
    // await db.values.add({ uid, ...data, created_at: now, updated_at: now })
-   await db.values.add({ uid, created_at: now, updated_at: now, email: data.email, firstname: data.firstname, lastname: data.lastname })
+   await db.values.add({ uid, created_at: now, email: data.email, firstname: data.firstname, lastname: data.lastname })
    // execute on server, asynchronously, if connection is active
    if (isConnected.value) {
+      app.service('meta_data').create({ data: { uid, created_at: now } })
       app.service('user').create({ data: { uid, ...data } })
    }
    return await db.values.get(uid)
@@ -81,9 +82,11 @@ export async function create(data) {
 
 export const update = async (uid, data) => {
    // optimistic update of cache
-   await db.values.update(uid, { ...data, updated_at: new Date() })
+   const now = new Date()
+   await db.values.update(uid, { ...data, updated_at: now })
    // execute on server, asynchronously, if connection is active
    if (isConnected.value) {
+      app.service('meta_data').update({ where: { uid }, data: { updated_at: now } })
       app.service('user').update({ where: { uid }, data })
    }
    return await db.values.get(uid)
@@ -94,18 +97,18 @@ export const remove = async (uid) => {
    await removeSynchroWhere({ uid }, db.whereList)
    const deleted_at = new Date()
 
-   // (soft)remove relations to groups in cache, and in database if connected
+   // remove relations to groups in cache, and in database if connected
    const userGroupRelations = await getManyUserGroupRelation({ user_uid: uid })
    await Promise.all(userGroupRelations.map(relation => removeGroupRelation(relation)))
 
-   // (soft)remove user in cache
-   await db.values.update(uid, { deleted_at })
+   // // (soft)remove user in cache
+   // await db.values.update(uid, { deleted_at })
+   // optimistic delete
+   await db.values.delete(uid)
    // and in database, if connected
    if (isConnected.value) {
-      app.service('user').update({
-         where: { uid },
-         data: { deleted_at }
-      })
+      app.service('meta_data').update({ where: { uid }, data: { deleted_at } })
+      app.service('user').delete({ where: { uid } })
    }
 }
 

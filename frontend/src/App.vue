@@ -21,6 +21,7 @@
 
    <v-toolbar>
       <v-toolbar-title text="Application offline-first, temps-réel, avec backend relationnel"></v-toolbar-title>
+      <!-- <v-toolbar-title text="Why fetch when you can sync?"></v-toolbar-title> -->
 
       <template v-slot:append>
          <div class="d-flex ga-2">

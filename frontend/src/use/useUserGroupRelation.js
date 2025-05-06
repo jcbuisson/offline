@@ -68,7 +68,7 @@ export async function updateUserGroups(user_uid, newGroupUIDs) {
    const now = new Date()
    for (const group_uid of toAdd) {
       const uid = uid16(16)
-      await db.values.add({ uid, user_uid, group_uid, created_at: now, updated_at: now })
+      await db.values.add({ uid, user_uid, group_uid, created_at: now })
    }
    for (const group_uid of toRemove) {
       const uid = currentRelations.find(relation => relation.group_uid === group_uid).uid
@@ -78,11 +78,19 @@ export async function updateUserGroups(user_uid, newGroupUIDs) {
    // execute on server, asynchronously, if connection is active
    for (const group_uid of toAdd) {
       const relation = await db.values.filter(value => value.user_uid === user_uid && value.group_uid === group_uid).first()
-      if (isConnected.value) app.service('user_group_relation').create({ data: { uid: relation.uid, user_uid, group_uid }})
+      if (isConnected.value) {
+         app.service('meta_data').create({ data: { uid: relation.uid, created_at: now } })
+         app.service('user_group_relation').create({ data: { uid: relation.uid, user_uid, group_uid }})
+      }
    }
    for (const group_uid of toRemove) {
       const relation = await db.values.filter(value => value.user_uid === user_uid && value.group_uid === group_uid).first()
-      if (isConnected.value) app.service('user_group_relation').delete({ where: { uid: relation.uid }})
+      if (isConnected.value) {
+         app.service('meta_data').update({ where: { uid: relation.uid }, data: { deleted_at } })
+         app.service('user_group_relation').delete({
+            where: { uid: relation.uid },
+         })
+      }
    }
 }
 
@@ -90,13 +98,15 @@ export async function remove(uid) {
    // stop synchronizing on this perimeter
    removeSynchroWhere({ uid }, db.whereList)
    const deleted_at = new Date()
-   // optimistic update
-   await db.values.update(uid, { deleted_at })
+   // // optimistic update
+   // await db.values.update(uid, { deleted_at })
+   // optimistic delete
+   await db.values.delete(uid)
    // execute on server, asynchronously, if connection is active
    if (isConnected.value) {
-      app.service('user_group_relation').update({
+      app.service('meta_data').update({ where: { model_name: 'user_group_relation', uid }, data: { deleted_at } })
+      app.service('user_group_relation').delete({
          where: { uid },
-         data: { deleted_at }
       })
    }
 }
