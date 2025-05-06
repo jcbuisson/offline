@@ -72,11 +72,11 @@ export default function (app) {
             const clientValue = clientMetadataDict[uid]
             if (clientValue.deleted_at) {
                deleteDatabase.push(uid)
-               deleteClient.push(uid) // also ask the client to remove the record with deleted_at != null
+               deleteClient.push(uid)
             } else {
                const metaData = await prisma.meta_data.findUnique({ where: { uid }})
-               console.log('metadata', uid, metaData)
                const dateDifference = new Date(clientValue.updated_at) - metaData.updated_at
+               console.log('dateDifference', dateDifference)
                if (dateDifference > 0) {
                   updateDatabase.push(clientValue)
                } else if (dateDifference < 0) {
