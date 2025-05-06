@@ -34,9 +34,10 @@
 
 
 <script setup>
-import { ref, onMounted, onUnmounted } from 'vue'
+import { ref, onMounted, onUnmounted, watch } from 'vue'
+import { useRoute} from 'vue-router'
 
-import { findMany$ as findManyUser$, getFullname, create as createUser, remove as removeUser } from '/src/use/useUser'
+import { findMany$ as findManyUser$, getFullname, remove as removeUser, selectedUser } from '/src/use/useUser'
 import { findMany$ as findManyGroup$, get as getGroup } from '/src/use/useGroup'
 import { findMany$ as findManyUserGroupRelation$ } from '/src/use/useUserGroupRelation'
 import router from '/src/router'
@@ -83,7 +84,15 @@ async function addUser() {
    router.push(`/users/create`)
 }
 
-const selectedUser = ref(null)
+const route = useRoute()
+const routeRegex = /\/users\/([a-z0-9]+)/
+
+watch(() => [route.path, userList.value], async () => {
+   const match = route.path.match(routeRegex)
+   if (!match) return
+   const user_uid = match[1]
+   selectedUser.value = userList.value.find(user => user.uid === user_uid)
+}, { immediate: true })
 
 function selectUser(user) {
    selectedUser.value = user

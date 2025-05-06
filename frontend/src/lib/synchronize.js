@@ -55,6 +55,7 @@ export async function synchronize(app, modelName, clientCache, where, cutoffDate
          })
       }
    } catch(err) {
+      console.log('err synchronize', err)
    } finally {
       await mutex.release()
    }
@@ -90,36 +91,46 @@ async function getWhereList(whereDb) {
 }
 
 export async function addSynchroWhere(where, whereDb) {
-   await mutex.acquire()
-   let over = false
    let modified = false
-   const whereList = await getWhereList(whereDb)
-   for (const w of whereList) {
-      // if `where` is included in `w`, do nothing and exit
-      if (isSubset(where, w)) { over = true; break }
-      // if `where` is more general than `w`, replace `w` by `where`
-      if (isSubset(w, where)) {
-         await whereDb.delete(sortedJson(w))
-         await whereDb.add({ sortedjson: sortedJson(where), where })
-         over = true
-         modified = true
-         break
+   await mutex.acquire()
+   try {
+      let over = false
+      const whereList = await getWhereList(whereDb)
+      for (const w of whereList) {
+         // if `where` is included in `w`, do nothing and exit
+         if (isSubset(where, w)) { over = true; break }
+         // if `where` is more general than `w`, replace `w` by `where`
+         if (isSubset(w, where)) {
+            await whereDb.delete(sortedJson(w))
+            await whereDb.add({ sortedjson: sortedJson(where), where })
+            over = true
+            modified = true
+            break
+         }
       }
+      if (!over && !modified) {
+         // add `where` to the existing set
+         await whereDb.add({ sortedjson: sortedJson(where), where })
+         modified = true
+      }
+   } catch(err) {
+      console.log('err addSynchroWhere', err)
+   } finally {
+      await mutex.release()
    }
-   if (!over && !modified) {
-      // add `where` to the existing set
-      await whereDb.add({ sortedjson: sortedJson(where), where })
-      modified = true
-   }
-   await mutex.release()
    return modified
 }
 
 export async function removeSynchroWhere(where, whereDb) {
    await mutex.acquire()
-   const sortedjson = sortedJson(where)
-   await whereDb.filter(value => value.sortedjson === sortedjson).delete()
-   await mutex.release()
+   try {
+      const sortedjson = sortedJson(where)
+      await whereDb.filter(value => value.sortedjson === sortedjson).delete()
+   } catch(err) {
+      console.log('err removeSynchroWhere', err)
+   } finally {
+      await mutex.release()
+   }
 }
 
 export async function synchronizeModelWhereList(app, modelName, clientCache, cutoffDate, whereDb) {

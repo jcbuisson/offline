@@ -1,6 +1,7 @@
 import Dexie from "dexie"
 import { liveQuery } from "dexie"
 import { uid as uid16 } from 'uid'
+import { ref } from 'vue'
 
 import { getMany as getManyUserGroupRelation, remove as removeGroupRelation } from '/src/use/useUserGroupRelation'
 import { wherePredicate, synchronize, addSynchroWhere, removeSynchroWhere, synchronizeModelWhereList } from '/src/lib/synchronize.js'
@@ -134,3 +135,7 @@ export function getFullname(user) {
    if (user.firstname && user.lastname) return user.lastname + ' ' + user.firstname
    return user.lastname || user.firstname
 }
+
+/////////////          SELECTED USER          /////////////
+
+export const selectedUser = ref()

@@ -29,6 +29,7 @@
 
 <script setup>
 import { ref, onMounted, onUnmounted } from 'vue'
+import { useRoute} from 'vue-router'
 
 import { findMany$ as findManyGroup$, remove as removeGroup } from '/src/use/useGroup'
 import router from '/src/router'
