@@ -43,16 +43,21 @@ export async function synchronize(app, modelName, clientCache, where, cutoffDate
       // 4- create elements of `addDatabase` with full data from cache
       for (const elt of addDatabase) {
          const fullValue = await clientCache.get(elt.uid)
-         await app.service(modelName).create({ data: fullValue })
+         delete fullValue.uid
+         delete fullValue.created_at
+         delete fullValue.updated_at
+         delete fullValue.deleted_at
+         await app.service(modelName).create(elt.uid, fullValue)
       }
 
       // 5- update elements of `updateDatabase` with full data from cache
       for (const elt of updateDatabase) {
          const fullValue = await clientCache.get(elt.uid)
-         await app.service(modelName).update({
-            where: { uid: elt.uid },
-            data: fullValue,
-         })
+         delete fullValue.uid
+         delete fullValue.created_at
+         delete fullValue.updated_at
+         delete fullValue.deleted_at
+         await app.service(modelName).update(elt.uid, fullValue)
       }
    } catch(err) {
       console.log('err synchronize', err)

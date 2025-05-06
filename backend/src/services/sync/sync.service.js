@@ -6,6 +6,7 @@ export default function (app) {
       go: async (modelName, where, cutoffDate, clientMetadataDict) => {
          console.log('>>>>> SYNC', modelName, where, cutoffDate)
          const databaseService = app.service(modelName)
+         const prisma = app.get('prisma')
    
          // STEP 1: get existing database `where` values
          const databaseValues = await databaseService.findMany({ where })
@@ -73,7 +74,9 @@ export default function (app) {
                deleteDatabase.push(uid)
                deleteClient.push(uid) // also ask the client to remove the record with deleted_at != null
             } else {
-               const dateDifference = new Date(clientValue.updated_at) - databaseValue.updated_at
+               const metaData = await prisma.meta_data.findUnique({ where: { uid }})
+               console.log('metadata', uid, metaData)
+               const dateDifference = new Date(clientValue.updated_at) - metaData.updated_at
                if (dateDifference > 0) {
                   updateDatabase.push(clientValue)
                } else if (dateDifference < 0) {

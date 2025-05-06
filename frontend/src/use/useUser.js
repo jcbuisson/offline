@@ -74,8 +74,8 @@ export async function create(data) {
    await db.values.add({ uid, created_at: now, email: data.email, firstname: data.firstname, lastname: data.lastname })
    // execute on server, asynchronously, if connection is active
    if (isConnected.value) {
-      app.service('meta_data').create({ data: { uid, created_at: now } })
-      app.service('user').create({ data: { uid, ...data } })
+      // also update meta-data
+      app.service('user').create(uid, data)
    }
    return await db.values.get(uid)
 }
@@ -86,8 +86,8 @@ export const update = async (uid, data) => {
    await db.values.update(uid, { ...data, updated_at: now })
    // execute on server, asynchronously, if connection is active
    if (isConnected.value) {
-      app.service('meta_data').update({ where: { uid }, data: { updated_at: now } })
-      app.service('user').update({ where: { uid }, data })
+      // also update meta-data
+      app.service('user').update(uid, data)
    }
    return await db.values.get(uid)
 }
@@ -97,18 +97,16 @@ export const remove = async (uid) => {
    await removeSynchroWhere({ uid }, db.whereList)
    const deleted_at = new Date()
 
-   // remove relations to groups in cache, and in database if connected
+   // remove relations to groups in cache
    const userGroupRelations = await getManyUserGroupRelation({ user_uid: uid })
    await Promise.all(userGroupRelations.map(relation => removeGroupRelation(relation)))
 
-   // // (soft)remove user in cache
-   // await db.values.update(uid, { deleted_at })
-   // optimistic delete
-   await db.values.delete(uid)
+   // optimistic delete in cache
+   await db.values.update(uid, { deleted_at })
    // and in database, if connected
    if (isConnected.value) {
-      app.service('meta_data').update({ where: { uid }, data: { deleted_at } })
-      app.service('user').delete({ where: { uid } })
+      // also update meta-data
+      app.service('user').delete(uid)
    }
 }
 
