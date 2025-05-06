@@ -69,8 +69,7 @@ export async function create(data) {
    await db.values.add({ uid, ...data, created_at: new Date(), updated_at: new Date() })
    // execute on server, asynchronously, if connection is active
    if (isConnected.value) {
-      app.service('meta_data').create({ data: { uid, created_at: now } })
-      app.service('group').create({ data: { uid, ...data } })
+      app.service('group').create(uid, data)
    }
    return await db.values.get(uid)
 }
@@ -80,8 +79,7 @@ export const update = async (uid, data) => {
    const value = await db.values.update(uid, {...data, updated_at: new Date()})
    // execute on server, asynchronously, if connection is active
    if (isConnected.value) {
-      app.service('meta_data').update({ where: { uid }, data: { updated_at: now } })
-      app.service('group').update({ where: { uid }, data })
+      app.service('group').update(uid, data)
    }
    return await db.values.get(uid)
 }
@@ -95,14 +93,12 @@ export const remove = async (uid) => {
    const userGroupRelations = await getManyUserGroupRelation({ group_uid: uid })
    await Promise.all(userGroupRelations.map(relation => removeGroupRelation(relation)))
 
-   // // (soft)remove group in cache
-   // await db.values.update(uid, { deleted_at })
-   // optimistic delete
-   await db.values.delete(uid)
+   // optimistic delete in cache
+   await db.values.update(uid, { deleted_at })
    // and in database, if connected
    if (isConnected.value) {
-      app.service('meta_data').update({ where: { uid }, data: { deleted_at } })
-      app.service('group').delete({ where: { uid } })
+      // also update meta-data
+      app.service('group').delete(uid)
    }
 }
 

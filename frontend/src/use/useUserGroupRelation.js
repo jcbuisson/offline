@@ -79,17 +79,13 @@ export async function updateUserGroups(user_uid, newGroupUIDs) {
    for (const group_uid of toAdd) {
       const relation = await db.values.filter(value => value.user_uid === user_uid && value.group_uid === group_uid).first()
       if (isConnected.value) {
-         app.service('meta_data').create({ data: { uid: relation.uid, created_at: now } })
-         app.service('user_group_relation').create({ data: { uid: relation.uid, user_uid, group_uid }})
+         app.service('user_group_relation').create(relation.uid, { user_uid, group_uid })
       }
    }
    for (const group_uid of toRemove) {
       const relation = await db.values.filter(value => value.user_uid === user_uid && value.group_uid === group_uid).first()
       if (isConnected.value) {
-         app.service('meta_data').update({ where: { uid: relation.uid }, data: { deleted_at } })
-         app.service('user_group_relation').delete({
-            where: { uid: relation.uid },
-         })
+         app.service('user_group_relation').delete(relation.uid)
       }
    }
 }
@@ -104,10 +100,7 @@ export async function remove(uid) {
    await db.values.delete(uid)
    // execute on server, asynchronously, if connection is active
    if (isConnected.value) {
-      app.service('meta_data').update({ where: { model_name: 'user_group_relation', uid }, data: { deleted_at } })
-      app.service('user_group_relation').delete({
-         where: { uid },
-      })
+      app.service('user_group_relation').delete(uid)
    }
 }
 

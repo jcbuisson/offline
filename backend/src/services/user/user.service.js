@@ -3,10 +3,6 @@ export default function (app) {
 
    const prisma = app.get('prisma')
 
-   // app.createService('user', {
-   //    ...prisma.user
-   // })
-
    app.createService('user', {
 
       findUnique: prisma.user.findUnique,
