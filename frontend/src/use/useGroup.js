@@ -91,7 +91,7 @@ export const remove = async (uid) => {
 
    // remove relations to users in cache, and in database if connected
    const userGroupRelations = await getManyUserGroupRelation({ group_uid: uid })
-   await Promise.all(userGroupRelations.map(relation => removeGroupRelation(relation)))
+   await Promise.all(userGroupRelations.map(relation => removeGroupRelation(relation.uid)))
 
    // optimistic delete in cache
    await db.values.update(uid, { deleted_at })

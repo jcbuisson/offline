@@ -99,7 +99,7 @@ export const remove = async (uid) => {
 
    // remove relations to groups in cache
    const userGroupRelations = await getManyUserGroupRelation({ user_uid: uid })
-   await Promise.all(userGroupRelations.map(relation => removeGroupRelation(relation)))
+   await Promise.all(userGroupRelations.map(relation => removeGroupRelation(relation.uid)))
 
    // optimistic delete in cache
    await db.values.update(uid, { deleted_at })

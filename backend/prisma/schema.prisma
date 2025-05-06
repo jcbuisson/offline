@@ -7,9 +7,11 @@ datasource db {
    url = env("DATABASE_URL")
 }
 
-// meta data for all elements of all models, even deleted ones. `uid` is unique across models
+
+//////////////        META-DATA FOR ALL ELEMENTS OF ALL BUSINESS MODELS        //////////////
+
 model meta_data {
-   uid                     String     @unique
+   uid                     String     @unique  // `uid` is unique across models
    created_at              DateTime?
    updated_at              DateTime?
    deleted_at              DateTime?
@@ -27,7 +29,6 @@ model user {
    user_group_relations    user_group_relation[]
 }
 
-// 'Enseignants', '1SN24D', '1APP24', 'Binôme X & Y'
 model group {
    uid                     String     @unique
    name                    String?    @unique(map: "group_name_unique")
@@ -35,6 +36,7 @@ model group {
    user_group_relations    user_group_relation[]
 }
 
+// relations (here: many-to-many between `user` and `group`) need to be explicitely defined
 model user_group_relation {
    uid             String     @unique
    user_uid        String
