@@ -92,7 +92,7 @@ async function submit() {
             firstname: data.value.firstname,
             lastname: data.value.lastname,
          })
-         await updateUserGroups(user.uid, data.value.groups)
+         await updateUserGroups(user.uid, data.value.groups || [])
          displaySnackbar({ text: "Création effectuée avec succès !", color: 'success', timeout: 2000 })
          router.push(`/users/${user.uid}`)
       }
