@@ -4,58 +4,72 @@ import { sortedJson, Mutex } from "/src/lib/utilities"
 const mutex = new Mutex()
 
 // ex: where = { uid: 'azer' }
-export async function synchronize(app, modelName, clientValues, clientMetaData, where, cutoffDate) {
+export async function synchronize(app, modelName, idbValues, idbMetadata, where, cutoffDate) {
    await mutex.acquire()
    try {
       const requestPredicate = wherePredicate(where)
 
       // collect meta-data of local values
-      const clientMetaDataList = await clientMetaData.toArray()
-      const clientMetadataDict = clientMetaDataList.reduce((accu, elt) => {
-         if (requestPredicate(elt)) accu[elt.uid] = {
-            uid: elt.uid,
-            created_at: elt.created_at,
-            updated_at: elt.updated_at,
-            deleted_at: elt.deleted_at,
-         }
-         return accu
-      }, {})
+      const metadataList = await idbMetadata.toArray()
+      // const clientMetadataDict = metadataList.reduce((accu, elt) => {
+      //    if (requestPredicate(elt)) accu[elt.uid] = {
+      //       uid: elt.uid,
+      //       created_at: elt.created_at,
+      //       updated_at: elt.updated_at,
+      //       deleted_at: elt.deleted_at,
+      //    }
+      //    return accu
+      // }, {}
+
+      const clientMetadataDict = {}
+      for (const metadata of metadataList) {
+         const value = await idbValues.get(metadata.uid)
+         if (requestPredicate(value)) clientMetadataDict[metadata.uid] = metadata
+      }
       
       // call sync service on `where` perimeter
       const { toAdd, toUpdate, toDelete, addDatabase, updateDatabase } = await app.service('sync').go(modelName, where, cutoffDate, clientMetadataDict)
       console.log('synchronize', toAdd, toUpdate, toDelete, addDatabase, updateDatabase)
 
+      const now = Date()
+
       // 1- add missing elements in cache
       for (const elt of toAdd) {
-         await clientValues.add(elt)
+         await idbValues.add(elt)
+         await idbMetadata.add({
+            uid: elt.uid,
+            created_at: now,
+         })
       }
       // 2- delete elements from cache
       for (const uid of toDelete) {
-         await clientValues.delete(uid)
+         await idbValues.delete(uid)
+         await idbMetadata.update(uid, { deleted_at: now })
       }
       // 3- update elements of cache
       for (const elt of toUpdate) {
          // get full value of element to update
          const fullValue = await app.service(modelName).findUnique({ where: { uid: elt.uid }})
          delete fullValue.uid
-         await clientValues.update(elt.uid, fullValue)
+         await idbValues.update(elt.uid, fullValue)
+         await idbMetadata.update(uid, { updated_at: now })
       }
 
       // 4- create elements of `addDatabase` with full data from cache
       for (const elt of addDatabase) {
-         const fullValue = await clientValues.get(elt.uid)
+         const fullValue = await idbValues.get(elt.uid)
          delete fullValue.uid
          await app.service(modelName).create(elt.uid, fullValue)
       }
 
       // 5- update elements of `updateDatabase` with full data from cache
       for (const elt of updateDatabase) {
-         const fullValue = await clientValues.get(elt.uid)
+         const fullValue = await idbValues.get(elt.uid)
          delete fullValue.uid
          await app.service(modelName).update(elt.uid, fullValue)
       }
    } catch(err) {
-      console.log('err synchronize', err)
+      console.log('err synchronize', modelName, where, err)
    } finally {
       await mutex.release()
    }
@@ -133,9 +147,9 @@ export async function removeSynchroWhere(where, whereDb) {
    }
 }
 
-export async function synchronizeModelWhereList(app, modelName, clientValues, clientMetaData, cutoffDate, whereDb) {
+export async function synchronizeModelWhereList(app, modelName, idbValues, idbMetadata, cutoffDate, whereDb) {
    const whereList = await getWhereList(whereDb)
    for (const where of whereList) {
-      await synchronize(app, modelName, clientValues, clientMetaData, where, cutoffDate)
+      await synchronize(app, modelName, idbValues, idbMetadata, where, cutoffDate)
    }
 }

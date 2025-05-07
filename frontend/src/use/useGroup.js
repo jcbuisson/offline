@@ -18,6 +18,7 @@ db.version(1).stores({
 export const reset = async () => {
    await db.whereList.clear()
    await db.values.clear()
+   await db.metadata.clear()
 }
 
 /////////////          PUB / SUB          /////////////

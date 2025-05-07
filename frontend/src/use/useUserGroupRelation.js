@@ -16,6 +16,7 @@ db.version(1).stores({
 export const reset = async () => {
    await db.whereList.clear()
    await db.values.clear()
+   await db.metadata.clear()
 }
 
 /////////////          PUB / SUB          /////////////
@@ -65,7 +66,11 @@ export async function updateUserGroups(user_uid, newGroupUIDs) {
    await addSynchroWhere({ user_uid }, db.whereList)
 
    // optimistic update of cache
-   const currentRelations = await db.values.filter(value => !value.deleted_at && value.user_uid === user_uid).toArray()
+   // const currentRelations = await db.values.filter(value => !value.deleted_at && value.user_uid === user_uid).toArray()
+
+   const relationUidList = await db.metadata.filter(metadata => metadata.user_uid === user_uid && !metadata.deleted_at).toArray()
+   const currentRelations = await db.values.filter(value => relationUidList.includes(value.uid)).toArray()
+
    const currentGroupUIDs = currentRelations.map(relation => relation.group_uid)
    const toAdd = newGroupUIDs.filter(group_uid => !currentGroupUIDs.includes(group_uid))
    const toRemove = currentGroupUIDs.filter(group_uid => !newGroupUIDs.includes(group_uid))
