@@ -70,6 +70,7 @@ export async function create(data) {
    // enlarge perimeter
    await addSynchroWhere({ uid }, db.whereList)
    // optimistic update
+   const now = new Date()
    await db.values.add({ uid, ...data })
    await db.metadata.add({ uid, created_at: now })
    // execute on server, asynchronously, if connection is active
