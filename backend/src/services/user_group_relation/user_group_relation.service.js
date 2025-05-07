@@ -10,27 +10,27 @@ export default function (app) {
       findMany: prisma.user_group_relation.findMany,
       
       create: async (uid, data) => {
-         const [value, metadata] = await prisma.$transaction([
+         const [value, meta] = await prisma.$transaction([
             prisma.user_group_relation.create({ data: { uid, ...data } }),
             prisma.meta_data.create({ data: { uid, created_at: new Date() } })
          ])
-         return value
+         return [value, meta]
       },
       
       update: async (uid, data) => {
-         const [value, metadata] = await prisma.$transaction([
+         const [value, meta] = await prisma.$transaction([
             prisma.user_group_relation.update({ where: { uid }, data }),
             prisma.meta_data.update({ where: { uid }, data: { updated_at: new Date() } })
          ])
-         return value
+         return [value, meta]
       },
       
       delete: async (uid) => {
-         const [value, metadata] = await prisma.$transaction([
+         const [value, meta] = await prisma.$transaction([
             prisma.user_group_relation.delete({ where: { uid } }),
             prisma.meta_data.update({ where: { uid }, data: { deleted_at: new Date() } })
          ])
-         return value
+         return [value, meta]
       },
    })
 

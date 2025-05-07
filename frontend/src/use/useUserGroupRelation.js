@@ -9,7 +9,8 @@ export const db = new Dexie(import.meta.env.VITE_APP_USER_GROUP_RELATION_IDB)
 
 db.version(1).stores({
    whereList: "sortedjson, where",
-   values: "uid, created_at, updated_at, deleted_at, user_uid, group_uid"
+   values: "uid, user_uid, group_uid",
+   metadata: "uid, created_at, updated_at, deleted_at",
 })
 
 export const reset = async () => {
@@ -19,19 +20,22 @@ export const reset = async () => {
 
 /////////////          PUB / SUB          /////////////
 
-app.service('user_group_relation').on('create', async value => {
+app.service('user_group_relation').on('create', async ([value, meta]) => {
    console.log('USER_GROUP_RELATION EVENT created', value)
    await db.values.put(value)
+   await db.metadata.put(meta)
 })
 
-app.service('user_group_relation').on('update', async value => {
+app.service('user_group_relation').on('update', async ([value, meta]) => {
    console.log('USER_GROUP_RELATION EVENT update', value)
    await db.values.put(value)
+   await db.metadata.put(meta)
 })
 
-app.service('user_group_relation').on('delete', async value => {
+app.service('user_group_relation').on('delete', async ([value, meta]) => {
    console.log('USER_GROUP_RELATION EVENT delete', value)
    await db.values.delete(value.uid)
+   await db.metadata.put(meta)
 })
 
 
@@ -49,7 +53,7 @@ export async function findMany$(where) {
    const isNew = await addSynchroWhere(where, db.whereList)
    // run synchronization if connected and if `where` is new
    if (isNew && isConnected.value) {
-      synchronize(app, 'user_group_relation', db.values, where, disconnectedDate.value)
+      synchronize(app, 'user_group_relation', db.values, db.metadata, where, disconnectedDate.value)
    }
    // return observable for `where` values
    const predicate = wherePredicate(where)
@@ -68,11 +72,13 @@ export async function updateUserGroups(user_uid, newGroupUIDs) {
    const now = new Date()
    for (const group_uid of toAdd) {
       const uid = uid16(16)
-      await db.values.add({ uid, user_uid, group_uid, created_at: now })
+      await db.values.add({ uid, user_uid, group_uid })
+      await db.metadata.add({ uid, created_at: now })
    }
    for (const group_uid of toRemove) {
       const uid = currentRelations.find(relation => relation.group_uid === group_uid).uid
-      await db.values.update(uid, { deleted_at: now })
+      await db.values.delete(uid)
+      await db.metadata.update(uid, { deleted_at: now })
    }
    
    // execute on server, asynchronously, if connection is active
@@ -80,12 +86,18 @@ export async function updateUserGroups(user_uid, newGroupUIDs) {
       const relation = await db.values.filter(value => value.user_uid === user_uid && value.group_uid === group_uid).first()
       if (isConnected.value) {
          app.service('user_group_relation').create(relation.uid, { user_uid, group_uid })
+         .catch(err => {
+            console.log("*** err sync user_group_relation updateUserGroups", err)
+         })
       }
    }
    for (const group_uid of toRemove) {
       const relation = await db.values.filter(value => value.user_uid === user_uid && value.group_uid === group_uid).first()
       if (isConnected.value) {
          app.service('user_group_relation').delete(relation.uid)
+         .catch(err => {
+            console.log("*** err sync user_group_relation updateUserGroups", err)
+         })
       }
    }
 }
@@ -94,16 +106,18 @@ export async function remove(uid) {
    // stop synchronizing on this perimeter
    removeSynchroWhere({ uid }, db.whereList)
    const deleted_at = new Date()
-   // // optimistic update
-   // await db.values.update(uid, { deleted_at })
    // optimistic delete
    await db.values.delete(uid)
+   await db.metadata.update(uid, { deleted_at })
    // execute on server, asynchronously, if connection is active
    if (isConnected.value) {
       app.service('user_group_relation').delete(uid)
+      .catch(err => {
+         console.log("*** err sync user_group_relation remove", err)
+      })
    }
 }
 
 export async function synchronizeAll() {
-   await synchronizeModelWhereList(app, 'user_group_relation', db.values, disconnectedDate.value, db.whereList)
+   await synchronizeModelWhereList(app, 'user_group_relation', db.values, db.metadata, disconnectedDate.value, db.whereList)
 }

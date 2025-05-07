@@ -4,14 +4,14 @@ import { sortedJson, Mutex } from "/src/lib/utilities"
 const mutex = new Mutex()
 
 // ex: where = { uid: 'azer' }
-export async function synchronize(app, modelName, clientCache, where, cutoffDate) {
+export async function synchronize(app, modelName, clientValues, clientMetaData, where, cutoffDate) {
    await mutex.acquire()
    try {
       const requestPredicate = wherePredicate(where)
 
       // collect meta-data of local values
-      const allValues = await clientCache.toArray()
-      const clientMetadataDict = allValues.reduce((accu, elt) => {
+      const clientMetaDataList = await clientMetaData.toArray()
+      const clientMetadataDict = clientMetaDataList.reduce((accu, elt) => {
          if (requestPredicate(elt)) accu[elt.uid] = {
             uid: elt.uid,
             created_at: elt.created_at,
@@ -27,36 +27,31 @@ export async function synchronize(app, modelName, clientCache, where, cutoffDate
 
       // 1- add missing elements in cache
       for (const elt of toAdd) {
-         await clientCache.add(elt)
+         await clientValues.add(elt)
       }
       // 2- delete elements from cache
       for (const uid of toDelete) {
-         await clientCache.delete(uid)
+         await clientValues.delete(uid)
       }
       // 3- update elements of cache
       for (const elt of toUpdate) {
          // get full value of element to update
-         const fullElt = await app.service(modelName).findUnique({ where: { uid: elt.uid }})
-         await clientCache.update(elt.uid, fullElt)
+         const fullValue = await app.service(modelName).findUnique({ where: { uid: elt.uid }})
+         delete fullValue.uid
+         await clientValues.update(elt.uid, fullValue)
       }
 
       // 4- create elements of `addDatabase` with full data from cache
       for (const elt of addDatabase) {
-         const fullValue = await clientCache.get(elt.uid)
+         const fullValue = await clientValues.get(elt.uid)
          delete fullValue.uid
-         delete fullValue.created_at
-         delete fullValue.updated_at
-         delete fullValue.deleted_at
          await app.service(modelName).create(elt.uid, fullValue)
       }
 
       // 5- update elements of `updateDatabase` with full data from cache
       for (const elt of updateDatabase) {
-         const fullValue = await clientCache.get(elt.uid)
+         const fullValue = await clientValues.get(elt.uid)
          delete fullValue.uid
-         delete fullValue.created_at
-         delete fullValue.updated_at
-         delete fullValue.deleted_at
          await app.service(modelName).update(elt.uid, fullValue)
       }
    } catch(err) {
@@ -138,9 +133,9 @@ export async function removeSynchroWhere(where, whereDb) {
    }
 }
 
-export async function synchronizeModelWhereList(app, modelName, clientCache, cutoffDate, whereDb) {
+export async function synchronizeModelWhereList(app, modelName, clientValues, clientMetaData, cutoffDate, whereDb) {
    const whereList = await getWhereList(whereDb)
    for (const where of whereList) {
-      await synchronize(app, modelName, clientCache, where, cutoffDate)
+      await synchronize(app, modelName, clientValues, clientMetaData, where, cutoffDate)
    }
 }
