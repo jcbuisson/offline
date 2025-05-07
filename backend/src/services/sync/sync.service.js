@@ -10,6 +10,7 @@ export default function (app) {
       go: async (modelName, where, cutoffDate, clientMetadataDict) => {
          await mutex.acquire()
          try {
+            console.log()
             console.log('>>>>> SYNC', modelName, where, cutoffDate)
             const databaseService = app.service(modelName)
             const prisma = app.get('prisma')
