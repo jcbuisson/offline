@@ -28,7 +28,7 @@
 
 
 <script setup>
-import { ref, onMounted, onUnmounted } from 'vue'
+import { ref, onMounted, onUnmounted, watch } from 'vue'
 import { useRoute} from 'vue-router'
 
 import { findMany$ as findManyGroup$, remove as removeGroup } from '/src/use/useGroup'
@@ -76,4 +76,14 @@ async function deleteGroup(group) {
       router.push(`/groups`)
    }
 }
+
+const route = useRoute()
+const routeRegex = /\/groups\/([a-z0-9]+)/
+
+watch(() => [route.path, groupList.value], async () => {
+   const match = route.path.match(routeRegex)
+   if (!match) return
+   const group_uid = match[1]
+   selectedGroup.value = groupList.value.find(group => group.uid === group_uid)
+}, { immediate: true })
 </script>
