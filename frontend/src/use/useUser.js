@@ -89,6 +89,8 @@ export async function create(data) {
 }
 
 export const update = async (uid, data) => {
+   const previousValue = { ...(await db.values.get(uid)) }
+   const previousMetadata = { ...(await db.metadata.get(uid)) }
    // optimistic update of cache
    const now = new Date()
    await db.values.update(uid, data)
@@ -96,8 +98,12 @@ export const update = async (uid, data) => {
    // execute on server, asynchronously, if connection is active
    if (isConnected.value) {
       app.service('user').update(uid, data)
-      .catch(err => {
+      .catch(async err => {
          console.log("*** err sync user update", err)
+         delete previousValue.uid
+         await db.values.update(uid, previousValue)
+         delete previousMetadata.uid
+         await db.metadata.update(uid, previousMetadata)
       })
    }
    return await db.values.get(uid)
