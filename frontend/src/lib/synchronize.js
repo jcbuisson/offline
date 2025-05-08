@@ -13,7 +13,7 @@ export async function synchronize(app, modelName, idbValues, idbMetadata, where,
       const valueList = await idbValues.filter(requestPredicate).toArray()
       const clientMetadataDict = {}
       for (const value of valueList) {
-         const metadata = await idbMetadata.get(value.uid)
+         const metadata = (await idbMetadata.get(value.uid))
          if (metadata) {
             clientMetadataDict[value.uid] = metadata
          } else {
