@@ -10,22 +10,20 @@ export async function synchronize(app, modelName, idbValues, idbMetadata, where,
       const requestPredicate = wherePredicate(where)
 
       // collect meta-data of local values
-      const metadataList = await idbMetadata.toArray()
-      // const clientMetadataDict = metadataList.reduce((accu, elt) => {
-      //    if (requestPredicate(elt)) accu[elt.uid] = {
-      //       uid: elt.uid,
-      //       created_at: elt.created_at,
-      //       updated_at: elt.updated_at,
-      //       deleted_at: elt.deleted_at,
-      //    }
-      //    return accu
-      // }, {}
+      // const metadataList = await idbMetadata.toArray()
+      // const clientMetadataDict = {}
+      // for (const metadata of metadataList) {
+      //    const value = await idbValues.get(metadata.uid)
+      //    if (requestPredicate(value)) clientMetadataDict[metadata.uid] = metadata
+      // }
 
+      const valueList = await idbValues.filter(requestPredicate).toArray()
       const clientMetadataDict = {}
-      for (const metadata of metadataList) {
-         const value = await idbValues.get(metadata.uid)
-         if (requestPredicate(value)) clientMetadataDict[metadata.uid] = metadata
+      for (const value of valueList) {
+         const metadata = await idbMetadata.get(value.uid)
+         clientMetadataDict[metadata.uid] = metadata
       }
+
       
       // call sync service on `where` perimeter
       const { toAdd, toUpdate, toDelete, addDatabase, updateDatabase } = await app.service('sync').go(modelName, where, cutoffDate, clientMetadataDict)

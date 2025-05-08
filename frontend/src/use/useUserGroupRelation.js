@@ -62,48 +62,98 @@ export async function findMany$(where) {
 }
 
 export async function updateUserGroups(user_uid, newGroupUIDs) {
-   // enlarge perimeter
-   await addSynchroWhere({ user_uid }, db.whereList)
+   try {
+      // enlarge perimeter
+      await addSynchroWhere({ user_uid }, db.whereList)
+      const now = new Date()
 
-   // optimistic update of cache
-   // const currentRelations = await db.values.filter(value => !value.deleted_at && value.user_uid === user_uid).toArray()
-
-   const relationUidList = await db.metadata.filter(metadata => metadata.user_uid === user_uid && !metadata.deleted_at).toArray()
-   const currentRelations = await db.values.filter(value => relationUidList.includes(value.uid)).toArray()
-
-   const currentGroupUIDs = currentRelations.map(relation => relation.group_uid)
-   const toAdd = newGroupUIDs.filter(group_uid => !currentGroupUIDs.includes(group_uid))
-   const toRemove = currentGroupUIDs.filter(group_uid => !newGroupUIDs.includes(group_uid))
-   const now = new Date()
-   for (const group_uid of toAdd) {
-      const uid = uid16(16)
-      await db.values.add({ uid, user_uid, group_uid })
-      await db.metadata.add({ uid, created_at: now })
-   }
-   for (const group_uid of toRemove) {
-      const uid = currentRelations.find(relation => relation.group_uid === group_uid).uid
-      await db.values.delete(uid)
-      await db.metadata.update(uid, { deleted_at: now })
-   }
-   
-   // execute on server, asynchronously, if connection is active
-   for (const group_uid of toAdd) {
-      const relation = await db.values.filter(value => value.user_uid === user_uid && value.group_uid === group_uid).first()
-      if (isConnected.value) {
-         app.service('user_group_relation').create(relation.uid, { user_uid, group_uid })
-         .catch(err => {
-            console.log("*** err sync user_group_relation updateUserGroups", err)
-         })
+      const allUserRelations = await db.values.filter(value => value.user_uid === user_uid).toArray()
+      // build list of active user-grooup relations with `user_uid`
+      const currentUserRelations = []
+      for (const relation of allUserRelations) {
+         const metadata = await db.metadata.get(relation.uid)
+         if (metadata.deleted_at) continue
+         currentUserRelations.push(relation)
       }
-   }
-   for (const group_uid of toRemove) {
-      const relation = await db.values.filter(value => value.user_uid === user_uid && value.group_uid === group_uid).first()
-      if (isConnected.value) {
-         app.service('user_group_relation').delete(relation.uid)
-         .catch(err => {
-            console.log("*** err sync user_group_relation updateUserGroups", err)
-         })
+
+      // add new relations
+      for (const group_uid of newGroupUIDs) {
+         if (!currentUserRelations.some(relation => relation.group_uid === group_uid)) {
+            // add in client cache
+            const uid = uid16(16)
+            await db.values.add({ uid, user_uid, group_uid })
+            await db.metadata.add({ uid, created_at: now })
+            // add in database, asynchronously, if connection is active
+            if (isConnected.value) {
+               app.service('user_group_relation').create(uid, { user_uid, group_uid })
+               .catch(err => {
+                  console.log("*** err sync user_group_relation updateUserGroups", err)
+               })
+            }
+         }
       }
+
+      // remove existing relations in client cache
+      for (const relation of currentUserRelations) {
+         if (!newGroupUIDs.includes(relation.group_uid)) {
+            // remove from client cache
+            await db.values.delete(relation.uid)
+            await db.metadata.update(relation.uid, { deleted_at: now })
+            // remove from database, asynchronously, if connection is active
+            if (isConnected.value) {
+               app.service('user_group_relation').delete(relation.uid)
+               .catch(err => {
+                  console.log("*** err sync user_group_relation updateUserGroups", err)
+               })
+            }
+         }
+      }
+
+      // const currentRelations = await db.values.filter(value => value.user_uid === user_uid).toArray()
+      // console.log('currentRelations', currentRelations)
+      // const currentGroupUIDs = []
+      // for (const relation of currentRelations) {
+      //    const metadata = await db.metadata.get(relation.uid)
+      //    if (metadata.deleted_at) continue
+      //    currentGroupUIDs.push(relation.group_uid)
+      // }
+      // console.log('currentGroupUIDs', currentGroupUIDs)
+
+      // const toAdd = newGroupUIDs.filter(group_uid => !currentGroupUIDs.includes(group_uid))
+      // const toRemove = currentGroupUIDs.filter(group_uid => !newGroupUIDs.includes(group_uid))
+      // const now = new Date()
+      // for (const group_uid of toAdd) {
+      //    const uid = uid16(16)
+      //    await db.values.add({ uid, user_uid, group_uid })
+      //    await db.metadata.add({ uid, created_at: now })
+      // }
+      // for (const group_uid of toRemove) {
+      //    const uid = currentRelations.find(relation => relation.group_uid === group_uid).uid
+      //    await db.values.delete(uid)
+      //    await db.metadata.update(uid, { deleted_at: now })
+      // }
+      
+      // // execute on server, asynchronously, if connection is active
+      // for (const group_uid of toAdd) {
+      //    const relation = await db.values.filter(value => value.user_uid === user_uid && value.group_uid === group_uid).first()
+      //    if (isConnected.value) {
+      //       app.service('user_group_relation').create(relation.uid, { user_uid, group_uid })
+      //       .catch(err => {
+      //          console.log("*** err sync user_group_relation updateUserGroups", err)
+      //       })
+      //    }
+      // }
+      // for (const group_uid of toRemove) {
+      //    const relation = await db.values.filter(value => value.user_uid === user_uid && value.group_uid === group_uid).first()
+      //    if (isConnected.value) {
+      //       app.service('user_group_relation').delete(relation.uid)
+      //       .catch(err => {
+      //          console.log("*** err sync user_group_relation updateUserGroups", err)
+      //       })
+      //    }
+      // }
+   } catch(err) {
+      console.log('*** err updateUserGroups', err)
    }
 }
 
