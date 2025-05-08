@@ -10,18 +10,16 @@ export async function synchronize(app, modelName, idbValues, idbMetadata, where,
       const requestPredicate = wherePredicate(where)
 
       // collect meta-data of local values
-      // const metadataList = await idbMetadata.toArray()
-      // const clientMetadataDict = {}
-      // for (const metadata of metadataList) {
-      //    const value = await idbValues.get(metadata.uid)
-      //    if (requestPredicate(value)) clientMetadataDict[metadata.uid] = metadata
-      // }
-
       const valueList = await idbValues.filter(requestPredicate).toArray()
       const clientMetadataDict = {}
       for (const value of valueList) {
          const metadata = await idbMetadata.get(value.uid)
-         clientMetadataDict[metadata.uid] = metadata
+         if (metadata) {
+            clientMetadataDict[value.uid] = metadata
+         } else {
+            // should not happen
+            clientMetadataDict[value.uid] = {}
+         }
       }
 
       
