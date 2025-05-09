@@ -11,7 +11,7 @@ export const db = new Dexie(import.meta.env.VITE_APP_GROUP_IDB)
 
 db.version(1).stores({
    whereList: "sortedjson, where",
-   values: "uid, name",
+   values: "uid, __deleted__, name",
    metadata: "uid, created_at, updated_at, deleted_at",
 })
 
@@ -49,7 +49,7 @@ export async function get(uid) {
 
 export async function getMany(where) {
    const predicate = wherePredicate(where)
-   return await db.values.filter(value => !value.deleted_at && predicate(value)).toArray()
+   return await db.values.filter(value => !value.__deleted__ && predicate(value)).toArray()
 }
 
 /////////////          CRUD METHODS WITH SYNC          /////////////
@@ -63,7 +63,7 @@ export async function findMany$(where) {
    }
    // return observable for `where` values
    const predicate = wherePredicate(where)
-   return liveQuery(() => db.values.filter(value => !value.deleted_at && predicate(value)).toArray())
+   return liveQuery(() => db.values.filter(value => !value.__deleted__ && predicate(value)).toArray())
 }
 
 export async function create(data) {
@@ -109,7 +109,8 @@ export const remove = async (uid) => {
    await Promise.all(userGroupRelations.map(relation => removeGroupRelation(relation.uid)))
 
    // optimistic delete in cache
-   await db.values.delete(uid)
+   // await db.values.delete(uid)
+   await db.values.update(uid, { __deleted__: true })
    await db.metadata.update(uid, { deleted_at })
    // and in database, if connected
    if (isConnected.value) {

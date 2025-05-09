@@ -37,7 +37,8 @@
 import { ref, onMounted, onUnmounted, watch } from 'vue'
 import { useRoute} from 'vue-router'
 
-import { findMany$ as findManyUser$, getFullname, remove as removeUser, selectedUser } from '/src/use/useUser'
+import { findMany$ as findManyUser$, getFullname, remove as removeUser } from '/src/use/useUser'
+import { selectedUser } from '/src/use/useSelectedUser'
 import { findMany$ as findManyGroup$, get as getGroup } from '/src/use/useGroup'
 import { findMany$ as findManyUserGroupRelation$ } from '/src/use/useUserGroupRelation'
 import router from '/src/router'

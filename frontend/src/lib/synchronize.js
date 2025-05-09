@@ -13,7 +13,7 @@ export async function synchronize(app, modelName, idbValues, idbMetadata, where,
       const valueList = await idbValues.filter(requestPredicate).toArray()
       const clientMetadataDict = {}
       for (const value of valueList) {
-         const metadata = (await idbMetadata.get(value.uid))
+         const metadata = await idbMetadata.get(value.uid)
          if (metadata) {
             clientMetadataDict[value.uid] = metadata
          } else {
@@ -21,11 +21,10 @@ export async function synchronize(app, modelName, idbValues, idbMetadata, where,
             clientMetadataDict[value.uid] = {}
          }
       }
-
       
       // call sync service on `where` perimeter
       const { toAdd, toUpdate, toDelete, addDatabase, updateDatabase } = await app.service('sync').go(modelName, where, cutoffDate, clientMetadataDict)
-      console.log('synchronize', toAdd, toUpdate, toDelete, addDatabase, updateDatabase)
+      console.log('synchronize', modelName, where, toAdd, toUpdate, toDelete, addDatabase, updateDatabase)
 
       const now = Date()
 
@@ -67,7 +66,7 @@ export async function synchronize(app, modelName, idbValues, idbMetadata, where,
    } catch(err) {
       console.log('err synchronize', modelName, where, err)
    } finally {
-      await mutex.release()
+      mutex.release()
    }
 }
 
@@ -126,7 +125,7 @@ export async function addSynchroWhere(where, whereDb) {
    } catch(err) {
       console.log('err addSynchroWhere', err)
    } finally {
-      await mutex.release()
+      mutex.release()
    }
    return modified
 }
@@ -139,7 +138,7 @@ export async function removeSynchroWhere(where, whereDb) {
    } catch(err) {
       console.log('err removeSynchroWhere', err)
    } finally {
-      await mutex.release()
+      mutex.release()
    }
 }
 

@@ -117,7 +117,7 @@ export default function (app) {
          } catch(err) {
             console.log('*** err sync', err)
          } finally {
-            await mutex.release()
+            mutex.release()
          }
       },
    })
