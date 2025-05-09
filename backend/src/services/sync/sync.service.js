@@ -81,7 +81,7 @@ export default function (app) {
                   deleteDatabase.push(uid)
                   deleteClient.push(uid)
                } else {
-                  const metaData = await prisma.meta_data.findUnique({ where: { uid }})
+                  const metaData = await prisma.metadata.findUnique({ where: { uid }})
                   const dateDifference = new Date(clientMetaData.updated_at || clientMetaData.created_at) - (metaData.updated_at || metaData.created_at)
                   console.log('dateDifference', dateDifference)
                   if (dateDifference > 0) {

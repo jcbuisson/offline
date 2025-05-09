@@ -97,7 +97,7 @@ export const update = async (uid, data) => {
    await db.metadata.update(uid, { updated_at: now })
    // execute on server, asynchronously, if connection is active
    if (isConnected.value) {
-      app.service('user').update(uid, data)
+      app.service('user').updateWithMeta(uid, data, now)
       .catch(async err => {
          console.log("*** err sync user update", err)
          delete previousValue.uid

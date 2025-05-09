@@ -10,7 +10,7 @@ datasource db {
 
 //////////////        META-DATA FOR ALL ELEMENTS OF ALL BUSINESS MODELS        //////////////
 
-model meta_data {
+model metadata {
    uid                     String     @unique  // `uid` is unique across models
    created_at              DateTime?
    updated_at              DateTime?

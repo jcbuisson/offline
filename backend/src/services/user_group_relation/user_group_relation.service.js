@@ -12,7 +12,7 @@ export default function (app) {
       createWithMeta: async (uid, data, created_at) => {
          const [value, meta] = await prisma.$transaction([
             prisma.user_group_relation.create({ data: { uid, ...data } }),
-            prisma.meta_data.create({ data: { uid, created_at } })
+            prisma.metadata.create({ data: { uid, created_at } })
          ])
          return [value, meta]
       },
@@ -20,7 +20,7 @@ export default function (app) {
       update: async (uid, data) => {
          const [value, meta] = await prisma.$transaction([
             prisma.user_group_relation.update({ where: { uid }, data }),
-            prisma.meta_data.update({ where: { uid }, data: { updated_at: new Date() } })
+            prisma.metadata.update({ where: { uid }, data: { updated_at: new Date() } })
          ])
          return [value, meta]
       },
@@ -28,7 +28,7 @@ export default function (app) {
       delete: async (uid) => {
          const [value, meta] = await prisma.$transaction([
             prisma.user_group_relation.delete({ where: { uid } }),
-            prisma.meta_data.update({ where: { uid }, data: { deleted_at: new Date() } })
+            prisma.metadata.update({ where: { uid }, data: { deleted_at: new Date() } })
          ])
          return [value, meta]
       },

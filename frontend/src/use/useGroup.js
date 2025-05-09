@@ -91,7 +91,7 @@ export const update = async (uid, data) => {
    await db.metadata.update(uid, { updated_at: now })
    // execute on server, asynchronously, if connection is active
    if (isConnected.value) {
-      app.service('group').update(uid, data)
+      app.service('group').updateWithMeta(uid, data, now)
       .catch(err => {
          console.log("*** err sync group update", err)
       })

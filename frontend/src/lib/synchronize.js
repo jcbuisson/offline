@@ -45,7 +45,7 @@ export async function synchronize(app, modelName, idbValues, idbMetadata, where,
       // 3- update elements of cache
       for (const elt of toUpdate) {
          // get full value of element to update
-         const [value, meta] = await app.service(modelName).findWithMeta(elt.uid)
+         const [value, meta] = await app.service(modelName).findByIdWithMeta(elt.uid)
          delete value.uid
          await idbValues.update(value.uid, value)
          await idbMetadata.update(value.uid, { updated_at: meta.updated_at })
@@ -62,8 +62,9 @@ export async function synchronize(app, modelName, idbValues, idbMetadata, where,
       // 5- update elements of `updateDatabase` with full data from cache
       for (const elt of updateDatabase) {
          const fullValue = await idbValues.get(elt.uid)
+         const meta = await idbMetadata.get(elt.uid)
          delete fullValue.uid
-         await app.service(modelName).update(elt.uid, fullValue)
+         await app.service(modelName).updateWithMeta(elt.uid, fullValue, meta.updated_at)
       }
    } catch(err) {
       console.log('err synchronize', modelName, where, err)

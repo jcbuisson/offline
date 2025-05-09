@@ -6,21 +6,30 @@ export default function (app) {
    app.createService('user', {
 
       findUnique: prisma.user.findUnique,
-
       findMany: prisma.user.findMany,
 
-      findWithMeta: async (uid) => {
+      findByIdWithMeta: async (uid) => {
          const [value, meta] = await prisma.$transaction([
             prisma.user.findUnique({ where: { uid } }),
-            prisma.meta_data.get(uid)
+            prisma.metadata.findUnique({ where: { uid } }),
          ])
          return [value, meta]
+      },
+
+      findManyWithMeta: async (where) => {
+         const valueList = await prisma.user.findMany({ where })
+         const metaList = []
+         for (const value of valueList) {
+            const meta = prisma.metadata.findUnique({ where: { uid: value.uid } })
+            metaList.push(meta)
+         }
+         return valueList.map((value, index) => [ value, metaList[index] ])
       },
       
       createWithMeta: async (uid, data, created_at) => {
          const [value, meta] = await prisma.$transaction([
             prisma.user.create({ data: { uid, ...data } }),
-            prisma.meta_data.create({ data: { uid, created_at } })
+            prisma.metadata.create({ data: { uid, created_at } })
          ])
          return [value, meta]
       },
@@ -28,7 +37,7 @@ export default function (app) {
       update: async (uid, data) => {
          const [value, meta] = await prisma.$transaction([
             prisma.user.update({ where: { uid }, data }),
-            prisma.meta_data.update({ where: { uid }, data: { updated_at: new Date() } })
+            prisma.metadata.update({ where: { uid }, data: { updated_at: new Date() } })
          ])
          return [value, meta]
       },
@@ -36,7 +45,7 @@ export default function (app) {
       delete: async (uid) => {
          const [value, meta] = await prisma.$transaction([
             prisma.user.delete({ where: { uid } }),
-            prisma.meta_data.update({ where: { uid }, data: { deleted_at: new Date() } })
+            prisma.metadata.update({ where: { uid }, data: { deleted_at: new Date() } })
          ])
          return [value, meta]
       },
