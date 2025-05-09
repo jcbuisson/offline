@@ -21,20 +21,20 @@ export const reset = async () => {
 
 /////////////          PUB / SUB          /////////////
 
-app.service('user_group_relation').on('create', async ([value, meta]) => {
-   console.log('USER_GROUP_RELATION EVENT created', value)
+app.service('user_group_relation').on('createWithMeta', async ([value, meta]) => {
+   console.log('USER_GROUP_RELATION EVENT createWithMeta', value)
    await db.values.put(value)
    await db.metadata.put(meta)
 })
 
-app.service('user_group_relation').on('update', async ([value, meta]) => {
-   console.log('USER_GROUP_RELATION EVENT update', value)
+app.service('user_group_relation').on('updateWithMeta', async ([value, meta]) => {
+   console.log('USER_GROUP_RELATION EVENT updateWithMeta', value)
    await db.values.put(value)
    await db.metadata.put(meta)
 })
 
-app.service('user_group_relation').on('delete', async ([value, meta]) => {
-   console.log('USER_GROUP_RELATION EVENT delete', value)
+app.service('user_group_relation').on('deleteWithMeta', async ([value, meta]) => {
+   console.log('USER_GROUP_RELATION EVENT deleteWithMeta', value)
    await db.values.delete(value.uid)
    await db.metadata.put(meta)
 })

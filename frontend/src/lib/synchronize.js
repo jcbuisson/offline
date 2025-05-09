@@ -30,17 +30,14 @@ export async function synchronize(app, modelName, idbValues, idbMetadata, where,
       const now = Date()
 
       // 1- add missing elements in cache
-      for (const elt of toAdd) {
-         await idbValues.add(elt)
-         await idbMetadata.add({
-            uid: elt.uid,
-            created_at: now,
-         })
+      for (const [value, metaData] of toAdd) {
+         await idbValues.add(value)
+         await idbMetadata.add(metaData)
       }
       // 2- delete elements from cache
-      for (const uid of toDelete) {
+      for (const [uid, deleted_at] of toDelete) {
          await idbValues.delete(uid)
-         await idbMetadata.update(uid, { deleted_at: now })
+         await idbMetadata.update(uid, { deleted_at })
       }
       // 3- update elements of cache
       for (const elt of toUpdate) {

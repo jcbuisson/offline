@@ -24,20 +24,20 @@ export const reset = async () => {
 
 /////////////          PUB / SUB          /////////////
 
-app.service('user').on('create', async ([value, meta]) => {
-   console.log('USER EVENT created', value)
+app.service('user').on('createWithMeta', async ([value, meta]) => {
+   console.log('USER EVENT createWithMeta', value)
    await db.values.put(value)
    await db.metadata.put(meta)
 })
 
-app.service('user').on('update', async ([value, meta]) => {
-   console.log('USER EVENT update', value)
+app.service('user').on('updateWithMeta', async ([value, meta]) => {
+   console.log('USER EVENT updateWithMeta', value)
    await db.values.put(value)
    await db.metadata.put(meta)
 })
 
-app.service('user').on('delete', async ([value, meta]) => {
-   console.log('USER EVENT delete', value)
+app.service('user').on('deleteWithMeta', async ([value, meta]) => {
+   console.log('USER EVENT deleteWithMeta', value)
    await db.values.delete(value.uid)
    await db.metadata.put(meta)
 })
@@ -124,7 +124,7 @@ export const remove = async (uid) => {
    await db.metadata.update(uid, { deleted_at })
    // and in database, if connected
    if (isConnected.value) {
-      app.service('user').delete(uid)
+      app.service('user').deleteWithMeta(uid, deleted_at)
       .catch(err => {
          console.log("*** err sync user remove", err)
       })
