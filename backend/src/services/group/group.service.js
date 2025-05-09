@@ -9,10 +9,10 @@ export default function (app) {
 
       findMany: prisma.group.findMany,
       
-      create: async (uid, data) => {
+      createWithMeta: async (uid, data, created_at) => {
          const [value, meta] = await prisma.$transaction([
             prisma.group.create({ data: { uid, ...data } }),
-            prisma.meta_data.create({ data: { uid, created_at: new Date() } })
+            prisma.meta_data.create({ data: { uid, created_at } })
          ])
          return [value, meta]
       },

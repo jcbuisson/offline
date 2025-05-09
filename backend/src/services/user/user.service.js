@@ -8,11 +8,19 @@ export default function (app) {
       findUnique: prisma.user.findUnique,
 
       findMany: prisma.user.findMany,
+
+      findWithMeta: async (uid) => {
+         const [value, meta] = await prisma.$transaction([
+            prisma.user.findUnique({ where: { uid } }),
+            prisma.meta_data.get(uid)
+         ])
+         return [value, meta]
+      },
       
-      create: async (uid, data) => {
+      createWithMeta: async (uid, data, created_at) => {
          const [value, meta] = await prisma.$transaction([
             prisma.user.create({ data: { uid, ...data } }),
-            prisma.meta_data.create({ data: { uid, created_at: new Date() } })
+            prisma.meta_data.create({ data: { uid, created_at } })
          ])
          return [value, meta]
       },

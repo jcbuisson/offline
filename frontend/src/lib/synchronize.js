@@ -10,6 +10,7 @@ export async function synchronize(app, modelName, idbValues, idbMetadata, where,
       const requestPredicate = wherePredicate(where)
 
       // collect meta-data of local values
+      // NOTE: __delete__ on values allows to collect metadata from cache-deleted values
       const valueList = await idbValues.filter(requestPredicate).toArray()
       const clientMetadataDict = {}
       for (const value of valueList) {
@@ -44,17 +45,18 @@ export async function synchronize(app, modelName, idbValues, idbMetadata, where,
       // 3- update elements of cache
       for (const elt of toUpdate) {
          // get full value of element to update
-         const fullValue = await app.service(modelName).findUnique({ where: { uid: elt.uid }})
-         delete fullValue.uid
-         await idbValues.update(elt.uid, fullValue)
-         await idbMetadata.update(uid, { updated_at: now })
+         const [value, meta] = await app.service(modelName).findWithMeta(elt.uid)
+         delete value.uid
+         await idbValues.update(value.uid, value)
+         await idbMetadata.update(value.uid, { updated_at: meta.updated_at })
       }
 
       // 4- create elements of `addDatabase` with full data from cache
       for (const elt of addDatabase) {
          const fullValue = await idbValues.get(elt.uid)
+         const meta = await idbMetadata.get(elt.uid)
          delete fullValue.uid
-         await app.service(modelName).create(elt.uid, fullValue)
+         await app.service(modelName).createWithMeta(elt.uid, fullValue, meta.created_at)
       }
 
       // 5- update elements of `updateDatabase` with full data from cache

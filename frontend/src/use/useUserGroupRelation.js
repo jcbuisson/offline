@@ -85,7 +85,7 @@ export async function updateUserGroups(user_uid, newGroupUIDs) {
             await db.metadata.add({ uid, created_at: now })
             // add in database, asynchronously, if connection is active
             if (isConnected.value) {
-               app.service('user_group_relation').create(uid, { user_uid, group_uid })
+               app.service('user_group_relation').createWithMeta(uid, { user_uid, group_uid }, now)
                .catch(err => {
                   console.log("*** err sync user_group_relation updateUserGroups", err)
                })

@@ -80,7 +80,7 @@ export async function create(data) {
    await db.metadata.add({ uid, created_at: now })
    // execute on server, asynchronously, if connection is active
    if (isConnected.value) {
-      app.service('user').create(uid, data)
+      app.service('user').createWithMeta(uid, data, now)
       .catch(err => {
          console.log("*** err sync user create", err)
       })
@@ -145,12 +145,6 @@ export async function synchronizeAll() {
 }
 
 /////////////          UTILITIES          /////////////
-
-// special case of signin: create/update record of user
-export const put = async (value) => {
-   // put: create (if new) or update
-   return await db.values.put(value)
-}
 
 export function getFullname(user) {
    if (!user) return ''

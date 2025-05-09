@@ -76,7 +76,7 @@ export async function create(data) {
    await db.metadata.add({ uid, created_at: now })
    // execute on server, asynchronously, if connection is active
    if (isConnected.value) {
-      app.service('group').create(uid, data)
+      app.service('group').createWithMeta(uid, data, now)
       .catch(err => {
          console.log("*** err sync group create", err)
       })
