@@ -57,7 +57,7 @@ export async function synchronize(app, modelName, idbValues, idbMetadata, where,
          try {
             await app.service(modelName).createWithMeta(elt.uid, fullValue, meta.created_at)
          } catch(err) {
-            console.log("*** err sync user updateDatabase", err)
+            console.log("*** err sync user addDatabase", err, elt.uid, fullValue, meta.created_at)
             alert("Erreur durant la création")
             // rollback
             await idbValues.delete(elt.uid)
@@ -150,7 +150,7 @@ export async function addSynchroWhere(where, whereDb) {
    return modified
 }
 
-export async function removeSynchroWhere(where, whereDb) {
+export async function removeSynchroWhereDB(where, whereDb) {
    await mutex.acquire()
    try {
       const sortedjson = sortedJson(where)

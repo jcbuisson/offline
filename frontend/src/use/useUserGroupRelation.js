@@ -2,7 +2,7 @@ import Dexie from "dexie"
 import { liveQuery } from "dexie"
 import { uid as uid16 } from 'uid'
 
-import { wherePredicate, synchronize, addSynchroWhere, removeSynchroWhere, synchronizeModelWhereList } from '/src/lib/synchronize.js'
+import { wherePredicate, synchronize, addSynchroWhere, removeSynchroWhereDB, synchronizeModelWhereList } from '/src/lib/synchronize.js'
 import { app, isConnected, disconnectedDate } from '/src/client-app.js'
 
 export const db = new Dexie(import.meta.env.VITE_APP_USER_GROUP_RELATION_IDB)
@@ -139,6 +139,10 @@ export async function remove(uid) {
          await db.metadata.update(uid, { deleted_at: null })
       })
    }
+}
+
+export function removeSynchroWhere(where) {
+   return removeSynchroWhereDB(where, db)
 }
 
 export async function synchronizeAll() {

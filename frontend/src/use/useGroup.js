@@ -1,10 +1,9 @@
 import Dexie from "dexie"
 import { liveQuery } from "dexie"
 import { uid as uid16 } from 'uid'
-import { firstValueFrom } from 'rxjs'
 
-import { getMany as getManyUserGroupRelation, remove as removeGroupRelation } from '/src/use/useUserGroupRelation'
-import { wherePredicate, synchronize, addSynchroWhere, removeSynchroWhere, synchronizeModelWhereList } from '/src/lib/synchronize.js'
+import { getMany as getManyUserGroupRelation, remove as removeGroupRelation, removeSynchroWhere as removeSynchroUserGroupRelationWhere } from '/src/use/useUserGroupRelation'
+import { wherePredicate, synchronize, addSynchroWhere, removeSynchroWhereDB, synchronizeModelWhereList } from '/src/lib/synchronize.js'
 import { app, isConnected, disconnectedDate } from '/src/client-app.js'
 
 export const db = new Dexie(import.meta.env.VITE_APP_GROUP_IDB)
@@ -113,6 +112,9 @@ export const update = async (uid, data) => {
 export const remove = async (uid) => {
    // stop synchronizing on this perimeter
    removeSynchroWhere({ uid }, db.whereList)
+   // .. and on this perimeter for user_group_relation
+   await removeSynchroUserGroupRelationWhere({ group_uid: uid })
+
    const deleted_at = new Date()
 
    // remove relations to users in cache, and in database if connected
@@ -136,6 +138,10 @@ export const remove = async (uid) => {
    }
 }
 
+
+export function removeSynchroWhere(where) {
+   return removeSynchroWhereDB(where, db)
+}
 
 export async function synchronizeWhere(where) {
    const isNew = await addSynchroWhere(where, db.whereList)
