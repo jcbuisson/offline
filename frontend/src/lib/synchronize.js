@@ -27,8 +27,6 @@ export async function synchronize(app, modelName, idbValues, idbMetadata, where,
       const { toAdd, toUpdate, toDelete, addDatabase, updateDatabase } = await app.service('sync').go(modelName, where, cutoffDate, clientMetadataDict)
       console.log('synchronize', modelName, where, toAdd, toUpdate, toDelete, addDatabase, updateDatabase)
 
-      const now = Date()
-
       // 1- add missing elements in cache
       for (const [value, metaData] of toAdd) {
          await idbValues.add(value)
@@ -42,10 +40,11 @@ export async function synchronize(app, modelName, idbValues, idbMetadata, where,
       // 3- update elements of cache
       for (const elt of toUpdate) {
          // get full value of element to update
-         const [value, meta] = await app.service(modelName).findByIdWithMeta(elt.uid)
+         const value = await app.service(modelName).findUnique({ where:{ uid: elt.uid }})
          delete value.uid
-         await idbValues.update(value.uid, value)
-         await idbMetadata.update(value.uid, { updated_at: meta.updated_at })
+         await idbValues.update(elt.uid, value)
+         const metadata = await idbMetadata.get(elt.uid)
+         await idbMetadata.update(elt.uid, { updated_at: metadata.updated_at })
       }
 
       // 4- create elements of `addDatabase` with full data from cache

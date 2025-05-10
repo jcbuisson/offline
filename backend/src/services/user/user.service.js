@@ -7,24 +7,6 @@ export default function (app) {
 
       findUnique: prisma.user.findUnique,
       findMany: prisma.user.findMany,
-
-      findByIdWithMeta: async (uid) => {
-         const [value, meta] = await prisma.$transaction([
-            prisma.user.findUnique({ where: { uid } }),
-            prisma.metadata.findUnique({ where: { uid } }),
-         ])
-         return [value, meta]
-      },
-
-      findManyWithMeta: async (where) => {
-         const valueList = await prisma.user.findMany({ where })
-         const metaList = []
-         for (const value of valueList) {
-            const meta = prisma.metadata.findUnique({ where: { uid: value.uid } })
-            metaList.push(meta)
-         }
-         return valueList.map((value, index) => [ value, metaList[index] ])
-      },
       
       createWithMeta: async (uid, data, created_at) => {
          const [value, meta] = await prisma.$transaction([

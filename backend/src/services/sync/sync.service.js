@@ -86,7 +86,7 @@ export default function (app) {
                   const clientUpdatedAt = new Date(clientMetaData.updated_at || clientMetaData.created_at)
                   const databaseUpdatedAt = new Date(databaseMetaData.updated_at || databaseMetaData.created_at)
                   const dateDifference = clientUpdatedAt - databaseUpdatedAt
-                  console.log('dateDifference', dateDifference)
+                  // console.log('databaseMetaData', databaseMetaData, 'clientMetaData', clientMetaData, 'dateDifference', dateDifference)
                   if (dateDifference > 0) {
                      updateDatabase.push(clientMetaData)
                   } else if (dateDifference < 0) {
@@ -104,8 +104,9 @@ export default function (app) {
          
             // STEP4: execute database deletions
             for (const uid of deleteDatabase) {
-               const metaData = await prisma.metadata.findUnique({ where: { uid }})
-               await databaseService.deleteWithMeta(uid, metaData.deleted_at)
+               const clientMetaData = clientMetadataDict[uid]
+               console.log('---delete', uid, clientMetaData)
+               await databaseService.deleteWithMeta(uid, clientMetaData.deleted_at)
             }
          
             // STEP5: return to client the changes to perform on its cache, and create/update to perform on database with full data
