@@ -17,18 +17,18 @@ export default function (app) {
          return [value, meta]
       },
       
-      update: async (uid, data) => {
+      updateWithMeta: async (uid, data, updated_at) => {
          const [value, meta] = await prisma.$transaction([
             prisma.user_group_relation.update({ where: { uid }, data }),
-            prisma.metadata.update({ where: { uid }, data: { updated_at: new Date() } })
+            prisma.metadata.update({ where: { uid }, data: { updated_at } })
          ])
          return [value, meta]
       },
       
-      delete: async (uid) => {
+      deleteWithMeta: async (uid, deleted_at) => {
          const [value, meta] = await prisma.$transaction([
             prisma.user_group_relation.delete({ where: { uid } }),
-            prisma.metadata.update({ where: { uid }, data: { deleted_at: new Date() } })
+            prisma.metadata.update({ where: { uid }, data: { deleted_at } })
          ])
          return [value, meta]
       },
