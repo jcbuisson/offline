@@ -81,8 +81,10 @@ export async function create(data) {
    // execute on server, asynchronously, if connection is active
    if (isConnected.value) {
       app.service('user').createWithMeta(uid, data, now)
-      .catch(err => {
+      .catch(async err => {
          console.log("*** err sync user create", err)
+         // rollback
+         await db.values.delete(uid)
       })
    }
    return await db.values.get(uid)
@@ -100,6 +102,7 @@ export const update = async (uid, data) => {
       app.service('user').updateWithMeta(uid, data, now)
       .catch(async err => {
          console.log("*** err sync user update", err)
+         // rollback
          delete previousValue.uid
          await db.values.update(uid, previousValue)
          delete previousMetadata.uid
@@ -119,7 +122,6 @@ export const remove = async (uid) => {
    await Promise.all(userGroupRelations.map(relation => removeGroupRelation(relation.uid)))
 
    // optimistic delete in cache
-   // await db.values.delete(uid)
    await db.values.update(uid, { __deleted__: true })
    await db.metadata.update(uid, { deleted_at })
    // and in database, if connected

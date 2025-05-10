@@ -97,7 +97,6 @@ export async function updateUserGroups(user_uid, newGroupUIDs) {
       for (const relation of currentUserRelations) {
          if (!newGroupUIDs.includes(relation.group_uid)) {
             // remove from client cache
-            // await db.values.delete(relation.uid)
             await db.values.update(relation.uid, { __deleted__: true })
             await db.metadata.update(relation.uid, { deleted_at: now })
             // remove from database, asynchronously, if connection is active
@@ -119,7 +118,7 @@ export async function remove(uid) {
    removeSynchroWhere({ uid }, db.whereList)
    const deleted_at = new Date()
    // optimistic delete
-   await db.values.delete(uid)
+   await db.values.update(uid, { __deleted__: true })
    await db.metadata.update(uid, { deleted_at })
    // execute on server, asynchronously, if connection is active
    if (isConnected.value) {

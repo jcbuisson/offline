@@ -109,7 +109,6 @@ export const remove = async (uid) => {
    await Promise.all(userGroupRelations.map(relation => removeGroupRelation(relation.uid)))
 
    // optimistic delete in cache
-   // await db.values.delete(uid)
    await db.values.update(uid, { __deleted__: true })
    await db.metadata.update(uid, { deleted_at })
    // and in database, if connected
