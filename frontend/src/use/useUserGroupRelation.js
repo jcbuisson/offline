@@ -142,7 +142,7 @@ export async function remove(uid) {
 }
 
 export function removeSynchroWhere(where) {
-   return removeSynchroWhereDB(where, db)
+   return removeSynchroWhereDB(where, db.whereList)
 }
 
 export async function synchronizeAll() {
