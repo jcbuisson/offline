@@ -72,9 +72,9 @@
       </v-row>
    </v-sheet> -->
 
-   <v-tabs>
-      <v-tab text="Utilisateurs" @click="router.push('/users')"></v-tab>
-      <v-tab text="Groupes" @click="router.push('/groups')"></v-tab>
+   <v-tabs v-model="currentTab">
+      <v-tab text="Utilisateurs" value="users" @click="router.push('/users')"></v-tab>
+      <v-tab text="Groupes" value="groups" @click="router.push('/groups')"></v-tab>
    </v-tabs>
 
    <router-view></router-view>
@@ -88,6 +88,9 @@
 </template>
 
 <script setup>
+import { ref, watch } from 'vue'
+import { useRoute} from 'vue-router'
+
 import { snackbar } from '/src/use/useSnackbar'
 
 import ReloadPrompt from '/src/components/ReloadPrompt.vue'
@@ -118,4 +121,17 @@ async function clearCaches() {
    await resetGroup()
    await resetUserGroupRelation()
 }
+
+const currentTab = ref('users')
+
+const route = useRoute()
+const routeRegex = /\/(users|groups)/
+
+watch(() => [route.path], async () => {
+   console.log('route.path', route.path)
+   const match = route.path.match(routeRegex)
+   if (!match) return
+   const tab = match[1]
+   currentTab.value = tab
+}, { immediate: true })
 </script>
