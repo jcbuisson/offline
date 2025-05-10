@@ -67,7 +67,7 @@ export async function updateUserGroups(user_uid, newGroupUIDs) {
       await addSynchroWhere({ user_uid }, db.whereList)
       const now = new Date()
 
-      // build list of active user-group relations with `user_uid`
+      // collect active user-group relations with `user_uid`
       const allUserRelations = await db.values.filter(value => value.user_uid === user_uid).toArray()
       const currentUserRelations = []
       for (const relation of allUserRelations) {
@@ -86,8 +86,12 @@ export async function updateUserGroups(user_uid, newGroupUIDs) {
             // add in database, asynchronously, if connection is active
             if (isConnected.value) {
                app.service('user_group_relation').createWithMeta(uid, { user_uid, group_uid }, now)
-               .catch(err => {
+               .catch(async err => {
                   console.log("*** err sync user_group_relation updateUserGroups", err)
+                  alert("An error occured")
+                  // rollback
+                  await db.values.delete(uid)
+                  await db.metadata.delete(uid)
                })
             }
          }
@@ -101,9 +105,13 @@ export async function updateUserGroups(user_uid, newGroupUIDs) {
             await db.metadata.update(relation.uid, { deleted_at: now })
             // remove from database, asynchronously, if connection is active
             if (isConnected.value) {
-               app.service('user_group_relation').delete(relation.uid)
-               .catch(err => {
+               app.service('user_group_relation').deleteWithMeta(relation.uid, now)
+               .catch(async err => {
                   console.log("*** err sync user_group_relation updateUserGroups", err)
+                  alert("An error occured")
+                  // rollback
+                  await db.values.update(relation.uid, { __deleted__: null })
+                  await db.metadata.update(relation.uid, { deleted_at: null })
                })
             }
          }
@@ -122,9 +130,13 @@ export async function remove(uid) {
    await db.metadata.update(uid, { deleted_at })
    // execute on server, asynchronously, if connection is active
    if (isConnected.value) {
-      app.service('user_group_relation').delete(uid)
-      .catch(err => {
+      app.service('user_group_relation').deleteWithMeta(uid, deleted_at)
+      .catch(async err => {
          console.log("*** err sync user_group_relation remove", err)
+         alert("An error occured")
+         // rollback
+         await db.values.update(uid, { __deleted__: null })
+         await db.metadata.update(uid, { deleted_at: null })
       })
    }
 }

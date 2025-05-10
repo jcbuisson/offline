@@ -77,14 +77,19 @@ export async function create(data) {
    // execute on server, asynchronously, if connection is active
    if (isConnected.value) {
       app.service('group').createWithMeta(uid, data, now)
-      .catch(err => {
+      .catch(async err => {
          console.log("*** err sync group create", err)
+         alert("An error occured", 3)
+         // rollback
+         await db.values.delete(uid)
       })
    }
    return await db.values.get(uid)
 }
 
 export const update = async (uid, data) => {
+   const previousValue = { ...(await db.values.get(uid)) }
+   const previousMetadata = { ...(await db.metadata.get(uid)) }
    // optimistic update of cache
    const now = new Date()
    await db.values.update(uid, data)
@@ -92,8 +97,14 @@ export const update = async (uid, data) => {
    // execute on server, asynchronously, if connection is active
    if (isConnected.value) {
       app.service('group').updateWithMeta(uid, data, now)
-      .catch(err => {
+      .catch(async err => {
          console.log("*** err sync group update", err)
+         alert("An error occured")
+         // rollback
+         delete previousValue.uid
+         await db.values.update(uid, previousValue)
+         delete previousMetadata.uid
+         await db.metadata.update(uid, previousMetadata)
       })
    }
    return await db.values.get(uid)
@@ -115,8 +126,12 @@ export const remove = async (uid) => {
    if (isConnected.value) {
       // also update meta-data
       app.service('group').delete(uid)
-      .catch(err => {
+      .catch(async err => {
          console.log("*** err sync group remove", err)
+         alert("An error occured")
+         // rollback
+         await db.values.update(uid, { __deleted__: null })
+         await db.metadata.update(uid, { deleted_at: null })
       })
    }
 }

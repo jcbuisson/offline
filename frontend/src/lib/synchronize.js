@@ -42,6 +42,7 @@ export async function synchronize(app, modelName, idbValues, idbMetadata, where,
          // get full value of element to update
          const value = await app.service(modelName).findUnique({ where:{ uid: elt.uid }})
          delete value.uid
+         delete value.__deleted__
          await idbValues.update(elt.uid, value)
          const metadata = await idbMetadata.get(elt.uid)
          await idbMetadata.update(elt.uid, { updated_at: metadata.updated_at })
@@ -52,7 +53,16 @@ export async function synchronize(app, modelName, idbValues, idbMetadata, where,
          const fullValue = await idbValues.get(elt.uid)
          const meta = await idbMetadata.get(elt.uid)
          delete fullValue.uid
-         await app.service(modelName).createWithMeta(elt.uid, fullValue, meta.created_at)
+         delete fullValue.__deleted__
+         try {
+            await app.service(modelName).createWithMeta(elt.uid, fullValue, meta.created_at)
+         } catch(err) {
+            console.log("*** err sync user updateDatabase", err)
+            alert("Erreur durant la création")
+            // rollback
+            await idbValues.delete(elt.uid)
+            await idbMetadata.delete(elt.uid)
+         }
       }
 
       // 5- update elements of `updateDatabase` with full data from cache
@@ -60,7 +70,18 @@ export async function synchronize(app, modelName, idbValues, idbMetadata, where,
          const fullValue = await idbValues.get(elt.uid)
          const meta = await idbMetadata.get(elt.uid)
          delete fullValue.uid
-         await app.service(modelName).updateWithMeta(elt.uid, fullValue, meta.updated_at)
+         delete fullValue.__deleted__
+         try {
+            await app.service(modelName).updateWithMeta(elt.uid, fullValue, meta.updated_at)
+         } catch(err) {
+            console.log("*** err sync user updateDatabase", err)
+            alert("Erreur durant l'enregistrement")
+            // rollback
+            const previousDatabaseValue = await app.service(modelName).findUnique({ where:{ uid: elt.uid }})
+            const previousDatabaseMetadata = await app.service('metadata').findUnique({ where:{ uid: elt.uid }})
+            await idbValues.update(elt.uid, previousDatabaseValue)
+            await idbMetadata.update(elt.uid, previousDatabaseMetadata)
+         }
       }
    } catch(err) {
       console.log('err synchronize', modelName, where, err)

@@ -83,6 +83,7 @@ export async function create(data) {
       app.service('user').createWithMeta(uid, data, now)
       .catch(async err => {
          console.log("*** err sync user create", err)
+         alert("An error occured")
          // rollback
          await db.values.delete(uid)
       })
@@ -102,6 +103,7 @@ export const update = async (uid, data) => {
       app.service('user').updateWithMeta(uid, data, now)
       .catch(async err => {
          console.log("*** err sync user update", err)
+         alert("An error occured")
          // rollback
          delete previousValue.uid
          await db.values.update(uid, previousValue)
@@ -127,8 +129,12 @@ export const remove = async (uid) => {
    // and in database, if connected
    if (isConnected.value) {
       app.service('user').deleteWithMeta(uid, deleted_at)
-      .catch(err => {
+      .catch(async err => {
          console.log("*** err sync user remove", err)
+         alert("An error occured")
+         // rollback
+         await db.values.update(uid, { __deleted__: null })
+         await db.metadata.update(uid, { deleted_at: null })
       })
    }
 }
