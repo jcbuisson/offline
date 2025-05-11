@@ -68,6 +68,16 @@ export async function findMany$(where) {
    return liveQuery(() => db.values.filter(value => !value.__deleted__ && predicate(value)).toArray())
 }
 
+// return an Observable
+export async function findByUID$(uid) {
+   const isNew = await addSynchroWhere({ uid })
+   // run synchronization if connected and if `where` is new
+   if (isNew && isConnected.value) {
+      synchronize(app, 'user', db.values, db.metadata, { uid }, disconnectedDate.value)
+   }
+   return liveQuery(() => db.values.filter(value => !value.__deleted__ && value.uid === uid).first())
+}
+
 export async function create(data) {
    const uid = uid16(16)
    // enlarge perimeter

@@ -45,11 +45,6 @@ const routes = [
    },
 
    {
-      path: "/explanations",
-      component: () => import('/src/views/Explanations.vue'),
-   },
-
-   {
       path: "/:catchAll(.*)",
       redirect: '/',
    },

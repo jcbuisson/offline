@@ -7,6 +7,7 @@ export default function (app) {
 
    app.createService('sync', {
 
+      // AMÉLIORER : ne pas avoir une exclusion mutuelle globale, mais seulement par model/where
       go: async (modelName, where, cutoffDate, clientMetadataDict) => {
          await mutex.acquire()
          try {
