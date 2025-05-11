@@ -119,7 +119,7 @@ async function getWhereList(whereDb) {
    return list.map(elt => elt.where)
 }
 
-export async function addSynchroWhere(where, whereDb) {
+export async function addSynchroDBWhere(where, whereDb) {
    let modified = false
    await mutex.acquire()
    try {
@@ -143,20 +143,20 @@ export async function addSynchroWhere(where, whereDb) {
          modified = true
       }
    } catch(err) {
-      console.log('err addSynchroWhere', err)
+      console.log('err addSynchroDBWhere', err)
    } finally {
       mutex.release()
    }
    return modified
 }
 
-export async function removeSynchroWhereDB(where, whereDb) {
+export async function removeSynchroDBWhere(where, whereDb) {
    await mutex.acquire()
    try {
       const sortedjson = sortedJson(where)
       await whereDb.filter(value => value.sortedjson === sortedjson).delete()
    } catch(err) {
-      console.log('err removeSynchroWhere', err)
+      console.log('err removeSynchroDBWhere', err)
    } finally {
       mutex.release()
    }

@@ -2,7 +2,7 @@ import Dexie from "dexie"
 import { liveQuery } from "dexie"
 import { uid as uid16 } from 'uid'
 
-import { wherePredicate, synchronize, addSynchroWhere, removeSynchroWhereDB, synchronizeModelWhereList } from '/src/lib/synchronize.js'
+import { wherePredicate, synchronize, addSynchroDBWhere, removeSynchroDBWhere, synchronizeModelWhereList } from '/src/lib/synchronize.js'
 import { app, isConnected, disconnectedDate } from '/src/client-app.js'
 
 export const db = new Dexie(import.meta.env.VITE_APP_USER_GROUP_RELATION_IDB)
@@ -51,7 +51,7 @@ export async function getMany(where) {
 
 // return an Observable
 export async function findMany$(where) {
-   const isNew = await addSynchroWhere(where, db.whereList)
+   const isNew = await addSynchroWhere(where)
    // run synchronization if connected and if `where` is new
    if (isNew && isConnected.value) {
       synchronize(app, 'user_group_relation', db.values, db.metadata, where, disconnectedDate.value)
@@ -64,7 +64,7 @@ export async function findMany$(where) {
 export async function updateUserGroups(user_uid, newGroupUIDs) {
    try {
       // enlarge perimeter
-      await addSynchroWhere({ user_uid }, db.whereList)
+      await addSynchroWhere({ user_uid })
       const now = new Date()
 
       // collect active user-group relations with `user_uid`
@@ -123,7 +123,7 @@ export async function updateUserGroups(user_uid, newGroupUIDs) {
 
 export async function remove(uid) {
    // stop synchronizing on this perimeter
-   removeSynchroWhere({ uid }, db.whereList)
+   removeSynchroWhere({ uid })
    const deleted_at = new Date()
    // optimistic delete
    await db.values.update(uid, { __deleted__: true })
@@ -141,8 +141,13 @@ export async function remove(uid) {
    }
 }
 
+
+export function addSynchroWhere(where) {
+   return addSynchroDBWhere(where, db.whereList)
+}
+
 export function removeSynchroWhere(where) {
-   return removeSynchroWhereDB(where, db.whereList)
+   return removeSynchroDBWhere(where, db.whereList)
 }
 
 export async function synchronizeAll() {

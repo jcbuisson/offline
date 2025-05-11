@@ -3,7 +3,7 @@ import { liveQuery } from "dexie"
 import { uid as uid16 } from 'uid'
 
 import { getMany as getManyUserGroupRelation, remove as removeGroupRelation, removeSynchroWhere as removeSynchroUserGroupRelationWhere } from '/src/use/useUserGroupRelation'
-import { wherePredicate, synchronize, addSynchroWhere, removeSynchroWhereDB, synchronizeModelWhereList } from '/src/lib/synchronize.js'
+import { wherePredicate, synchronize, addSynchroDBWhere, removeSynchroDBWhere, synchronizeModelWhereList } from '/src/lib/synchronize.js'
 import { app, isConnected, disconnectedDate } from '/src/client-app.js'
 
 export const db = new Dexie(import.meta.env.VITE_APP_USER_IDB)
@@ -58,7 +58,7 @@ export async function getFirst(where) {
 
 // return an Observable
 export async function findMany$(where) {
-   const isNew = await addSynchroWhere(where, db.whereList)
+   const isNew = await addSynchroWhere(where)
    // run synchronization if connected and if `where` is new
    if (isNew && isConnected.value) {
       synchronize(app, 'user', db.values, db.metadata, where, disconnectedDate.value)
@@ -71,7 +71,7 @@ export async function findMany$(where) {
 export async function create(data) {
    const uid = uid16(16)
    // enlarge perimeter
-   await addSynchroWhere({ uid }, db.whereList)
+   await addSynchroDBWhere({ uid }, db.whereList)
    // optimistic update
    const now = new Date()
    await db.values.add({ uid, ...data })
@@ -115,7 +115,7 @@ export const update = async (uid, data) => {
 
 export const remove = async (uid) => {
    // stop synchronizing on this perimeter for users
-   await removeSynchroWhere({ uid }, db.whereList)
+   await removeSynchroWhere({ uid })
    // .. and on this perimeter for user_group_relation
    await removeSynchroUserGroupRelationWhere({ user_uid: uid })
 
@@ -142,16 +142,12 @@ export const remove = async (uid) => {
 }
 
 
-export async function synchronizeWhere(where) {
-   const isNew = await addSynchroWhere(where, db.whereList)
-   // run synchronization if connected and if `where` is new
-   if (isNew && isConnected.value) {
-      await synchronize(app, 'user', db.values, db.metadata, where, disconnectedDate.value)
-   }
+export function addSynchroWhere(where) {
+   return addSynchroDBWhere(where, db.whereList)
 }
 
 export function removeSynchroWhere(where) {
-   return removeSynchroWhereDB(where, db.whereList)
+   return removeSynchroDBWhere(where, db.whereList)
 }
 
 export async function synchronizeAll() {
