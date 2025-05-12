@@ -58,7 +58,7 @@ import { firstValueFrom } from 'rxjs'
 
 import { findMany$ as findManyUser$, create as createUser } from '/src/use/useUser.js'
 import { findMany$ as findManyGroup$ } from '/src/use/useGroup'
-import { /*updateUserGroups,*/ groupDifference } from '/src/use/useUserGroupRelation'
+import { /*updateUserGroups,*/ groupDifference, create as createUserGroupRelation, remove as removeUserGroupRelation } from '/src/use/useUserGroupRelation'
 
 import router from '/src/router'
 import { displaySnackbar } from '/src/use/useSnackbar'
@@ -92,7 +92,7 @@ async function submit() {
             firstname: data.value.firstname,
             lastname: data.value.lastname,
          })
-         const [toAddGroupUIDs, toRemoveRelationUIDs] = await groupDifference(user.uid, groupUIDs)
+         const [toAddGroupUIDs, toRemoveRelationUIDs] = await groupDifference(user.uid, data.value.groups || [])
          for (const group_uid of toAddGroupUIDs) {
             await createUserGroupRelation({ user_uid: user.uid, group_uid })
          }

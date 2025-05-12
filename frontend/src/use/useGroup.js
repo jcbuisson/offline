@@ -78,7 +78,6 @@ export async function create(data) {
       app.service('group').createWithMeta(uid, data, now)
       .catch(async err => {
          console.log("*** err sync group create", err)
-         alert("An error occured", 3)
          // rollback
          await db.values.delete(uid)
       })
@@ -98,7 +97,6 @@ export const update = async (uid, data) => {
       app.service('group').updateWithMeta(uid, data, now)
       .catch(async err => {
          console.log("*** err sync group update", err)
-         alert("An error occured")
          // rollback
          delete previousValue.uid
          await db.values.update(uid, previousValue)
@@ -130,7 +128,6 @@ export const remove = async (uid) => {
       app.service('group').delete(uid)
       .catch(async err => {
          console.log("*** err sync group remove", err)
-         alert("An error occured")
          // rollback
          await db.values.update(uid, { __deleted__: null })
          await db.metadata.update(uid, { deleted_at: null })
