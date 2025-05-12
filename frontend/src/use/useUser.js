@@ -68,15 +68,15 @@ export async function findMany$(where) {
    return liveQuery(() => db.values.filter(value => !value.__deleted__ && predicate(value)).toArray())
 }
 
-// return an Observable
-export async function findByUID$(uid) {
-   const isNew = await addSynchroWhere({ uid })
-   // run synchronization if connected and if `where` is new
-   if (isNew && isConnected.value) {
-      synchronize(app, 'user', db.values, db.metadata, { uid }, disconnectedDate.value)
-   }
-   return liveQuery(() => db.values.filter(value => !value.__deleted__ && value.uid === uid).first())
-}
+// // return an Observable
+// export async function findByUID$(uid) {
+//    const isNew = await addSynchroWhere({ uid })
+//    // run synchronization if connected and if `where` is new
+//    if (isNew && isConnected.value) {
+//       synchronize(app, 'user', db.values, db.metadata, { uid }, disconnectedDate.value)
+//    }
+//    return liveQuery(() => db.values.filter(value => !value.__deleted__ && value.uid === uid).first())
+// }
 
 export async function create(data) {
    const uid = uid16(16)
@@ -85,7 +85,6 @@ export async function create(data) {
    // optimistic update
    const now = new Date()
    await db.values.add({ uid, ...data })
-   // await db.values.add({ uid, email: data.email, firstname: data.firstname, lastname: data.lastname })
    await db.metadata.add({ uid, created_at: now })
    // execute on server, asynchronously, if connection is active
    if (isConnected.value) {
@@ -158,6 +157,14 @@ export function addSynchroWhere(where) {
 
 export function removeSynchroWhere(where) {
    return removeSynchroDBWhere(where, db.whereList)
+}
+
+export async function synchronizeWhere(where) {
+   const isNew = await addSynchroWhere(where)
+   // run synchronization if connected and if `where` is new
+   if (isNew && isConnected.value) {
+      synchronize(app, 'user', db.values, db.metadata, where, disconnectedDate.value)
+   }
 }
 
 export async function synchronizeAll() {

@@ -39,7 +39,7 @@ import { useRoute} from 'vue-router'
 
 import { findMany$ as findManyUser$, getFullname, remove as removeUser } from '/src/use/useUser'
 import { selectedUser } from '/src/use/useSelectedUser'
-import { findMany$ as findManyGroup$, get as getGroup } from '/src/use/useGroup'
+import { findMany$ as findManyGroup$, get as getGroup, synchronizeWhere as synchronizeGroupWhere } from '/src/use/useGroup'
 import { findMany$ as findManyUserGroupRelation$ } from '/src/use/useUserGroupRelation'
 import router from '/src/router'
 import { displaySnackbar } from '/src/use/useSnackbar'
@@ -71,8 +71,8 @@ onMounted(async () => {
    })
    subscriptions.push(userSubscription)
 
-   // enough to ensure that `group` objects are in cache
-   await findManyGroup$({})
+   // ensure that `group` objects are in cache
+   await synchronizeGroupWhere({})
 })
 
 onUnmounted(() => {

@@ -59,7 +59,7 @@ import { useDebounceFn } from '@vueuse/core'
 
 import { findMany$ as findManyUser$, update as updateUser } from '/src/use/useUser'
 import { findMany$ as findManyGroup$ } from '/src/use/useGroup'
-import { findMany$ as findManyUserGroupRelation$, updateUserGroups } from '/src/use/useUserGroupRelation'
+import { findMany$ as findManyUserGroupRelation$, /*updateUserGroups,*/ groupDifference, create as createUserGroupRelation, remove as removeUserGroupRelation } from '/src/use/useUserGroupRelation'
 import { displaySnackbar } from '/src/use/useSnackbar'
 
 
@@ -125,7 +125,14 @@ const groupList = ref([])
 
 const onGroupChange = async (groupUIDs) => {
    try {
-      await updateUserGroups(props.user_uid, groupUIDs)
+      const [toAddGroupUIDs, toRemoveRelationUIDs] = await groupDifference(props.user_uid, groupUIDs)
+      for (const group_uid of toAddGroupUIDs) {
+         await createUserGroupRelation({ user_uid: props.user_uid, group_uid })
+      }
+      for (const relation_uid of toRemoveRelationUIDs) {
+         await removeUserGroupRelation(relation_uid)
+      }
+      // await updateUserGroups(props.user_uid, groupUIDs)
       displaySnackbar({ text: "Modification effectuée avec succès !", color: 'success', timeout: 2000 })
    } catch(err) {
       displaySnackbar({ text: "Erreur lors de l'enregistrement...", color: 'error', timeout: 4000 })

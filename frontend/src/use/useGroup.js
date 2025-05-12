@@ -147,6 +147,14 @@ export function removeSynchroWhere(where) {
    return removeSynchroDBWhere(where, db.whereList)
 }
 
+export async function synchronizeWhere(where) {
+   const isNew = await addSynchroWhere(where)
+   // run synchronization if connected and if `where` is new
+   if (isNew && isConnected.value) {
+      synchronize(app, 'group', db.values, db.metadata, where, disconnectedDate.value)
+   }
+}
+
 export async function synchronizeAll() {
    await synchronizeModelWhereList(app, 'group', db.values, db.metadata, disconnectedDate.value, db.whereList)
 }
