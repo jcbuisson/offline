@@ -58,7 +58,7 @@ import { firstValueFrom } from 'rxjs'
 
 import { findMany$ as findManyUser$, create as createUser } from '/src/use/useUser.js'
 import { findMany$ as findManyGroup$ } from '/src/use/useGroup'
-import { /*updateUserGroups,*/ groupDifference, create as createUserGroupRelation, remove as removeUserGroupRelation } from '/src/use/useUserGroupRelation'
+import { groupDifference, create as createUserGroupRelation, remove as removeUserGroupRelation } from '/src/use/useUserGroupRelation'
 
 import router from '/src/router'
 import { displaySnackbar } from '/src/use/useSnackbar'

@@ -40,7 +40,7 @@ import { useRoute} from 'vue-router'
 import { findMany$ as findManyUser$, getFullname, remove as removeUser } from '/src/use/useUser'
 import { selectedUser } from '/src/use/useSelectedUser'
 import { findMany$ as findManyGroup$, get as getGroup, synchronizeWhere as synchronizeGroupWhere } from '/src/use/useGroup'
-import { findMany$ as findManyUserGroupRelation$ } from '/src/use/useUserGroupRelation'
+import { getMany as getManyUserGroupRelation, findMany$ as findManyUserGroupRelation$, remove as removeGroupRelation } from '/src/use/useUserGroupRelation'
 import router from '/src/router'
 import { displaySnackbar } from '/src/use/useSnackbar'
 
@@ -50,6 +50,7 @@ import SplitPanel from '/src/components/SplitPanel.vue'
 const filter = ref('')
 
 const userList = ref([])
+
 const subscriptions = []
 
 onMounted(async () => {
@@ -103,6 +104,10 @@ function selectUser(user) {
 async function deleteUser(user) {
    if (window.confirm(`Supprimer ${getFullname(user)} ?`)) {
       try {
+         // remove user-group relations
+         const userGroupRelations = await getManyUserGroupRelation({ user_uid: user.uid })
+         await Promise.all(userGroupRelations.map(relation => removeGroupRelation(relation.uid)))
+         // remove user
          await removeUser(user.uid)
          router.push(`/users`)
          displaySnackbar({ text: "Suppression effectuée avec succès !", color: 'success', timeout: 2000 })

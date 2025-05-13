@@ -59,7 +59,7 @@ import { useDebounceFn } from '@vueuse/core'
 
 import { findMany$ as findManyUser$, update as updateUser } from '/src/use/useUser'
 import { findMany$ as findManyGroup$ } from '/src/use/useGroup'
-import { findMany$ as findManyUserGroupRelation$, /*updateUserGroups,*/ groupDifference, create as createUserGroupRelation, remove as removeUserGroupRelation } from '/src/use/useUserGroupRelation'
+import { findMany$ as findManyUserGroupRelation$, groupDifference, create as createUserGroupRelation, remove as removeUserGroupRelation } from '/src/use/useUserGroupRelation'
 import { displaySnackbar } from '/src/use/useSnackbar'
 
 
