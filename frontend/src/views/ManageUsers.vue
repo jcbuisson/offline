@@ -105,7 +105,6 @@ async function deleteUser(user) {
    if (window.confirm(`Supprimer ${getFullname(user)} ?`)) {
       try {
          // remove user-group relations
-         const userGroupRelations = await getManyUserGroupRelation({ user_uid: user.uid })
          await Promise.all(userGroupRelations.map(relation => removeGroupRelation(relation.uid)))
          // remove user
          await removeUser(user.uid)

@@ -32,9 +32,11 @@ import { ref, onMounted, onUnmounted, watch } from 'vue'
 import { useRoute} from 'vue-router'
 
 import { findMany$ as findManyGroup$, remove as removeGroup } from '/src/use/useGroup'
+import { getMany as getManyUserGroupRelation, remove as removeGroupRelation } from '/src/use/useUserGroupRelation'
 import router from '/src/router'
 
 import SplitPanel from '/src/components/SplitPanel.vue'
+import { displaySnackbar } from '/src/use/useSnackbar'
 
 
 const filter = ref('')
@@ -68,9 +70,17 @@ function selectGroup(group) {
 }
 
 async function deleteGroup(group) {
-   if (window.confirm(`Supprimer ${group.name} ?`)) {
-      await removeGroup(group.uid)
-      router.push(`/groups`)
+   const userGroupRelations = await getManyUserGroupRelation({ group_uid: group.uid })
+   if (window.confirm(`Supprimer le groupe ${group.name} ? (nombre d'utilisateurs qui y appartiennent : ${userGroupRelations.length})`)) {
+      try {
+         // remove user-group relations
+         await Promise.all(userGroupRelations.map(relation => removeGroupRelation(relation.uid)))
+         await removeGroup(group.uid)
+         router.push(`/groups`)
+         displaySnackbar({ text: "Suppression effectuée avec succès !", color: 'success', timeout: 2000 })
+      } catch(err) {
+         displaySnackbar({ text: "Erreur lors de la suppression...", color: 'error', timeout: 4000 })
+      }
    }
 }
 
