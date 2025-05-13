@@ -2,12 +2,12 @@ import Dexie from "dexie"
 import { liveQuery } from "dexie"
 import { uid as uid16 } from 'uid'
 
-import { getMany as getManyUserGroupRelation, remove as removeGroupRelation, removeSynchroWhere as removeSynchroUserGroupRelationWhere } from '/src/use/useUserGroupRelation'
+// import { getMany as getManyUserGroupRelation, remove as removeGroupRelation, removeSynchroWhere as removeSynchroUserGroupRelationWhere } from '/src/use/useUserGroupRelation'
 import { wherePredicate, synchronize, addSynchroDBWhere, removeSynchroDBWhere, synchronizeModelWhereList } from '/src/lib/synchronize.js'
 import { app, isConnected, disconnectedDate } from '/src/client-app.js'
 
 
-export default function(dbName, modelName, fields, relations) {
+export default function(dbName, modelName, fields) {
 
    const db = new Dexie(dbName)
 
@@ -46,6 +46,10 @@ export default function(dbName, modelName, fields, relations) {
 
    /////////////          CACHE METHODS          /////////////
 
+   async function get(uid) {
+      return await db.values.get(uid)
+   }
+   
    async function getMany(where) {
       const predicate = wherePredicate(where)
       return await db.values.filter(value => !value.__deleted__ && predicate(value)).toArray()
@@ -64,7 +68,7 @@ export default function(dbName, modelName, fields, relations) {
       const isNew = await addSynchroWhere(where)
       // run synchronization if connected and if `where` is new
       if (isNew && isConnected.value) {
-         synchronize(app, 'user', db.values, db.metadata, where, disconnectedDate.value)
+         synchronize(app, modelName, db.values, db.metadata, where, disconnectedDate.value)
       }
       // return observable for `where` values
       const predicate = wherePredicate(where)
@@ -81,9 +85,9 @@ export default function(dbName, modelName, fields, relations) {
       await db.metadata.add({ uid, created_at: now })
       // execute on server, asynchronously, if connection is active
       if (isConnected.value) {
-         app.service('user').createWithMeta(uid, data, now)
+         app.service(modelName).createWithMeta(uid, data, now)
          .catch(async err => {
-            console.log("*** err sync user create", err)
+            console.log(`*** err sync ${modelName} create`, err)
             // rollback
             await db.values.delete(uid)
          })
@@ -100,9 +104,9 @@ export default function(dbName, modelName, fields, relations) {
       await db.metadata.update(uid, { updated_at: now })
       // execute on server, asynchronously, if connection is active
       if (isConnected.value) {
-         app.service('user').updateWithMeta(uid, data, now)
+         app.service(modelName).updateWithMeta(uid, data, now)
          .catch(async err => {
-            console.log("*** err sync user update", err)
+            console.log(`*** err sync ${modelName} update`, err)
             // rollback
             delete previousValue.uid
             await db.values.update(uid, previousValue)
@@ -114,10 +118,10 @@ export default function(dbName, modelName, fields, relations) {
    }
 
    const remove = async (uid) => {
-      // stop synchronizing on this perimeter for users
+      // stop synchronizing on this perimeter
       await removeSynchroWhere({ uid })
-      // .. and on this perimeter for user_group_relation
-      await removeSynchroUserGroupRelationWhere({ user_uid: uid })
+      // // .. and on this perimeter for user_group_relation
+      // await removeSynchroUserGroupRelationWhere({ user_uid: uid })
 
       const deleted_at = new Date()
 
@@ -130,9 +134,9 @@ export default function(dbName, modelName, fields, relations) {
       await db.metadata.update(uid, { deleted_at })
       // and in database, if connected
       if (isConnected.value) {
-         app.service('user').deleteWithMeta(uid, deleted_at)
+         app.service(modelName).deleteWithMeta(uid, deleted_at)
          .catch(async err => {
-            console.log("*** err sync user remove", err)
+            console.log(`*** err sync ${modelName} remove`, err)
             // rollback
             await db.values.update(uid, { __deleted__: null })
             await db.metadata.update(uid, { deleted_at: null })
@@ -152,22 +156,18 @@ export default function(dbName, modelName, fields, relations) {
       const isNew = await addSynchroWhere(where)
       // run synchronization if connected and if `where` is new
       if (isNew && isConnected.value) {
-         synchronize(app, 'user', db.values, db.metadata, where, disconnectedDate.value)
+         synchronize(app, modelName, db.values, db.metadata, where, disconnectedDate.value)
       }
    }
 
    async function synchronizeAll() {
-      await synchronizeModelWhereList(app, 'user', db.values, db.metadata, disconnectedDate.value, db.whereList)
+      await synchronizeModelWhereList(app, modelName, db.values, db.metadata, disconnectedDate.value, db.whereList)
    }
-
-
-
-
 
 
    return {
       db, reset,
-      getMany, getFirst, findMany$, create, update, remove,
+      get, getMany, getFirst, findMany$, create, update, remove,
       addSynchroWhere, removeSynchroWhere, synchronizeWhere, synchronizeAll,
    }
 }

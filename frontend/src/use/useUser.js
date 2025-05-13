@@ -1,6 +1,6 @@
 
 import useModel from '/src/use/useModel'
-import { getMany as getManyUserGroupRelation, remove as removeGroupRelation, removeSynchroWhere as removeSynchroUserGroupRelationWhere } from '/src/use/useUserGroupRelation'
+// import { getMany as getManyUserGroupRelation, remove as removeGroupRelation, removeSynchroWhere as removeSynchroUserGroupRelationWhere } from '/src/use/useUserGroupRelation'
 
 
 /////////////          CRUD/SYNC METHODS          /////////////
@@ -9,7 +9,7 @@ const {
    db, reset,
    getMany, getFirst, findMany$, create, update, remove,
    addSynchroWhere, removeSynchroWhere, synchronizeWhere, synchronizeAll,
-} = useModel(import.meta.env.VITE_APP_USER_IDB, 'user', ['email', 'firstname', 'lastname'], ['user_group_relation', 'user_uid'])
+} = useModel(import.meta.env.VITE_APP_USER_IDB, 'user', ['email', 'firstname', 'lastname'])
 
 
 /////////////          UTILITIES          /////////////
@@ -24,5 +24,6 @@ export {
    db, reset,
    getMany, getFirst, findMany$, create, update, remove,
    addSynchroWhere, removeSynchroWhere, synchronizeWhere, synchronizeAll,
+   
    getFullname,
 }
