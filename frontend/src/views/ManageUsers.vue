@@ -39,8 +39,8 @@ import { useRoute} from 'vue-router'
 
 import { findMany$ as findManyUser$, getFullname, remove as removeUser } from '/src/use/useUser'
 import { selectedUser } from '/src/use/useSelectedUser'
-import { findMany$ as findManyGroup$, get as getGroup, synchronizeWhere as synchronizeGroupWhere } from '/src/use/useGroup'
-import { getMany as getManyUserGroupRelation, findMany$ as findManyUserGroupRelation$, remove as removeGroupRelation } from '/src/use/useUserGroupRelation'
+import { get as getGroup, synchronizeWhere as synchronizeGroupWhere } from '/src/use/useGroup'
+import { findMany$ as findManyUserGroupRelation$, getMany as getManyUserGroupRelation, remove as removeGroupRelation } from '/src/use/useUserGroupRelation'
 import router from '/src/router'
 import { displaySnackbar } from '/src/use/useSnackbar'
 
@@ -102,6 +102,7 @@ function selectUser(user) {
 }
 
 async function deleteUser(user) {
+   const userGroupRelations = await getManyUserGroupRelation({ user_uid: user.uid })
    if (window.confirm(`Supprimer ${getFullname(user)} ?`)) {
       try {
          // remove user-group relations
