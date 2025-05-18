@@ -2,7 +2,6 @@ import Dexie from "dexie"
 import { liveQuery } from "dexie"
 import { uid as uid16 } from 'uid'
 
-// import { getMany as getManyUserGroupRelation, remove as removeGroupRelation, removeSynchroWhere as removeSynchroUserGroupRelationWhere } from '/src/use/useUserGroupRelation'
 import { wherePredicate, synchronize, addSynchroDBWhere, removeSynchroDBWhere, synchronizeModelWhereList } from '/src/lib/synchronize.js'
 import { app, isConnected, disconnectedDate } from '/src/client-app.js'
 
@@ -44,21 +43,21 @@ export default function(dbName, modelName, fields) {
    })
 
 
-   /////////////          CACHE METHODS          /////////////
+   // /////////////          CACHE METHODS          /////////////
 
-   async function get(uid) {
-      return await db.values.get(uid)
-   }
+   // async function get(uid) {
+   //    return await db.values.get(uid)
+   // }
    
-   async function getMany(where) {
-      const predicate = wherePredicate(where)
-      return await db.values.filter(value => !value.__deleted__ && predicate(value)).toArray()
-   }
+   // async function getMany(where) {
+   //    const predicate = wherePredicate(where)
+   //    return await db.values.filter(value => !value.__deleted__ && predicate(value)).toArray()
+   // }
 
-   async function getFirst(where) {
-      const predicate = wherePredicate(where)
-      return await db.values.filter(value => !value.__deleted__ && predicate(value)).first()
-   }
+   // async function getFirst(where) {
+   //    const predicate = wherePredicate(where)
+   //    return await db.values.filter(value => !value.__deleted__ && predicate(value)).first()
+   // }
 
 
    /////////////          CRUD METHODS WITH SYNC          /////////////
@@ -178,7 +177,7 @@ export default function(dbName, modelName, fields) {
 
    return {
       db, reset,
-      get, getMany, getFirst, create, update, remove,
+      create, update, remove,
       addPerimeter,
       addSynchroWhere, removeSynchroWhere, synchronizeWhere, synchronizeAll,
    }

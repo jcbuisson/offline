@@ -1,13 +1,12 @@
 
 import useModel from '/src/use/useModel'
-// import { getMany as getManyUserGroupRelation, remove as removeGroupRelation, removeSynchroWhere as removeSynchroUserGroupRelationWhere } from '/src/use/useUserGroupRelation'
 
 
 /////////////          CRUD/SYNC METHODS          /////////////
 
 const {
    db, reset,
-   getMany, getFirst, create, update, remove,
+   create, update, remove,
    addPerimeter,
    addSynchroWhere, removeSynchroWhere, synchronizeWhere, synchronizeAll,
 } = useModel(import.meta.env.VITE_APP_USER_IDB, 'user', ['email', 'firstname', 'lastname'])
@@ -23,7 +22,7 @@ function getFullname(user) {
 
 export {
    db, reset,
-   getMany, getFirst, create, update, remove,
+   create, update, remove,
    addPerimeter,
    addSynchroWhere, removeSynchroWhere, synchronizeWhere, synchronizeAll,
    
