@@ -7,7 +7,8 @@ import useModel from '/src/use/useModel'
 
 const {
    db, reset,
-   getMany, getFirst, findMany$, create, update, remove,
+   getMany, getFirst, create, update, remove,
+   addPerimeter,
    addSynchroWhere, removeSynchroWhere, synchronizeWhere, synchronizeAll,
 } = useModel(import.meta.env.VITE_APP_USER_IDB, 'user', ['email', 'firstname', 'lastname'])
 
@@ -22,7 +23,8 @@ function getFullname(user) {
 
 export {
    db, reset,
-   getMany, getFirst, findMany$, create, update, remove,
+   getMany, getFirst, create, update, remove,
+   addPerimeter,
    addSynchroWhere, removeSynchroWhere, synchronizeWhere, synchronizeAll,
    
    getFullname,

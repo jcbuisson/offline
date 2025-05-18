@@ -6,7 +6,8 @@ import useModel from '/src/use/useModel'
 
 const {
    db, reset,
-   get, getMany, getFirst, findMany$, create, update, remove,
+   get, getMany, getFirst, create, update, remove,
+   addPerimeter,
    addSynchroWhere, removeSynchroWhere, synchronizeWhere, synchronizeAll,
 } = useModel(import.meta.env.VITE_APP_USER_GROUP_RELATION_IDB, 'user_group_relation', ['name'])
 
@@ -41,7 +42,8 @@ async function groupDifference(user_uid, newGroupUIDs) {
 
 export {
    db, reset,
-   get, getMany, getFirst, findMany$, create, update, remove,
+   get, getMany, getFirst, create, update, remove,
+   addPerimeter,
    addSynchroWhere, removeSynchroWhere, synchronizeWhere, synchronizeAll,
 
    groupDifference,

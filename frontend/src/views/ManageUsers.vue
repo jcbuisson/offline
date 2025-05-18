@@ -37,10 +37,10 @@
 import { ref, onMounted, onUnmounted, watch } from 'vue'
 import { useRoute} from 'vue-router'
 
-import { findMany$ as findManyUser$, getFullname, remove as removeUser } from '/src/use/useUser'
+import { addPerimeter as addUserPerimeter, getFullname, remove as removeUser } from '/src/use/useUser'
+import { addPerimeter as addGroupPerimeter } from '/src/use/useGroup'
+import { addPerimeter as addUserGroupRelationPerimeter, remove as removeGroupRelation } from '/src/use/useUserGroupRelation'
 import { selectedUser } from '/src/use/useSelectedUser'
-import { get as getGroup, synchronizeWhere as synchronizeGroupWhere } from '/src/use/useGroup'
-import { findMany$ as findManyUserGroupRelation$, getMany as getManyUserGroupRelation, remove as removeGroupRelation } from '/src/use/useUserGroupRelation'
 import router from '/src/router'
 import { displaySnackbar } from '/src/use/useSnackbar'
 
@@ -51,34 +51,32 @@ const filter = ref('')
 
 const userList = ref([])
 
-const subscriptions = []
+const perimeters = []
 
 onMounted(async () => {
-   const userObservable = await findManyUser$({})
-   const userSubscription = userObservable.subscribe(async list => {
+   // ensures that all groups are in cache
+   const groupListPerimeter = await addGroupPerimeter({})
+   perimeters.push(groupListPerimeter)
+
+   perimeters.push(await addUserPerimeter({}, async list => {
       userList.value = list.toSorted((u1, u2) => (u1.lastname > u2.lastname) ? 1 : (u1.lastname < u2.lastname) ? -1 : 0)
 
       for (const user of userList.value) {
-         const userGroupRelationObservable = await findManyUserGroupRelation$({ user_uid: user.uid })
-         const groupRelationSubscription = userGroupRelationObservable.subscribe(async relationList => {
+         perimeters.push(await addUserGroupRelationPerimeter({ user_uid: user.uid }, async relationList => {
             user.groups = []
             for (const group_uid of relationList.map(relation => relation.group_uid)) {
-               const group = await getGroup(group_uid)
+               // .get is sure to return the group in cache
+               const group = await groupListPerimeter.getByUid(group_uid)
                user.groups.push(group)
             }
-         })
-         subscriptions.push(groupRelationSubscription)
+         }))
       }
-   })
-   subscriptions.push(userSubscription)
-
-   // ensure that `group` objects are in cache
-   await synchronizeGroupWhere({})
+   }))
 })
 
-onUnmounted(() => {
-   for (const subscription of subscriptions) {
-      subscription.unsubscribe()
+onUnmounted(async () => {
+   for (const perimeter of perimeters) {
+      await perimeter.remove()
    }
 })
 
@@ -102,7 +100,9 @@ function selectUser(user) {
 }
 
 async function deleteUser(user) {
-   const userGroupRelations = await getManyUserGroupRelation({ user_uid: user.uid })
+   const userGroupRelationPerimeter = await addUserGroupRelationPerimeter({ user_uid: user.uid })
+   perimeters.push(userGroupRelationPerimeter)
+   const userGroupRelations = await userGroupRelationPerimeter.currentValue()
    if (window.confirm(`Supprimer ${getFullname(user)} ?`)) {
       try {
          // remove user-group relations

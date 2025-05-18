@@ -63,16 +63,27 @@ export default function(dbName, modelName, fields) {
 
    /////////////          CRUD METHODS WITH SYNC          /////////////
 
-   // return an Observable
-   async function findMany$(where) {
+   async function addPerimeter(where, callback) {
       const isNew = await addSynchroWhere(where)
       // run synchronization if connected and if `where` is new
       if (isNew && isConnected.value) {
-         synchronize(app, modelName, db.values, db.metadata, where, disconnectedDate.value)
+         await          synchronize(app, modelName, db.values, db.metadata, where, disconnectedDate.value)
       }
-      // return observable for `where` values
       const predicate = wherePredicate(where)
-      return liveQuery(() => db.values.filter(value => !value.__deleted__ && predicate(value)).toArray())
+      const observable = liveQuery(() => db.values.filter(value => !value.__deleted__ && predicate(value)).toArray())
+      const subscription = observable.subscribe(async value => {
+         callback && callback(value)
+      })
+      return {
+         getByUid: async (uid) => db.values.get(uid),
+         currentValue: async () => {
+            return await db.values.filter(value => !value.__deleted__ && predicate(value)).toArray()
+         },
+         remove: async () => {
+            await removeSynchroWhere(where)
+            subscription.unsubscribe()
+         },
+      }
    }
 
    async function create(data) {
@@ -167,7 +178,8 @@ export default function(dbName, modelName, fields) {
 
    return {
       db, reset,
-      get, getMany, getFirst, findMany$, create, update, remove,
+      get, getMany, getFirst, create, update, remove,
+      addPerimeter,
       addSynchroWhere, removeSynchroWhere, synchronizeWhere, synchronizeAll,
    }
 }

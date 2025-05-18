@@ -31,8 +31,8 @@
 import { ref, onMounted, onUnmounted, watch } from 'vue'
 import { useRoute} from 'vue-router'
 
-import { findMany$ as findManyGroup$, remove as removeGroup } from '/src/use/useGroup'
-import { getMany as getManyUserGroupRelation, remove as removeGroupRelation } from '/src/use/useUserGroupRelation'
+import { addPerimeter as addGroupPerimeter, remove as removeGroup } from '/src/use/useGroup'
+import { addPerimeter as addUserGroupRelationPerimeter, remove as removeGroupRelation } from '/src/use/useUserGroupRelation'
 import router from '/src/router'
 
 import SplitPanel from '/src/components/SplitPanel.vue'
@@ -42,20 +42,19 @@ import { displaySnackbar } from '/src/use/useSnackbar'
 const filter = ref('')
 
 const groupList = ref([])
-const subscriptions = []
+
+let groupListPerimeter
+let userGroupRelationPerimeter
 
 onMounted(async () => {
-   const groupObservable = await findManyGroup$({})
-   const groupSubscription = groupObservable.subscribe(async list => {
+   groupListPerimeter = await addGroupPerimeter({}, async list => {
       groupList.value = list.toSorted((u1, u2) => (u1.name > u2.name) ? 1 : (u1.name < u2.name) ? -1 : 0)
    })
-   subscriptions.push(groupSubscription)
 })
 
-onUnmounted(() => {
-   for (const subscription of subscriptions) {
-      subscription.unsubscribe()
-   }
+onUnmounted(async () => {
+   await groupListPerimeter.remove()
+   userGroupRelationPerimeter && await userGroupRelationPerimeter.remove()
 })
 
 async function addGroup() {
@@ -70,8 +69,9 @@ function selectGroup(group) {
 }
 
 async function deleteGroup(group) {
-   const userGroupRelations = await getManyUserGroupRelation({ group_uid: group.uid })
-   if (window.confirm(`Supprimer le groupe ${group.name} ? (nombre d'utilisateurs qui y appartiennent : ${userGroupRelations.length})`)) {
+   userGroupRelationPerimeter = await addUserGroupRelationPerimeter({ group_uid: group.uid })
+   const userGroupRelations = await userGroupRelationPerimeter.currentValue()
+   if (window.confirm(`Supprimer le groupe ${group.name} ? (nombre d'utilisateurs membres : ${userGroupRelations.length})`)) {
       try {
          // remove user-group relations
          await Promise.all(userGroupRelations.map(relation => removeGroupRelation(relation.uid)))

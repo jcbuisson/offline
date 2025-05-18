@@ -53,11 +53,10 @@
 </template>
 
 <script setup>
-import { ref, onMounted } from 'vue'
-import { firstValueFrom } from 'rxjs'
+import { ref, onMounted, onUnmounted } from 'vue'
 
-import { findMany$ as findManyUser$, create as createUser } from '/src/use/useUser.js'
-import { findMany$ as findManyGroup$ } from '/src/use/useGroup'
+import { addPerimeter as addUserPerimeter, create as createUser } from '/src/use/useUser.js'
+import { addPerimeter as addGroupPerimeter } from '/src/use/useGroup'
 import { groupDifference, create as createUserGroupRelation, remove as removeUserGroupRelation } from '/src/use/useUserGroupRelation'
 
 import router from '/src/router'
@@ -73,17 +72,27 @@ const emailRules = [
 
 const groupList = ref([])
 
+const perimeters = []
+
 onMounted(async () => {
-   const groupListObservable = await findManyGroup$({})
-   groupListObservable.subscribe(list => {
+   perimeters.push(await addGroupPerimeter({}, async list => {
       groupList.value = list.toSorted((u1, u2) => (u1.name > u2.name) ? 1 : (u1.name < u2.name) ? -1 : 0)
-   })
+   }))
+
+})
+
+onUnmounted(async () => {
+   for (const perimeter of perimeters) {
+      await perimeter.remove()
+   }
 })
 
 async function submit() {
    try {
       // check if email is not already used
-      const [other] = await firstValueFrom(await findManyUser$({ email: data.value.email }))
+      const userPerimeter = await addUserPerimeter({ email: data.value.email })
+      perimeters.push(userPerimeter)
+      const [other] = await userPerimeter.currentValue()
       if (other) {
          alert(`Il existe déjà un utilisateur avec cet email : ${data.value.email}`)
       } else {
@@ -99,7 +108,6 @@ async function submit() {
          for (const relationUID of toRemoveRelationUIDs) {
             await removeUserGroupRelation(relationUID)
          }
-         // await updateUserGroups(user.uid, data.value.groups || [])
          displaySnackbar({ text: "Création effectuée avec succès !", color: 'success', timeout: 2000 })
          router.push(`/users/${user.uid}`)
       }
