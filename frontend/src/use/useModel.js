@@ -10,7 +10,7 @@ export default function(dbName, modelName, fields) {
 
    const db = new Dexie(dbName)
 
-   db.version(2).stores({
+   db.version(12).stores({
       whereList: "sortedjson, where",
       values: ['uid', '__deleted__', ...fields].join(','), // ex: "uid, __deleted__, email, firstname, lastname",
       metadata: "uid, created_at, updated_at, deleted_at",
