@@ -17,9 +17,10 @@ export default function(dbName, modelName, fields) {
    })
 
    const reset = async () => {
-      await db.whereList.clear()
-      await db.values.clear()
-      await db.metadata.clear()
+      // await db.whereList.clear()
+      // await db.values.clear()
+      // await db.metadata.clear()
+      await db.delete()
    }
 
    /////////////          PUB / SUB          /////////////
