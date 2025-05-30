@@ -29,16 +29,19 @@ export async function synchronize(app, modelName, idbValues, idbMetadata, where,
 
       // 1- add missing elements in cache
       for (const [value, metaData] of toAdd) {
+         console.log('adding', value, metaData)
          await idbValues.add(value)
          await idbMetadata.add(metaData)
       }
       // 2- delete elements from cache
       for (const [uid, deleted_at] of toDelete) {
+         console.log('deleting', uid, deleted_at)
          await idbValues.delete(uid)
          await idbMetadata.update(uid, { deleted_at })
       }
       // 3- update elements of cache
       for (const elt of toUpdate) {
+         console.log('updating', elt)
          // get full value of element to update
          const value = await app.service(modelName).findUnique({ where:{ uid: elt.uid }})
          delete value.uid

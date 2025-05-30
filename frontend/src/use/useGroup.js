@@ -6,9 +6,9 @@ import useModel from '/src/use/useModel'
 
 const {
    db, reset,
-   getFirst, create, update, remove,
+   create, update, remove,
    addPerimeter,
-   addSynchroWhere, removeSynchroWhere, synchronizeWhere, synchronizeAll,
+   synchronizeAll,
 } = useModel(import.meta.env.VITE_APP_GROUP_IDB, 'group', ['name'])
 
 
@@ -16,5 +16,5 @@ export {
    db, reset,
    create, update, remove,
    addPerimeter,
-   addSynchroWhere, removeSynchroWhere, synchronizeWhere, synchronizeAll,
+   synchronizeAll,
 }

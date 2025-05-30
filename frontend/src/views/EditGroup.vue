@@ -33,7 +33,6 @@ const props = defineProps({
 
 const group = ref()
 
-// let groupSubscription
 let groupPerimeter
 
 onUnmounted(() => {

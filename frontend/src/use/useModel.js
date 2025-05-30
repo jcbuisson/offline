@@ -12,7 +12,7 @@ export default function(dbName, modelName, fields) {
 
    db.version(1).stores({
       whereList: "sortedjson, where",
-      values: ['__deleted__', 'uid', ...fields].join(','), // "uid, __deleted__, email, firstname, lastname",
+      values: ['uid', '__deleted__', ...fields].join(','), // ex: "uid, __deleted__, email, firstname, lastname",
       metadata: "uid, created_at, updated_at, deleted_at",
    })
 
@@ -43,30 +43,13 @@ export default function(dbName, modelName, fields) {
    })
 
 
-   // /////////////          CACHE METHODS          /////////////
-
-   // async function get(uid) {
-   //    return await db.values.get(uid)
-   // }
-   
-   // async function getMany(where) {
-   //    const predicate = wherePredicate(where)
-   //    return await db.values.filter(value => !value.__deleted__ && predicate(value)).toArray()
-   // }
-
-   // async function getFirst(where) {
-   //    const predicate = wherePredicate(where)
-   //    return await db.values.filter(value => !value.__deleted__ && predicate(value)).first()
-   // }
-
-
    /////////////          CRUD METHODS WITH SYNC          /////////////
 
    async function addPerimeter(where, callback) {
       const isNew = await addSynchroWhere(where)
       // run synchronization if connected and if `where` is new
       if (isNew && isConnected.value) {
-         await          synchronize(app, modelName, db.values, db.metadata, where, disconnectedDate.value)
+         await synchronize(app, modelName, db.values, db.metadata, where, disconnectedDate.value)
       }
       const predicate = wherePredicate(where)
       const observable = liveQuery(() => db.values.filter(value => !value.__deleted__ && predicate(value)).toArray())
@@ -87,8 +70,6 @@ export default function(dbName, modelName, fields) {
 
    async function create(data) {
       const uid = uid16(16)
-      // enlarge perimeter
-      await addSynchroDBWhere({ uid }, db.whereList)
       // optimistic update
       const now = new Date()
       await db.values.add({ uid, ...data })
@@ -128,17 +109,7 @@ export default function(dbName, modelName, fields) {
    }
 
    const remove = async (uid) => {
-      // stop synchronizing on this perimeter
-      await removeSynchroWhere({ uid })
-      // // .. and on this perimeter for user_group_relation
-      // await removeSynchroUserGroupRelationWhere({ user_uid: uid })
-
       const deleted_at = new Date()
-
-      // // remove relations to groups in cache
-      // const userGroupRelations = await getManyUserGroupRelation({ user_uid: uid })
-      // await Promise.all(userGroupRelations.map(relation => removeGroupRelation(relation.uid)))
-
       // optimistic delete in cache
       await db.values.update(uid, { __deleted__: true })
       await db.metadata.update(uid, { deleted_at })
@@ -162,14 +133,6 @@ export default function(dbName, modelName, fields) {
       return removeSynchroDBWhere(where, db.whereList)
    }
 
-   async function synchronizeWhere(where) {
-      const isNew = await addSynchroWhere(where)
-      // run synchronization if connected and if `where` is new
-      if (isNew && isConnected.value) {
-         synchronize(app, modelName, db.values, db.metadata, where, disconnectedDate.value)
-      }
-   }
-
    async function synchronizeAll() {
       await synchronizeModelWhereList(app, modelName, db.values, db.metadata, disconnectedDate.value, db.whereList)
    }
@@ -179,6 +142,6 @@ export default function(dbName, modelName, fields) {
       db, reset,
       create, update, remove,
       addPerimeter,
-      addSynchroWhere, removeSynchroWhere, synchronizeWhere, synchronizeAll,
+      synchronizeAll,
    }
 }

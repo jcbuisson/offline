@@ -8,8 +8,8 @@ const {
    db, reset,
    create, update, remove,
    addPerimeter,
-   addSynchroWhere, removeSynchroWhere, synchronizeWhere, synchronizeAll,
-} = useModel(import.meta.env.VITE_APP_USER_GROUP_RELATION_IDB, 'user_group_relation', ['name'])
+   synchronizeAll,
+} = useModel(import.meta.env.VITE_APP_USER_GROUP_RELATION_IDB, 'user_group_relation', ['user_uid', 'group_uid'])
 
 
 /////////////          UTILITY          /////////////
@@ -44,7 +44,7 @@ export {
    db, reset,
    create, update, remove,
    addPerimeter,
-   addSynchroWhere, removeSynchroWhere, synchronizeWhere, synchronizeAll,
+   synchronizeAll,
 
    groupDifference,
 }

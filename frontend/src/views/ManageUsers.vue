@@ -65,7 +65,6 @@ onMounted(async () => {
          perimeters.push(await addUserGroupRelationPerimeter({ user_uid: user.uid }, async relationList => {
             user.groups = []
             for (const group_uid of relationList.map(relation => relation.group_uid)) {
-               // .get is sure to return the group in cache
                const group = await groupListPerimeter.getByUid(group_uid)
                user.groups.push(group)
             }

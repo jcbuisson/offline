@@ -8,7 +8,7 @@ const {
    db, reset,
    create, update, remove,
    addPerimeter,
-   addSynchroWhere, removeSynchroWhere, synchronizeWhere, synchronizeAll,
+   synchronizeAll,
 } = useModel(import.meta.env.VITE_APP_USER_IDB, 'user', ['email', 'firstname', 'lastname'])
 
 
@@ -24,7 +24,7 @@ export {
    db, reset,
    create, update, remove,
    addPerimeter,
-   addSynchroWhere, removeSynchroWhere, synchronizeWhere, synchronizeAll,
+   synchronizeAll,
    
    getFullname,
 }
