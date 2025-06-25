@@ -26,3 +26,17 @@
 - Lorsqu’un client supprime une donnée lorsqu’il est offline, il la marque avec deleted_at=now sans la supprimer du cache,
 sinon le serveur ne pourrait pas savoir que le client a demandé à la supprimer (est-ce important ? À vérifier)
 
+
+
+# Tutorial
+
+## Sans temps-réel, sans offline-résilience
+
+Sans temps-réel ni offline, obtenir tous les événements de tous les documents d'un utilisateur `user_uid` est simple :
+```
+SELECT e.* from user_document_event as e, user_document as d where d.user_uid = user_uid and e.document_uid = d.uid;
+```
+
+## Avec temps-réel, sans offline-résilience
+
+## Avec temps-réel et avec offline-résilience
