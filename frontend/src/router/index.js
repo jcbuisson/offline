@@ -5,7 +5,7 @@ import { createRouter, createWebHistory } from 'vue-router'
 const routes = [
    {
       path: '/',
-      redirect: '/users',
+      component: () => import('/src/views/Home.vue'),
       children: [
          {
             path: 'users',
