@@ -12,17 +12,17 @@
          
             <!-- Fills remaining vertical space -->
             <div class="d-flex flex-column flex-grow-1 overflow-auto">
-               <v-list-item three-line v-for="(user, index) in userList":key="index" :value="user" @click="selectUser(user)" :active="selectedUser?.uid === user?.uid">
-                  <v-list-item-title>{{ user.lastname }} {{ user.firstname }}</v-list-item-title>
-                  <v-list-item-subtitle>{{ user.email }}</v-list-item-subtitle>
+               <v-list-item three-line v-for="(userAndGroups, index) in filteredUserAndGroupList" :key="index" :value="userAndGroups?.user" @click="selectUser(userAndGroups.user)" :active="selectedUser?.uid === userAndGroups?.user.uid">
+                  <v-list-item-title>{{ userAndGroups?.user.lastname }} {{ userAndGroups?.user.firstname }}</v-list-item-title>
+                  <v-list-item-subtitle>{{ userAndGroups?.user.email }}</v-list-item-subtitle>
                   <v-list-item-subtitle>
-                     <template v-for="group in user.groups">
+                     <template v-for="group in userAndGroups.groups">
                         <v-chip size="x-small">{{ group?.name }}</v-chip>
                      </template>
                   </v-list-item-subtitle>
 
                   <template v-slot:append>
-                     <v-btn color="grey-lighten-1" icon="mdi-delete" variant="text" @click="deleteUser(user)"></v-btn>
+                     <v-btn color="grey-lighten-1" icon="mdi-delete" variant="text" @click="deleteUser(userAndGroups.user)"></v-btn>
                   </template>
                </v-list-item>
             </div>
@@ -128,9 +128,8 @@ watch(() => [route.path, userAndGroupsList.value], async () => {
 
 
 function selectUser(user) {
-   extendExpiration()
    selectedUser.value = user
-   router.push(`/home/${props.signedinUid}/users/${user.uid}`)
+   router.push(`/users/${user.uid}`)
 }
 
 async function deleteUser(user) {
