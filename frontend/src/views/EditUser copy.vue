@@ -3,19 +3,18 @@
       <v-form>
          <v-container>
             <v-row>
-               <v-col cols="12" md="3">
+               <v-col cols="12" sm="6">
                   <v-text-field
-                     label="email"
+                     label="Email (unique)"
                      :modelValue="user?.email"
-                     @input="(e) => onFieldInputDebounced('email', e.target.value)"
                      :rules="emailRules"
+                     @input="(e) => onFieldInputDebounced('email', e.target.value)"
                      variant="underlined"
                   ></v-text-field>
                </v-col>
             </v-row>
-
             <v-row>
-               <v-col cols="12" md="6">
+               <v-col cols="12" sm="6">
                   <v-text-field
                      label="Nom"
                      :modelValue="user?.lastname"
@@ -23,7 +22,7 @@
                      variant="underlined"
                   ></v-text-field>
                </v-col>
-               <v-col cols="12" md="6">
+               <v-col cols="12" sm="6">
                   <v-text-field
                      label="Prénom"
                      :modelValue="user?.firstname"
@@ -34,7 +33,7 @@
             </v-row>
 
             <v-row>
-               <v-col xs="12" md="3">
+               <v-col xs="12" sm="12">
                   <v-select
                      variant="underlined"
                      v-model="userGroups"
@@ -48,26 +47,20 @@
                   ></v-select>
                </v-col>
             </v-row>
+
          </v-container>
       </v-form>
    </v-card>
 </template>
 
 <script setup>
-import { ref, watch, onUnmounted } from 'vue'
+import { ref, watch, onMounted, onUnmounted } from 'vue'
 import { useDebounceFn } from '@vueuse/core'
-import { useObservable } from '@vueuse/rxjs'
-import { firstValueFrom, map } from 'rxjs'
 
-import { useUser } from '/src/use/useUser'
-import { useGroup } from '/src/use/useGroup'
-import { useUserGroupRelation } from '/src/use/useUserGroupRelation'
-
+import { addPerimeter as addUserPerimeter, update as updateUser } from '/src/use/useUser'
+import { addPerimeter as addGroupPerimeter } from '/src/use/useGroup'
+import { addPerimeter as addUserGroupRelationPerimeter, groupDifference, create as createUserGroupRelation, remove as removeUserGroupRelation } from '/src/use/useUserGroupRelation'
 import { displaySnackbar } from '/src/use/useSnackbar'
-
-const { getObservable: users$, update: updateUser } = useUser()
-const { getObservable: groups$ } = useGroup()
-const { getObservable: userGroupRelations$, groupDifference, create: createUserGroupRelation, remove: removeUserGroupRelation } = useUserGroupRelation()
 
 
 const props = defineProps({
@@ -81,40 +74,33 @@ const emailRules = [
    (v) => /^([a-z0-9_.-]+)@([\da-z.-]+)\.([a-z.]{2,6})$/.test(v) || "l'email doit être valide"
 ]
 
-const groupList = useObservable(groups$({}))
-
 const user = ref()
-const userGroups = ref([])
-const userTabs = ref([])
 
-let usersSubscription
-let userGroupRelationSubscription
-let userTabRelationSubscription
+let groupListPerimeter
+let userPerimeter
+let groupRelationListPerimeter
+
+onMounted(async () => {
+   groupListPerimeter = await addGroupPerimeter({}, (list) => groupList.value = list)
+})
+
+onUnmounted(async () => {
+   await groupListPerimeter.remove()
+   userPerimeter && userPerimeter.remove()
+   groupRelationListPerimeter && groupRelationListPerimeter.remove()
+})
 
 watch(() => props.user_uid, async (user_uid) => {
-   
-   // handle unsubscription carefully - otherwise, a previous subscription for another user_uid will interfere with current subscription
-   if (usersSubscription) usersSubscription.unsubscribe()
-   usersSubscription = users$({ uid: user_uid }).subscribe(userList => {
-      if (userList.length === 0) return
-      user.value = userList[0]
+   if (userPerimeter) await userPerimeter.remove()
+   userPerimeter = await addUserPerimeter({ uid: user_uid }, ([user_]) => {
+      user.value = user_
    })
-
-   if (userGroupRelationSubscription) userGroupRelationSubscription.unsubscribe()
-   userGroupRelationSubscription = userGroupRelations$({ user_uid }).pipe(
-      map(relationList => relationList.map(relation => relation.group_uid))
-   ).subscribe(groupUIDs => {
-      userGroups.value = groupUIDs
+   if (groupRelationListPerimeter) await groupRelationListPerimeter.remove()
+   groupRelationListPerimeter = await addUserGroupRelationPerimeter({ user_uid }, (relationList) => {
+      userGroups.value = relationList.map(relation => relation.group_uid)
    })
-},
-   { immediate: true } // so that it's called on component mount
-)
+}, { immediate: true })
 
-onUnmounted(() => {
-   if (usersSubscription) usersSubscription.unsubscribe()
-   if (userGroupRelationSubscription) userGroupRelationSubscription.unsubscribe()
-   if (userTabRelationSubscription) userTabRelationSubscription.unsubscribe()
-})
 
 //////////////////////        TEXT FIELD EDITING        //////////////////////
 
@@ -123,13 +109,16 @@ const onFieldInput = async (field, value) => {
       await updateUser(props.user_uid, { [field]: value })
       displaySnackbar({ text: "Modification effectuée avec succès !", color: 'success', timeout: 2000 })
    } catch(err) {
-      displaySnackbar({ text: "Erreur lors de la sauvegarde...", color: 'error', timeout: 4000 })
+      displaySnackbar({ text: "Erreur lors de l'enregistrement...", color: 'error', timeout: 4000 })
    }
 }
 const onFieldInputDebounced = useDebounceFn(onFieldInput, 500)
 
 
 //////////////////////        USER-GROUP RELATIONS        //////////////////////
+
+const userGroups = ref([])
+const groupList = ref([])
 
 const onGroupChange = async (groupUIDs) => {
    try {
@@ -140,6 +129,7 @@ const onGroupChange = async (groupUIDs) => {
       for (const relation_uid of toRemoveRelationUIDs) {
          await removeUserGroupRelation(relation_uid)
       }
+      // await updateUserGroups(props.user_uid, groupUIDs)
       displaySnackbar({ text: "Modification effectuée avec succès !", color: 'success', timeout: 2000 })
    } catch(err) {
       displaySnackbar({ text: "Erreur lors de l'enregistrement...", color: 'error', timeout: 4000 })

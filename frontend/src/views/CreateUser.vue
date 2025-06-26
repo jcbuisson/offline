@@ -58,7 +58,6 @@ import { ref, onMounted, onUnmounted } from 'vue'
 import { useUser, getFullname } from '/src/use/useUser'
 import { useGroup } from '/src/use/useGroup'
 import { useUserGroupRelation } from '/src/use/useUserGroupRelation'
-import { tabs } from '/src/use/useTabs'
 
 import router from '/src/router'
 import { displaySnackbar } from '/src/use/useSnackbar'

@@ -3,7 +3,7 @@
       <v-form>
          <v-container>
             <v-row>
-               <v-col cols="12" md="6">
+               <v-col cols="12" sm="6">
                   <v-text-field
                      label="Nom"
                      :modelValue="group?.name"
@@ -20,13 +20,9 @@
 <script setup>
 import { ref, watch, onUnmounted } from 'vue'
 import { useDebounceFn } from '@vueuse/core'
-import { Observable, from, map, of, merge, combineLatest, firstValueFrom } from 'rxjs'
-import { mergeMap, switchMap, scan, tap, catchError } from 'rxjs/operators'
 
-import { useGroup } from '/src/use/useGroup'
+import { addPerimeter as addGroupPerimeter, update as updateGroup } from '/src/use/useGroup'
 import { displaySnackbar } from '/src/use/useSnackbar'
-
-const { getObservable: groups$, update: updateGroup } = useGroup()
 
 
 const props = defineProps({
@@ -37,21 +33,16 @@ const props = defineProps({
 
 const group = ref()
 
-let groupSubscription
-
-function group$(group_uid) {
-   return groups$({ uid: group_uid }).pipe(
-      map(groups => groups.length > 0 ? groups[0] : null)
-   )
-}
+let groupPerimeter
 
 onUnmounted(() => {
-   groupSubscription && groupSubscription.unsubscribe()
+   groupPerimeter && groupPerimeter.remove()
 })
 
 watch(() => props.group_uid, async (group_uid) => {
-   groupSubscription = group$(group_uid).subscribe(grp => {
-      group.value = grp
+   if (groupPerimeter) await groupPerimeter.remove()
+   groupPerimeter = await addGroupPerimeter({ uid: group_uid }, ([group_]) => {
+      group.value = group_
    })
 }, { immediate: true })
 

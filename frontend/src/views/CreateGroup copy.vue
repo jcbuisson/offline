@@ -6,7 +6,7 @@
                <v-col cols="12" sm="6">
                   <v-text-field
                      label="Nom"
-                     v-model="data.name"
+                     v-model="group.name"
                      variant="underlined"
                   ></v-text-field>
                </v-col>
@@ -22,26 +22,23 @@
 <script setup>
 import { ref } from 'vue'
 
-import { useGroup } from '/src/use/useGroup'
-
+import { create as createGroup } from '/src/use/useGroup'
 import router from '/src/router'
 import { displaySnackbar } from '/src/use/useSnackbar'
 
-const { create: createGroup } = useGroup()
 
-const data = ref({})
+const group = ref({})
 
 const valid = ref()
 
 async function submit() {
    try {
-      const group = await createGroup(data.value)
+      const createdGroup = await createGroup(group.value)
       displaySnackbar({ text: "Création effectuée avec succès !", color: 'success', timeout: 2000 })
       router.push(`/groups/${createdGroup.uid}`)
    } catch(err) {
       displaySnackbar({ text: "Erreur lors de la création...", color: 'error', timeout: 4000 })
    }
-   router.back()
 }
 </script>
 
