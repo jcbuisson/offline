@@ -55,12 +55,19 @@
 <script setup>
 import { ref, onMounted, onUnmounted } from 'vue'
 
-import { addPerimeter as addUserPerimeter, create as createUser } from '/src/use/useUser.js'
-import { addPerimeter as addGroupPerimeter } from '/src/use/useGroup'
-import { groupDifference, create as createUserGroupRelation, remove as removeUserGroupRelation } from '/src/use/useUserGroupRelation'
+import { useUser, getFullname } from '/src/use/useUser'
+import { useGroup } from '/src/use/useGroup'
+import { useUserGroupRelation } from '/src/use/useUserGroupRelation'
+import { tabs } from '/src/use/useTabs'
 
 import router from '/src/router'
 import { displaySnackbar } from '/src/use/useSnackbar'
+import 'jcb-upload'
+
+const { getObservable: users$, create: createUser } = useUser()
+const { getObservable: groups$ } = useGroup()
+const { create: createUserGroupRelation, remove: removeUserGroupRelation, groupDifference } = useUserGroupRelation()
+
 
 const data = ref({})
 const valid = ref()
@@ -70,31 +77,17 @@ const emailRules = [
    (v) => /^([a-z0-9_.-]+)@([\da-z.-]+)\.([a-z.]{2,6})$/.test(v) || "l'email doit être valide"
 ]
 
-const groupList = ref([])
+const groupList = useObservable(groups$({}))
 
-const perimeters = []
-
-onMounted(async () => {
-   perimeters.push(await addGroupPerimeter({}, async list => {
-      groupList.value = list.toSorted((u1, u2) => (u1.name > u2.name) ? 1 : (u1.name < u2.name) ? -1 : 0)
-   }))
-
-})
-
-onUnmounted(async () => {
-   for (const perimeter of perimeters) {
-      await perimeter.remove()
-   }
-})
+// make sure all users are eventually synchronized, to allow email check
+const allUsers = useObservable(users$({}))
 
 async function submit() {
    try {
       // check if email is not already used
-      const userPerimeter = await addUserPerimeter({ email: data.value.email })
-      perimeters.push(userPerimeter)
-      const [other] = await userPerimeter.currentValue()
+      const other = allUsers.value.find(user => user.email === data.value.email)
       if (other) {
-         alert(`Il existe déjà un utilisateur avec cet email : ${data.value.email}`)
+         alert(`Il existe déjà un utilisateur "${getFullname(other)}" avec cet email : ${data.value.email}`)
       } else {
          const user = await createUser({
             email: data.value.email,
@@ -109,7 +102,7 @@ async function submit() {
             await removeUserGroupRelation(relationUID)
          }
          displaySnackbar({ text: "Création effectuée avec succès !", color: 'success', timeout: 2000 })
-         router.push(`/users/${user.uid}`)
+         router.push(`/home/${props.signedinUid}/users/${user.uid}`)
       }
    } catch(err) {
       displaySnackbar({ text: "Erreur lors de la création...", color: 'error', timeout: 4000 })

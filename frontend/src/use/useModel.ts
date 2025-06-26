@@ -1,26 +1,29 @@
 import Dexie from "dexie"
+import { from } from 'rxjs'
 import { liveQuery } from "dexie"
 import { uid as uid16 } from 'uid'
+import { tryOnScopeDispose } from '@vueuse/core'
 
 import { wherePredicate, synchronize, addSynchroDBWhere, removeSynchroDBWhere, synchronizeModelWhereList } from '/src/lib/synchronize.js'
 import { app, isConnected, disconnectedDate } from '/src/client-app.js'
 
 
-export default function(dbName, modelName, fields) {
+export default function(dbName: string, modelName: string, fields) {
 
    const db = new Dexie(dbName)
 
-   db.version(12).stores({
-      whereList: "sortedjson, where",
+   db.version(1).stores({
+      whereList: "sortedjson",
       values: ['uid', '__deleted__', ...fields].join(','), // ex: "uid, __deleted__, email, firstname, lastname",
       metadata: "uid, created_at, updated_at, deleted_at",
    })
 
+   // db.open().then(() => console.log('db ready', dbName, modelName))
+
    const reset = async () => {
-      // await db.whereList.clear()
-      // await db.values.clear()
-      // await db.metadata.clear()
-      await db.delete()
+      await db.whereList.clear()
+      await db.values.clear()
+      await db.metadata.clear()
    }
 
    /////////////          PUB / SUB          /////////////
@@ -43,32 +46,7 @@ export default function(dbName, modelName, fields) {
       await db.metadata.put(meta)
    })
 
-
-   /////////////          CRUD METHODS WITH SYNC          /////////////
-
-   async function addPerimeter(where, callback) {
-      const isNew = await addSynchroWhere(where)
-      // run synchronization if connected and if `where` is new
-      if (isNew && isConnected.value) {
-         await synchronize(app, modelName, db.values, db.metadata, where, disconnectedDate.value)
-      }
-      const predicate = wherePredicate(where)
-      const observable = liveQuery(() => db.values.filter(value => !value.__deleted__ && predicate(value)).toArray())
-      const subscription = observable.subscribe(async value => {
-         callback && callback(value)
-      })
-      return {
-         getByUid: async (uid) => db.values.get(uid),
-         currentValue: async () => {
-            return await db.values.filter(value => !value.__deleted__ && predicate(value)).toArray()
-         },
-         remove: async () => {
-            await removeSynchroWhere(where)
-            subscription.unsubscribe()
-         },
-      }
-   }
-
+   
    async function create(data) {
       const uid = uid16(16)
       // optimistic update
@@ -87,7 +65,7 @@ export default function(dbName, modelName, fields) {
       return await db.values.get(uid)
    }
 
-   const update = async (uid, data) => {
+   const update = async (uid: string, data: object) => {
       const previousValue = { ...(await db.values.get(uid)) }
       const previousMetadata = { ...(await db.metadata.get(uid)) }
       // optimistic update of cache
@@ -109,7 +87,7 @@ export default function(dbName, modelName, fields) {
       return await db.values.get(uid)
    }
 
-   const remove = async (uid) => {
+   const remove = async (uid: string) => {
       const deleted_at = new Date()
       // optimistic delete in cache
       await db.values.update(uid, { __deleted__: true })
@@ -126,11 +104,24 @@ export default function(dbName, modelName, fields) {
       }
    }
 
-   function addSynchroWhere(where) {
+
+   function getObservable(where = {}) {
+      addSynchroWhere(where).then((isNew: boolean) => {
+         if (isNew && isConnected.value) {
+            synchronize(app, modelName, db.values, db.metadata, where, disconnectedDate.value)
+         }
+      })
+      const predicate = wherePredicate(where)
+      return from(liveQuery(() => db.values.filter(value => !value.__deleted__ && predicate(value)).toArray()))
+   }
+
+   function addSynchroWhere(where: object) {
+      console.log('addSynchroWhere', dbName, modelName, where)
       return addSynchroDBWhere(where, db.whereList)
    }
 
-   function removeSynchroWhere(where) {
+   function removeSynchroWhere(where: object) {
+      console.log('removeSynchroWhere', dbName, modelName, where)
       return removeSynchroDBWhere(where, db.whereList)
    }
 
@@ -138,11 +129,19 @@ export default function(dbName, modelName, fields) {
       await synchronizeModelWhereList(app, modelName, db.values, db.metadata, disconnectedDate.value, db.whereList)
    }
 
+   // Automatically clean up when the component using this composable unmounts
+   tryOnScopeDispose(async () => {
+      console.log('CLEANING', dbName, modelName)
+      const whereList = await db.whereList.toArray()
+      for (const where of whereList) {
+         removeSynchroWhere(JSON.parse(where.sortedjson))
+      }
+   })
 
    return {
       db, reset,
       create, update, remove,
-      addPerimeter,
+      getObservable,
       synchronizeAll,
    }
 }

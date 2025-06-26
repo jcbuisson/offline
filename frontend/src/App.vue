@@ -137,9 +137,13 @@ import { isConnected, connect, disconnect } from '/src/client-app.js'
 import { app } from '/src/client-app.js'
 import router from '/src/router'
 
-import { synchronizeAll as synchronizeAllUser, reset as resetUser } from '/src/use/useUser'
-import { synchronizeAll as synchronizeAllGroup, reset as resetGroup } from '/src/use/useGroup'
-import { synchronizeAll as synchronizeAllUserGroupRelation, reset as resetUserGroupRelation } from '/src/use/useUserGroupRelation'
+import { useUser } from '/src/use/useUser'
+import { useGroup } from '/src/use/useGroup'
+import { useUserGroupRelation } from '/src/use/useUserGroupRelation'
+
+const { synchronizeAll: synchronizeAllUser, reset: resetUser } = useUser()
+const { synchronizeAll: synchronizeAllGroup, reset: resetGroup } = useGroup()
+const { synchronizeAll: synchronizeAllUserGroupRelation, reset: resetUserGroupRelation } = useUserGroupRelation()
 
 // synchronize when connection starts or restarts
 // it is located here because of import circularity issues
