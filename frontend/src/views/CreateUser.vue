@@ -54,6 +54,7 @@
 
 <script setup>
 import { ref, onMounted, onUnmounted } from 'vue'
+import { useObservable } from '@vueuse/rxjs'
 
 import { useUser, getFullname } from '/src/use/useUser'
 import { useGroup } from '/src/use/useGroup'
@@ -61,7 +62,6 @@ import { useUserGroupRelation } from '/src/use/useUserGroupRelation'
 
 import router from '/src/router'
 import { displaySnackbar } from '/src/use/useSnackbar'
-import 'jcb-upload'
 
 const { getObservable: users$, create: createUser } = useUser()
 const { getObservable: groups$ } = useGroup()
@@ -101,7 +101,7 @@ async function submit() {
             await removeUserGroupRelation(relationUID)
          }
          displaySnackbar({ text: "Création effectuée avec succès !", color: 'success', timeout: 2000 })
-         router.push(`/home/${props.signedinUid}/users/${user.uid}`)
+         router.push(`/users/${user.uid}`)
       }
    } catch(err) {
       displaySnackbar({ text: "Erreur lors de la création...", color: 'error', timeout: 4000 })

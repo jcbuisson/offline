@@ -74,7 +74,7 @@ async function deleteGroup(group) {
          // remove user-group relations
          await Promise.all(userGroupRelations.map(relation => removeGroupRelation(relation.uid)))
          await removeGroup(group.uid)
-         router.push(`/home/${props.signedinUid}/groups`)
+         router.push(`/groups`)
          displaySnackbar({ text: "Suppression effectuée avec succès !", color: 'success', timeout: 2000 })
       } catch(err) {
          displaySnackbar({ text: "Erreur lors de la suppression...", color: 'error', timeout: 4000 })
@@ -83,7 +83,7 @@ async function deleteGroup(group) {
 }
 
 const route = useRoute()
-const routeRegex = /\/home\/([a-z0-9]+)\/groups\/([a-z0-9]+)/
+const routeRegex = /\/groups\/([a-z0-9]+)/
 
 watch(() => [route.path, groupList.value], async () => {
    if (!groupList.value) return

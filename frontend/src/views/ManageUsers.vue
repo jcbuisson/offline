@@ -61,15 +61,6 @@ const { getObservable: groups$ } = useGroup()
 const { getObservable: userGroupRelations$, remove: removeGroupRelation } = useUserGroupRelation()
 
 
-const props = defineProps({
-   signedinUid: {
-      type: String,
-   },
-})
-
-const groupList = useObservable(groups$({}))
-const userGroups = ref([])
-
 const nameFilter = ref('')
 const groupFilter = ref('')
 
@@ -89,10 +80,6 @@ const userAndGroups$ = users$({}).pipe(
 )
 const userAndGroupsList = useObservable(userAndGroups$)
 
-function onGroupChange(uid) {
-   groupFilter.value = uid
-}
-
 const filteredUserAndGroupList = computed(() => {
    if (!userAndGroupsList.value) return []
    const nameFilter_ = (nameFilter.value || '').toLowerCase()
@@ -110,11 +97,11 @@ const filteredUserAndGroupList = computed(() => {
 
 
 async function addUser() {
-   router.push(`/home/${props.signedinUid}/users/create`)
+   router.push(`/users/create`)
 }
 
 const route = useRoute()
-const routeRegex = /home\/[a-z0-9]+\/users\/([a-z0-9]+)/
+const routeRegex = /\/users\/([a-z0-9]+)/
 
 watch(() => [route.path, userAndGroupsList.value], async () => {
    if (!userAndGroupsList.value) return
@@ -141,7 +128,7 @@ async function deleteUser(user) {
          await Promise.all(userGroupRelations.map(relation => removeGroupRelation(relation.uid)))
          // remove user
          await removeUser(user.uid)
-         router.push(`/home/${props.signedinUid}/users`)
+         router.push(`/users`)
          displaySnackbar({ text: "Suppression effectuée avec succès !", color: 'success', timeout: 2000 })
       } catch(err) {
          displaySnackbar({ text: "Erreur lors de la suppression...", color: 'error', timeout: 4000 })

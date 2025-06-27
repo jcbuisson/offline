@@ -1,5 +1,13 @@
 # Offline
 
+# BUG
+- fenêtre #1 en offline sur iPhone, fenêtre #2 en online sur Firefox
+- supprimer un groupe qui contient un user dans la fenêtre #1
+- visualiser la liste des users dans la fenêtre #2 : le user et son appartenance au groupe sont visibles
+- mettre la fenêtre #1 en online : dans la fenêtre #2 le user est toujours visible avec son groupe, ce qui est incorrect.
+Après inspection, le groupe a été supprimé dans l'indexedb de la fenêtre #1, mais pas la relation user-group. Dans la base de données tout est normal.
+
+
 - Les clients ont des caches dénormalisés pour chaque table/modèle
 - Ces caches permettent toutes les opérations relationnelles : accès aux objets, aux listes, jointures entre modèles, etc.
 - Les clés de ces caches sont des uid, créés explicitement par les clients, pour ne pas avoir de conflit entre les identifiants créés offline par différents clients
