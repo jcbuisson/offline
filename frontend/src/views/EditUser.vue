@@ -34,7 +34,7 @@
             </v-row>
 
             <v-row>
-               <v-col xs="12" md="3">
+               <v-col xs="12" md="6">
                   <v-select
                      variant="underlined"
                      v-model="userGroups"
