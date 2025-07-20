@@ -3,10 +3,11 @@
       <template v-slot:left-panel>
          <!-- makes the layout a vertical stack filling the full height -->
          <v-card class="d-flex flex-column fill-height">
+            
             <!-- Toolbar (does not grow) -->
             <v-toolbar color="red-darken-4" density="compact">
                <v-btn readonly icon="mdi-magnify" variant="text"></v-btn>
-               <v-text-field v-model="filter" single-line></v-text-field>
+               <v-text-field v-model="nameFilter" single-line></v-text-field>
                <v-btn icon="mdi-plus" variant="text" @click="addUser"></v-btn>
             </v-toolbar>
          

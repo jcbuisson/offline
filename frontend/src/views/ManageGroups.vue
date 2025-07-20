@@ -15,7 +15,7 @@
                   <v-list-item-title>{{ group.name }}</v-list-item-title>
 
                   <template v-slot:append>
-                     <v-btn color="grey-lighten-1" icon="mdi-delete" variant="text" @click="deleteGroup(group)"></v-btn>
+                     <v-btn color="grey-lighten-1" icon="mdi-delete" variant="text" @click="startDeletingGroup(group)"></v-btn>
                   </template>
                </v-list-item>
             </div>
@@ -26,6 +26,17 @@
          <router-view></router-view>
       </template>
    </SplitPanel>
+
+   <dialog ref="confirmDialog">
+      <v-card>
+         <v-card-title>Confirmer</v-card-title>
+         <v-card-text>Supprimer le groupe {{groupToDelete?.name}} ? (nombre d'utilisateurs membres : {{userGroupRelations?.length}})</v-card-text>
+         <v-card-actions>
+            <v-btn @click="cancelDelete">Annuler</v-btn>
+            <v-btn @click="deleteGroup">Supprimer</v-btn>
+         </v-card-actions>
+      </v-card>
+   </dialog>
 </template>
 
 
@@ -67,22 +78,55 @@ function selectGroup(group) {
    router.push(`/groups/${group.uid}`)
 }
 
-async function deleteGroup(group) {
-   // TODO: use subscription
-   const userGroupRelations = await firstValueFrom(debouncedGroupRelations$(group.uid))
-   if (window.confirm(`Supprimer le groupe ${group.name} ? (nombre d'utilisateurs membres : ${userGroupRelations.length})`)) {
-      try {
-         // remove user-group relations
-         await Promise.all(userGroupRelations.map(relation => removeGroupRelation(relation.uid)))
-         // remove group
-         await removeGroup(group.uid)
-         router.push(`/groups`)
-         displaySnackbar({ text: "Suppression effectuée avec succès !", color: 'success', timeout: 2000 })
-      } catch(err) {
-         displaySnackbar({ text: "Erreur lors de la suppression...", color: 'error', timeout: 4000 })
-      }
+const confirmDialog = ref(null)
+const groupToDelete = ref()
+const userGroupRelations = ref()
+let subscription
+
+function startDeletingGroup(group) {
+   groupToDelete.value = group
+   if (subscription) subscription.unsubscribe()
+   subscription = userGroupRelations$({ group_uid: group.uid }).subscribe(relations => {
+      // modal dialog will show the real-time count of group members
+      userGroupRelations.value = relations
+   })
+   userGroupRelations.value = []
+   confirmDialog.value.showModal()
+   // // TODO: find an async way to do it
+   // const userGroupRelations = await firstValueFrom(debouncedGroupRelations$(group.uid))
+   // if (window.confirm(`Supprimer le groupe ${group.name} ? (nombre d'utilisateurs membres : ${userGroupRelations.length})`)) {
+   //    try {
+   //       // remove user-group relations
+   //       await Promise.all(userGroupRelations.map(relation => removeGroupRelation(relation.uid)))
+   //       // remove group
+   //       await removeGroup(group.uid)
+   //       router.push(`/groups`)
+   //       displaySnackbar({ text: "Suppression effectuée avec succès !", color: 'success', timeout: 2000 })
+   //    } catch(err) {
+   //       displaySnackbar({ text: "Erreur lors de la suppression...", color: 'error', timeout: 4000 })
+   //    }
+   // }
+}
+function cancelDelete() {
+   confirmDialog.value.close()
+}
+async function deleteGroup() {
+   confirmDialog.value.close()
+   try {
+      // remove user-group relations
+      await Promise.all(userGroupRelations.value.map(relation => removeGroupRelation(relation.uid)))
+      // remove group
+      await removeGroup(groupToDelete.value.uid)
+      router.push(`/groups`)
+      displaySnackbar({ text: "Suppression effectuée avec succès !", color: 'success', timeout: 2000 })
+   } catch(err) {
+      displaySnackbar({ text: "Erreur lors de la suppression...", color: 'error', timeout: 4000 })
    }
 }
+
+onUnmounted(() => {
+   if (subscription) subscription.unsubscribe()
+})
 
 const route = useRoute()
 const routeRegex = /\/groups\/([a-z0-9]+)/
