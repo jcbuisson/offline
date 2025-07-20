@@ -5,7 +5,9 @@ const mutex = new Mutex()
 
 // ex: where = { uid: 'azer' }
 export async function synchronize(app, modelName, idbValues, idbMetadata, where, cutoffDate) {
+   
    await mutex.acquire()
+
    try {
       const requestPredicate = wherePredicate(where)
 
@@ -29,19 +31,16 @@ export async function synchronize(app, modelName, idbValues, idbMetadata, where,
 
       // 1- add missing elements in cache
       for (const [value, metaData] of toAdd) {
-         console.log('adding', value, metaData)
          await idbValues.add(value)
          await idbMetadata.add(metaData)
       }
       // 2- delete elements from cache
       for (const [uid, deleted_at] of toDelete) {
-         console.log('deleting', uid, deleted_at)
          await idbValues.delete(uid)
          await idbMetadata.update(uid, { deleted_at })
       }
       // 3- update elements of cache
       for (const elt of toUpdate) {
-         console.log('updating', elt)
          // get full value of element to update
          const value = await app.service(modelName).findUnique({ where:{ uid: elt.uid }})
          delete value.uid
@@ -101,50 +100,39 @@ export function wherePredicate(where) {
    }
 }
 
-function isSubset(subset, fullObject) {
-   // return Object.entries(subset).some(([key, value]) => fullObject[key] === value)
-   for (const key in fullObject) {
-      if (fullObject[key] !== subset[key]) return false
-   }
-   return true
-}
-console.log('isSubset({a: 1, b: 2}, {b: 2})=true', isSubset({a: 1, b: 2}, {b: 2}))
-console.log('isSubset({}, {})=true', isSubset({}, {}))
-console.log('isSubset({a: 1}, {})=true', isSubset({a: 1}, {}))
-console.log('isSubset({a: 1}, {b: 2})=false', isSubset({a: 1}, {b: 2}))
-console.log('isSubset({a: 1}, {a: 1})=true', isSubset({a: 1}, {a: 1}))
+// function isSubset(subset, fullObject) {
+//    // return Object.entries(subset).some(([key, value]) => fullObject[key] === value)
+//    for (const key in fullObject) {
+//       if (fullObject[key] !== subset[key]) return false
+//    }
+//    return true
+// }
+// console.log('isSubset({a: 1, b: 2}, {b: 2})=true', isSubset({a: 1, b: 2}, {b: 2}))
+// console.log('isSubset({}, {})=true', isSubset({}, {}))
+// console.log('isSubset({a: 1}, {})=true', isSubset({a: 1}, {}))
+// console.log('isSubset({a: 1}, {b: 2})=false', isSubset({a: 1}, {b: 2}))
+// console.log('isSubset({a: 1}, {a: 1})=true', isSubset({a: 1}, {a: 1}))
 
- 
+
+// sortedjson is used in whereDb to have a deterministic representation of an object
+
 async function getWhereList(whereDb) {
    const list = await whereDb.toArray()
-   return list.map(elt => elt.where)
+   return list.map(elt => elt.sortedjson)
 }
 
 export async function addSynchroDBWhere(where, whereDb) {
-   let modified = false
    await mutex.acquire()
+   let modified = false
+   const swhere = sortedJson(where)
    try {
-      let over = false
       const whereList = await getWhereList(whereDb)
-      for (const w of whereList) {
-         // if `where` is included in `w`, do nothing and exit
-         if (isSubset(where, w)) { over = true; break }
-         // if `where` is more general than `w`, replace `w` by `where`
-         if (isSubset(w, where)) {
-            await whereDb.delete(sortedJson(w))
-            await whereDb.add({ sortedjson: sortedJson(where), where })
-            over = true
-            modified = true
-            break
-         }
-      }
-      if (!over && !modified) {
-         // add `where` to the existing set
-         await whereDb.add({ sortedjson: sortedJson(where), where })
+      if (!whereList.includes(swhere)) {
+         await whereDb.add({ sortedjson: sortedJson(where) })
          modified = true
       }
    } catch(err) {
-      console.log('err addSynchroDBWhere', err)
+      console.log('err addSynchroDBWhere', where, err)
    } finally {
       mutex.release()
    }
@@ -154,8 +142,8 @@ export async function addSynchroDBWhere(where, whereDb) {
 export async function removeSynchroDBWhere(where, whereDb) {
    await mutex.acquire()
    try {
-      const sortedjson = sortedJson(where)
-      await whereDb.filter(value => value.sortedjson === sortedjson).delete()
+      const swhere = sortedJson(where)
+      await whereDb.filter(value => (value.sortedjson === swhere)).delete()
    } catch(err) {
       console.log('err removeSynchroDBWhere', err)
    } finally {
@@ -164,8 +152,9 @@ export async function removeSynchroDBWhere(where, whereDb) {
 }
 
 export async function synchronizeModelWhereList(app, modelName, idbValues, idbMetadata, cutoffDate, whereDb) {
-   const whereList = await getWhereList(whereDb)
-   for (const where of whereList) {
+   const swhereList = await getWhereList(whereDb)
+   for (const swhere of swhereList) {
+      const where = JSON.parse(swhere)
       await synchronize(app, modelName, idbValues, idbMetadata, where, cutoffDate)
    }
 }
