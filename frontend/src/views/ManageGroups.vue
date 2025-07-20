@@ -68,11 +68,13 @@ function selectGroup(group) {
 }
 
 async function deleteGroup(group) {
+   // TODO: use subscription
    const userGroupRelations = await firstValueFrom(debouncedGroupRelations$(group.uid))
    if (window.confirm(`Supprimer le groupe ${group.name} ? (nombre d'utilisateurs membres : ${userGroupRelations.length})`)) {
       try {
          // remove user-group relations
          await Promise.all(userGroupRelations.map(relation => removeGroupRelation(relation.uid)))
+         // remove group
          await removeGroup(group.uid)
          router.push(`/groups`)
          displaySnackbar({ text: "Suppression effectuée avec succès !", color: 'success', timeout: 2000 })
