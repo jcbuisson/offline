@@ -22,12 +22,12 @@
 <script setup>
 import { ref } from 'vue'
 
-import { useGroup } from '/src/use/useGroup'
-
 import router from '/src/router'
 import { displaySnackbar } from '/src/use/useSnackbar'
 
-const { create: createGroup } = useGroup()
+import { groupModel } from '/src/client-app.ts';
+
+const { create: createGroup } = groupModel;
 
 const data = ref({})
 

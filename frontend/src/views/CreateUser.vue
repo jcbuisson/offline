@@ -56,17 +56,14 @@
 import { ref, onMounted, onUnmounted } from 'vue'
 import { useObservable } from '@vueuse/rxjs'
 
-import { useUser, getFullname } from '/src/use/useUser'
-import { useGroup } from '/src/use/useGroup'
-import { useUserGroupRelation } from '/src/use/useUserGroupRelation'
-
 import router from '/src/router'
 import { displaySnackbar } from '/src/use/useSnackbar'
 
-const { getObservable: users$, create: createUser } = useUser()
-const { getObservable: groups$ } = useGroup()
-const { create: createUserGroupRelation, remove: removeUserGroupRelation, groupDifference } = useUserGroupRelation()
+import { userModel, groupModel, userGroupRelationModel } from '/src/client-app.ts';
 
+const { getObservable: users$, create: createUser } = userModel;
+const { getObservable: groups$ } = groupModel;
+const { create: createUserGroupRelation, remove: removeUserGroupRelation, groupDifference } = userGroupRelationModel;
 
 const data = ref({})
 const valid = ref()

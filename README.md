@@ -1,5 +1,48 @@
 # Offline
 
+
+## Pros
+
+- a relational database schema!
+- real-time!
+- offline-first!
+- extensive use of observables, ideal for all types of reactive frameworks (React, Vue, etc.)
+
+## Cons
+
+- no autoincremented ids, only uuids (v7)
+- many-to-many relations must be explicitly described
+- relations must be explicitly deleted, even with ondelete-cascade
+- extensive use of observables
+
+## Typical usage
+
+```
+const { getObservable: groups$, remove: removeGroup } = useGroup()
+const { getObservable: groupRelations$ } = useGroupRelation()
+...
+const groupList = useObservable(groups$(), [])
+...
+watch(() => props.group_uid, (group_uid) => {
+    if (subscription) subscription.unsubscribe()
+    subscription = groupRelations$({ group_uid }).subscribe(groupRelationList => {
+        ...
+    }
+}, { immediate: true })
+```
+
+## Alternatives
+
+- yjs permet de partager un ensemble de valeurs entre plusieurs participants, en utilisant l'algorithme xxx.
+Idéal pour les applis collaboratives, mais mal utilisable si la source de vérité est une BD centralisée
+- CouchDB / PouchDB + replication
+C'estdu NoSQL non structuré. MongoDB a des schémas, mais pas de protocole de réplication
+- ElectricSQL : très prometteur, mais pas encore stable
+
+
+
+## Under the hood
+
 - Les clients ont des caches dénormalisés pour chaque table/modèle
 - Ces caches permettent toutes les opérations relationnelles : accès aux objets, aux listes, jointures entre modèles, etc.
 - Les clés de ces caches sont des uid, créés explicitement par les clients, pour ne pas avoir de conflit entre les identifiants créés offline par différents clients

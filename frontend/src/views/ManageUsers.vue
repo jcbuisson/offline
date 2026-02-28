@@ -45,10 +45,6 @@ import { Observable, from, map, of, merge, combineLatest, forkJoin, firstValueFr
 import { mergeMap, switchMap, concatMap, scan, tap, catchError, take, debounceTime } from 'rxjs/operators'
 import { useObservable } from '@vueuse/rxjs'
 
-import { useUser, getFullname } from '/src/use/useUser'
-import { useGroup } from '/src/use/useGroup'
-import { useUserGroupRelation } from '/src/use/useUserGroupRelation'
-
 import { selectedUser } from '/src/use/useSelectedUser'
 import { displaySnackbar } from '/src/use/useSnackbar'
 
@@ -57,9 +53,11 @@ import router from '/src/router'
 
 import SplitPanel from '/src/components/SplitPanel.vue'
 
-const { getObservable: users$, remove: removeUser } = useUser()
-const { getObservable: groups$ } = useGroup()
-const { getObservable: userGroupRelations$, remove: removeGroupRelation } = useUserGroupRelation()
+import { userModel, groupModel, userGroupRelationModel } from '/src/client-app.ts';
+
+const { getObservable: users$, remove: removeUser } = userModel;
+const { getObservable: groups$ } = groupModel;
+const { getObservable: userGroupRelations$, remove: removeGroupRelation } = userGroupRelationModel;
 
 
 const nameFilter = ref('')

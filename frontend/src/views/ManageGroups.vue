@@ -27,7 +27,7 @@
       </template>
    </SplitPanel>
 
-   <dialog ref="confirmDialog">
+   <dialog ref="deletionDialog">
       <v-card>
          <v-card-title>Confirmer</v-card-title>
          <v-card-text>Supprimer le groupe {{groupToDelete?.name}} ? (nombre d'utilisateurs membres : {{userGroupRelations?.length}})</v-card-text>
@@ -41,31 +41,26 @@
 
 
 <script setup>
-import { ref, onMounted, onUnmounted, watch, computed } from 'vue'
+import { ref, onUnmounted, watch, computed } from 'vue'
 import { useRoute} from 'vue-router'
-import { Observable, from, map, of, merge, combineLatest, forkJoin, firstValueFrom } from 'rxjs'
-import { mergeMap, switchMap, concatMap, scan, tap, catchError, take, debounceTime } from 'rxjs/operators'
 import { useObservable } from '@vueuse/rxjs'
 
-import { useGroup } from '/src/use/useGroup'
-import { useUserGroupRelation } from '/src/use/useUserGroupRelation'
 import router from '/src/router'
 
 import SplitPanel from '/src/components/SplitPanel.vue'
 import { displaySnackbar } from '/src/use/useSnackbar'
 
-const { getObservable: groups$, remove: removeGroup } = useGroup()
-const { getObservable: userGroupRelations$, remove: removeGroupRelation } = useUserGroupRelation()
+import { groupModel, userGroupRelationModel } from '/src/client-app.ts';
+
+const { getObservable: groups$, remove: removeGroup } = groupModel;
+const { getObservable: userGroupRelations$, remove: removeGroupRelation } = userGroupRelationModel;
+
 
 
 const filter = ref('')
 
 const groupList = useObservable(groups$({}), [])
 const sortedGroupList = computed(() => groupList.value ? groupList.value.toSorted((u1, u2) => (u1.name > u2.name) ? 1 : (u1.name < u2.name) ? -1 : 0) : [])
-
-const debouncedGroupRelations$ = (group_uid) => userGroupRelations$({ group_uid }).pipe(
-   debounceTime(300) // wait until no new value for 300ms
-)
 
 async function addGroup() {
    router.push(`/groups/create`)
@@ -78,7 +73,7 @@ function selectGroup(group) {
    router.push(`/groups/${group.uid}`)
 }
 
-const confirmDialog = ref(null)
+const deletionDialog = ref(null)
 const groupToDelete = ref()
 const userGroupRelations = ref()
 let subscription
@@ -90,28 +85,15 @@ function startDeletingGroup(group) {
       // modal dialog will show the real-time count of group members
       userGroupRelations.value = relations
    })
-   userGroupRelations.value = []
-   confirmDialog.value.showModal()
-   // // TODO: find an async way to do it
-   // const userGroupRelations = await firstValueFrom(debouncedGroupRelations$(group.uid))
-   // if (window.confirm(`Supprimer le groupe ${group.name} ? (nombre d'utilisateurs membres : ${userGroupRelations.length})`)) {
-   //    try {
-   //       // remove user-group relations
-   //       await Promise.all(userGroupRelations.map(relation => removeGroupRelation(relation.uid)))
-   //       // remove group
-   //       await removeGroup(group.uid)
-   //       router.push(`/groups`)
-   //       displaySnackbar({ text: "Suppression effectuée avec succès !", color: 'success', timeout: 2000 })
-   //    } catch(err) {
-   //       displaySnackbar({ text: "Erreur lors de la suppression...", color: 'error', timeout: 4000 })
-   //    }
-   // }
+   deletionDialog.value.showModal()
 }
+
 function cancelDelete() {
-   confirmDialog.value.close()
+   deletionDialog.value.close()
 }
+
 async function deleteGroup() {
-   confirmDialog.value.close()
+   deletionDialog.value.close()
    try {
       // remove user-group relations
       await Promise.all(userGroupRelations.value.map(relation => removeGroupRelation(relation.uid)))

@@ -1,22 +1,28 @@
 import 'dotenv/config'
+// import { expressX, reloadPlugin, offlinePlugin } from '@jcbuisson/express-x'
+import { expressX, reloadPlugin, offlinePlugin } from '#root/src/server.mjs'
 
-// import { expressX } from '@jcbuisson/express-x'
-import { expressX } from './server.mjs'
-import { PrismaClient } from '@prisma/client'
-import services from './services/index.js'
 import channels from './channels.js'
+
+import prisma from './prisma.js'
+
 
 const app = expressX({
    WS_TRANSPORT: true,
    WS_PATH: '/offline-socket-io/',
 })
 
-const prisma = new PrismaClient()
 app.set('prisma', prisma)
 
-app.configure(services)
-app.configure(channels)
+// allows socket data & room transfer on page reload
+app.configure(reloadPlugin)
 
+// add offline synchronization service and add database services for business models
+app.configure(offlinePlugin, ['user', 'group', 'user_group_relation'])
+
+// publish
+app.configure(channels)
+// subscribe
 app.on('connection', (socket) => {
    app.joinChannel('anonymous', socket)
 })

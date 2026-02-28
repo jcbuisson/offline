@@ -1,6 +1,6 @@
 <template>
    <v-app class="h-screen overflow-hidden">
-
+CC {{ app.isConnected }}
       <!-- makes the layout a vertical stack filling the full screen -->
       <div class="d-flex flex-column fill-height">
          <!-- Toolbar (does not grow) -->
@@ -128,39 +128,35 @@ model user_group_relation {
 </template>
 
 <script setup>
-import { ref, watch } from 'vue'
+import { ref, watch, computed } from 'vue'
 import { useRoute} from 'vue-router'
 
 import GithubLink from '/src/components/GithubLink.vue'
 import OnlineButton from '/src/components/OnlineButton.vue'
 
-import { isConnected, connect, disconnect } from '/src/client-app.js'
+import { app, connect, disconnect } from '/src/client-app.ts'
 
-import { app } from '/src/client-app.js'
 import router from '/src/router'
 
-import { useUser } from '/src/use/useUser'
-import { useGroup } from '/src/use/useGroup'
-import { useUserGroupRelation } from '/src/use/useUserGroupRelation'
+import { userModel, groupModel, userGroupRelationModel } from '/src/client-app.ts';
 
-const { synchronizeAll: synchronizeAllUser, reset: resetUser } = useUser()
-const { synchronizeAll: synchronizeAllGroup, reset: resetGroup } = useGroup()
-const { synchronizeAll: synchronizeAllUserGroupRelation, reset: resetUserGroupRelation } = useUserGroupRelation()
+const isConnected = computed(() => !!app.isConnected);
+
 
 // synchronize when connection starts or restarts
 // it is located here because of import circularity issues
 app.addConnectListener(async () => {
    console.log(">>>>>>>>>>>>>>>> SYNC ALL")
    // order matters
-   await synchronizeAllUser()
-   await synchronizeAllGroup()
-   await synchronizeAllUserGroupRelation()
+   await userModel.synchronizeAll()
+   await groupModel.synchronizeAll()
+   await userGroupRelationModel.synchronizeAll()
 })
 
 async function clearCaches() {
-   await resetUser()
-   await resetGroup()
-   await resetUserGroupRelation()
+   await userModel.reset()
+   await groupModel.reset()
+   await userGroupRelationModel.reset()
 }
 
 const currentTab = ref('users')

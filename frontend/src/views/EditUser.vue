@@ -57,17 +57,15 @@
 import { ref, watch, onUnmounted } from 'vue'
 import { useDebounceFn } from '@vueuse/core'
 import { useObservable } from '@vueuse/rxjs'
-import { firstValueFrom, map } from 'rxjs'
-
-import { useUser } from '/src/use/useUser'
-import { useGroup } from '/src/use/useGroup'
-import { useUserGroupRelation } from '/src/use/useUserGroupRelation'
+import { map } from 'rxjs'
 
 import { displaySnackbar } from '/src/use/useSnackbar'
 
-const { getObservable: users$, update: updateUser } = useUser()
-const { getObservable: groups$ } = useGroup()
-const { getObservable: userGroupRelations$, groupDifference, create: createUserGroupRelation, remove: removeUserGroupRelation } = useUserGroupRelation()
+import { userModel, groupModel, userGroupRelationModel } from '/src/client-app.ts';
+
+const { getObservable: users$, update: updateUser } = userModel;
+const { getObservable: groups$ } = groupModel;
+const { getObservable: userGroupRelations$, groupDifference, create: createUserGroupRelation, remove: removeUserGroupRelation } = userGroupRelationModel;
 
 
 const props = defineProps({
@@ -85,14 +83,12 @@ const groupList = useObservable(groups$({}))
 
 const user = ref()
 const userGroups = ref([])
-const userTabs = ref([])
 
 let usersSubscription
 let userGroupRelationSubscription
 let userTabRelationSubscription
 
 watch(() => props.user_uid, async (user_uid) => {
-   
    // handle unsubscription carefully - otherwise, a previous subscription for another user_uid will interfere with current subscription
    if (usersSubscription) usersSubscription.unsubscribe()
    usersSubscription = users$({ uid: user_uid }).subscribe(userList => {

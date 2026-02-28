@@ -1,0 +1,44 @@
+generator client {
+  provider = "prisma-client"
+  output   = "../generated/prisma"
+}
+
+datasource db {
+   provider = "postgresql"
+}
+
+//////////////        META-DATA FOR ALL ELEMENTS OF ALL BUSINESS MODELS        //////////////
+
+model metadata {
+    uid        String    @unique(map: "meta_data_uid_key")   // `uid` is unique across models
+    created_at DateTime?
+    updated_at DateTime?
+    deleted_at DateTime?
+}
+
+//////////////        BUSINESS MODELS        //////////////
+
+model user {
+  uid                  String                @unique
+  firstname            String?
+  lastname             String?
+  email                String?               @unique
+  user_group_relations user_group_relation[]
+}
+
+model group {
+  uid                  String                @unique
+  name                 String?               @unique(map: "group_name_unique")
+  user_group_relations user_group_relation[]
+}
+
+// relations (here: many-to-many between `user` and `group`) need to be explicitely defined
+model user_group_relation {
+  uid       String @unique
+  user_uid  String
+  group_uid String
+  group     group  @relation(fields: [group_uid], references: [uid], onDelete: Cascade, onUpdate: NoAction)
+  user      user   @relation(fields: [user_uid], references: [uid], onDelete: Cascade, onUpdate: NoAction)
+
+  @@unique([user_uid, group_uid])
+}

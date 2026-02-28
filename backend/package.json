@@ -10,9 +10,7 @@
     "npm": ">= 6.0.0"
   },
   "imports": {
-    "#root/*": "./*",
-    "#lib/*": "./src/lib/*",
-    "#config": "./config/index.mjs"
+    "#root/*": "./*"
   },
   "homepage": "",
   "repository": {
@@ -28,16 +26,19 @@
   },
   "contributors": [],
   "scripts": {
-    "dev": "npx nodemon src/app.js",
+    "dev": "node --watch --experimental-strip-types src/app.js",
     "test": ""
   },
   "dependencies": {
-    "@jcbuisson/express-x": "^2.1.18",
-    "@prisma/client": "^6.2.1",
-    "dotenv": "^16.4.7",
-    "es6": "^0.0.7"
+    "@jcbuisson/express-x": "^3.0.1",
+    "@prisma/adapter-pg": "^7.4.1",
+    "@prisma/client": "^7.4.1",
+    "dotenv": "^17.3.1",
+    "express": "^5.2.1",
+    "pg": "^8.18.0",
+    "prisma": "^7.4.1"
   },
   "devDependencies": {
-    "prisma": "^6.2.1"
+    "prisma": "^6.19.2"
   }
 }

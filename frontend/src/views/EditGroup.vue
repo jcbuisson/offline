@@ -20,13 +20,11 @@
 <script setup>
 import { ref, watch, onUnmounted } from 'vue'
 import { useDebounceFn } from '@vueuse/core'
-import { Observable, from, map, of, merge, combineLatest, firstValueFrom } from 'rxjs'
-import { mergeMap, switchMap, scan, tap, catchError } from 'rxjs/operators'
+import { map } from 'rxjs'
 
-import { useGroup } from '/src/use/useGroup'
-import { displaySnackbar } from '/src/use/useSnackbar'
+import { groupModel } from '/src/client-app.ts';
 
-const { getObservable: groups$, update: updateGroup } = useGroup()
+const { getObservable: groups$, update: updateGroup } = groupModel;
 
 
 const props = defineProps({
