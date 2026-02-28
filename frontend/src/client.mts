@@ -371,7 +371,7 @@ export function offlinePlugin(app) {
       }
 
       async function synchronizeAll() {
-         await synchronizeModelWhereList(app, modelName, db.values, db.metadata, app.getDisconnectedDate, db.whereList)
+         await synchronizeModelWhereList(modelName, db.values, db.metadata, app.disconnectedDate, db.whereList)
       }
 
       // Automatically clean up when the component using this composable unmounts
