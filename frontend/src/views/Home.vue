@@ -1,6 +1,6 @@
 <template>
    <v-app class="h-screen overflow-hidden">
-CC {{ app.isConnected }}
+
       <!-- makes the layout a vertical stack filling the full screen -->
       <div class="d-flex flex-column fill-height">
          <!-- Toolbar (does not grow) -->

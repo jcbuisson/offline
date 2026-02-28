@@ -15,7 +15,7 @@ const socketOptions = {
 
 const socket = io(socketOptions);
 
-export const app = createClient(socket, { debug: false });
+export const app = createClient(socket, { debug: true });
 
 app.configure(reloadPlugin);
 

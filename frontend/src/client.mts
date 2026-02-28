@@ -8,20 +8,6 @@ import { tryOnScopeDispose } from '@vueuse/core';
 import { useSessionStorage } from '@vueuse/core'
 
 
-//////////////////////////       UTILITIES       //////////////////////////
-
-function generateUID(length) {
-   const characters = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789'
-   let uid = ''
-
-   for (let i = 0; i < length; i++) {
-     const randomIndex = Math.floor(Math.random() * characters.length)
-     uid += characters.charAt(randomIndex)
-   }
-   return uid
-}
-
-
 //////////////////////////       EXPRESSX       //////////////////////////
 
 export function createClient(socket, options={}) {
@@ -593,6 +579,20 @@ export function offlinePlugin(app) {
    return Object.assign(app, {
       createOfflineModel,
    })
+}
+
+
+//////////////////////////       UTILITIES       //////////////////////////
+
+function generateUID(length) {
+   const characters = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789'
+   let uid = ''
+
+   for (let i = 0; i < length; i++) {
+     const randomIndex = Math.floor(Math.random() * characters.length)
+     uid += characters.charAt(randomIndex)
+   }
+   return uid
 }
 
 
