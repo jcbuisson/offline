@@ -1,3 +1,7 @@
+:root {
+  overscroll-behavior: none; /* prevents things like "rubber band" scrolling on iOS. */
+}
+
 body {
    font-family: Arial, sans-serif;
    margin: 20px;
