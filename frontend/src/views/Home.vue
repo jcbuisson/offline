@@ -128,7 +128,7 @@ model user_group_relation {
 </template>
 
 <script setup>
-import { ref, watch, computed } from 'vue'
+import { ref, watch } from 'vue'
 import { useRoute} from 'vue-router'
 
 import GithubLink from '/src/components/GithubLink.vue'
@@ -140,17 +140,21 @@ import router from '/src/router'
 
 import { userModel, groupModel, userGroupRelationModel } from '/src/client-app.ts';
 
-const isConnected = computed(() => !!app.isConnected);
-
+const isConnected = ref(false);
 
 // synchronize when connection starts or restarts
 // it is located here because of import circularity issues
 app.addConnectListener(async () => {
+   isConnected.value = true
    console.log(">>>>>>>>>>>>>>>> SYNC ALL")
    // order matters
    await userModel.synchronizeAll()
    await groupModel.synchronizeAll()
    await userGroupRelationModel.synchronizeAll()
+})
+
+app.addDisconnectListener(() => {
+   isConnected.value = false
 })
 
 async function clearCaches() {
