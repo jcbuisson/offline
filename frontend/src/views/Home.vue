@@ -25,8 +25,8 @@
          </v-tabs>
 
          <!-- Fills remaining vertical space -->
-         <div class="d-flex flex-column flex-grow-1 overflow-auto">
-            <router-view />
+         <div class="d-flex flex-column flex-grow-1 overflow-hidden">
+            <router-view class="fill-height" />
          </div>
 
       </div>
