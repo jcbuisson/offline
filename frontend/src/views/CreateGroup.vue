@@ -25,9 +25,11 @@ import { ref } from 'vue'
 import router from '/src/router'
 import { displaySnackbar } from '/src/use/useSnackbar'
 
-import { groupModel } from '/src/client-app.ts';
+import useGroup from '/src/use/useGroup';
 
-const { create: createGroup } = groupModel;
+import { app } from '/src/client-app.ts';
+
+const { create: createGroup } = useGroup(app);
 
 const data = ref({})
 
