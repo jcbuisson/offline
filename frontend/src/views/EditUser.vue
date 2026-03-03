@@ -61,11 +61,15 @@ import { map } from 'rxjs'
 
 import { displaySnackbar } from '/src/use/useSnackbar'
 
-import { userModel, groupModel, userGroupRelationModel } from '/src/client-app.ts';
+import useUser from '/src/use/useUser';
+import useGroup from '/src/use/useGroup';
+import useUserGroupRelation from '/src/use/useUserGroupRelation';
 
-const { getObservable: users$, update: updateUser } = userModel;
-const { getObservable: groups$ } = groupModel;
-const { getObservable: userGroupRelations$, groupDifference, create: createUserGroupRelation, remove: removeUserGroupRelation } = userGroupRelationModel;
+import { app } from '/src/client-app.ts';
+
+const { getObservable: users$, update: updateUser } = useUser(app);
+const { getObservable: groups$ } = useGroup(app);
+const { getObservable: userGroupRelations$, groupDifference, create: createUserGroupRelation, remove: removeUserGroupRelation } = useUserGroupRelation(app);
 
 
 const props = defineProps({

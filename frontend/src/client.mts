@@ -136,8 +136,6 @@ export function createClient(socket, options={}) {
       return new Proxy(service, handler)
    }
 
-   //--------------------         APPLICATION-LEVEL EVENTS         --------------------
-
    // There is a need for application-wide events sent outside any service method call, for example when backend state changes
    // without front-end interactions
    socket.on('app-event', ({ type, value }) => {
@@ -152,6 +150,16 @@ export function createClient(socket, options={}) {
       type2appHandler[type] = handler
    }
 
+   function connect() {
+      if (options.debug) console.log('connecting...')
+      socket.connect()
+   }
+
+   function disconnect() {
+      if (options.debug) console.log('disconnecting...')
+      socket.disconnect()
+   }
+
    const app = {
       configure,
       addConnectListener,
@@ -163,6 +171,7 @@ export function createClient(socket, options={}) {
    
       service,
       on,
+      connect, disconnect,
    }
 
    return app

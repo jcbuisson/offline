@@ -1,10 +1,13 @@
 import { Observable, from, map, of, merge, combineLatest, firstValueFrom } from 'rxjs'
 import { mergeMap, switchMap, scan, tap, catchError } from 'rxjs/operators'
 
-import { groupModel, userGroupRelationModel } from '/src/client-app.ts';
+import useGroup from '/src/use/useGroup';
+import useUserGroupRelation from '/src/use/useUserGroupRelation';
 
-const { getObservable: groups$ } = groupModel;
-const { getObservable: userGroupRelations$ } = userGroupRelationModel;
+import { app } from '/src/client-app.ts';
+
+const { getObservable: groups$ } = useGroup(app);
+const { getObservable: userGroupRelations$ } = useUserGroupRelation(app);
 
 
 export function guardCombineLatest(observables) {

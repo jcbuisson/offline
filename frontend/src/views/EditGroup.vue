@@ -22,9 +22,13 @@ import { ref, watch, onUnmounted } from 'vue'
 import { useDebounceFn } from '@vueuse/core'
 import { map } from 'rxjs'
 
-import { groupModel } from '/src/client-app.ts';
+import { displaySnackbar } from '/src/use/useSnackbar'
 
-const { getObservable: groups$, update: updateGroup } = groupModel;
+import useGroup from '/src/use/useGroup';
+
+import { app } from '/src/client-app.ts';
+
+const { getObservable: groups$, update: updateGroup } = useGroup(app);
 
 
 const props = defineProps({

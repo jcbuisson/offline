@@ -1,10 +1,7 @@
 
-import useModel from '/src/use/useModel'
-
-
-export function useUserGroupRelation() {
-
-   const model = useModel(import.meta.env.VITE_APP_USER_GROUP_RELATION_IDB, 'user_group_relation', ['user_uid', 'group_uid'])
+export default function(app) {
+   const model = app.createOfflineModel('user_group_relation', ['user_uid', 'group_uid']);
+   return { ...model, groupDifference }
 
 
    /////////////          UTILITY          /////////////
@@ -36,7 +33,4 @@ export function useUserGroupRelation() {
       }
       return [toAddGroupUIDs, toRemoveRelationUIDs]
    }
-
-   return { ...model, groupDifference }
-
 }

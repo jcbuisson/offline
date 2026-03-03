@@ -50,10 +50,13 @@ import router from '/src/router'
 import SplitPanel from '/src/components/SplitPanel.vue'
 import { displaySnackbar } from '/src/use/useSnackbar'
 
-import { groupModel, userGroupRelationModel } from '/src/client-app.ts';
+import useGroup from '/src/use/useGroup';
+import useUserGroupRelation from '/src/use/useUserGroupRelation';
 
-const { getObservable: groups$, remove: removeGroup } = groupModel;
-const { getObservable: userGroupRelations$, remove: removeGroupRelation } = userGroupRelationModel;
+import { app } from '/src/client-app.ts';
+
+const { getObservable: groups$ } = useGroup(app);
+const { getObservable: userGroupRelations$ } = useUserGroupRelation(app);
 
 
 

@@ -53,11 +53,15 @@ import router from '/src/router'
 
 import SplitPanel from '/src/components/SplitPanel.vue'
 
-import { userModel, groupModel, userGroupRelationModel } from '/src/client-app.ts';
+import useUser from '/src/use/useUser';
+import useGroup from '/src/use/useGroup';
+import useUserGroupRelation from '/src/use/useUserGroupRelation';
 
-const { getObservable: users$, remove: removeUser } = userModel;
-const { getObservable: groups$ } = groupModel;
-const { getObservable: userGroupRelations$, remove: removeGroupRelation } = userGroupRelationModel;
+import { app } from '/src/client-app.ts';
+
+const { getObservable: users$ } = useUser(app);
+const { getObservable: groups$ } = useGroup(app);
+const { getObservable: userGroupRelations$ } = useUserGroupRelation(app);
 
 
 const nameFilter = ref('')

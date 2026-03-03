@@ -134,11 +134,17 @@ import { useRoute} from 'vue-router'
 import GithubLink from '/src/components/GithubLink.vue'
 import OnlineButton from '/src/components/OnlineButton.vue'
 
-import { app, connect, disconnect } from '/src/client-app.ts'
-
 import router from '/src/router'
 
-import { userModel, groupModel, userGroupRelationModel } from '/src/client-app.ts';
+import useUser from '/src/use/useUser';
+import useGroup from '/src/use/useGroup';
+import useUserGroupRelation from '/src/use/useUserGroupRelation';
+
+import { app } from '/src/client-app.ts'
+
+const { synchronizeAll: userSynchronizeAll } = useUser(app);
+const { synchronizeAll: groupSynchronizeAll } = useGroup(app);
+const { synchronizeAll: userGroupRelationSynchronizeAll } = useUserGroupRelation(app);
 
 const isConnected = ref(false);
 
@@ -148,14 +154,22 @@ app.addConnectListener(async () => {
    isConnected.value = true
    console.log(">>>>>>>>>>>>>>>> SYNC ALL")
    // order matters
-   await userModel.synchronizeAll()
-   await groupModel.synchronizeAll()
-   await userGroupRelationModel.synchronizeAll()
+   await userSynchronizeAll()
+   await groupSynchronizeAll()
+   await userGroupRelationSynchronizeAll()
 })
 
 app.addDisconnectListener(() => {
    isConnected.value = false
 })
+
+function connect() {
+   app.connect();
+}
+
+function disconnect() {
+   app.disconnect();
+}
 
 async function clearCaches() {
    await userModel.reset()

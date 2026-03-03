@@ -20,17 +20,3 @@ export const app = createClient(socket, { debug: true });
 app.configure(reloadPlugin);
 
 app.configure(offlinePlugin);
-
-export const userModel = app.createOfflineModel('user', ['email']);
-export const groupModel = app.createOfflineModel('group', ['name']);
-export const userGroupRelationModel = app.createOfflineModel('user_group_relation', ['user_uid', 'group_uid']);
-
-export function connect() {
-   console.log('connecting...')
-   socket.connect()
-}
-
-export function disconnect() {
-   console.log('disconnecting...')
-   socket.disconnect()
-}
