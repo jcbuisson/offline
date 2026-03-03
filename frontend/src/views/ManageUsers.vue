@@ -48,39 +48,21 @@ import { useObservable } from '@vueuse/rxjs'
 import { selectedUser } from '/src/use/useSelectedUser'
 import { displaySnackbar } from '/src/use/useSnackbar'
 
-import { guardCombineLatest } from '/src/lib/businessObservables'
+import { userAndGroups$ } from '/src/lib/businessObservables'
 import router from '/src/router'
 
 import SplitPanel from '/src/components/SplitPanel.vue'
 
-import useUser from '/src/use/useUser';
-import useGroup from '/src/use/useGroup';
 import useUserGroupRelation from '/src/use/useUserGroupRelation';
 
 import { app } from '/src/client-app.ts';
 
-const { getObservable: users$ } = useUser(app);
-const { getObservable: groups$ } = useGroup(app);
 const { getObservable: userGroupRelations$ } = useUserGroupRelation(app);
 
 
 const nameFilter = ref('')
 const groupFilter = ref('')
 
-const userAndGroups$ = users$({}).pipe(
-   switchMap(users => 
-      guardCombineLatest(
-         users.map(user =>
-            userGroupRelations$({ user_uid: user.uid }).pipe(
-               switchMap(relations =>
-                  guardCombineLatest(relations.map(relation => groups$({ uid: relation.group_uid }).pipe(map(groups => groups[0]))))
-               ),
-               map(groups => ({ user, groups }))
-            )
-         )
-      )
-   ),
-)
 const userAndGroupsList = useObservable(userAndGroups$)
 
 const filteredUserAndGroupList = computed(() => {
