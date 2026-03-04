@@ -42,6 +42,11 @@ const routes = [
                },
             ],      
          },
+         {
+            path: 'explanations',
+            props: true,
+            component: () => import('/src/views/Explanations.vue'),
+         },
       ],
    },
 
