@@ -1,5 +1,5 @@
 <template>
-   <div class="pa-4 bg-red">
+   <div class="pa-4 bg-grey-lighten-4 overflow-auto">
       <ul>
          <p>Le développeur peut créer pour son application un schéma de base de données relationnelle quelconque,
             avec des relations one-to-many et many-to-many, des on-delete-cascade etc.
