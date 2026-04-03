@@ -55,7 +55,7 @@ import useUserGroupRelation from '/src/use/useUserGroupRelation';
 
 import { app } from '/src/client-app.ts';
 
-const { getObservable: groups$ } = useGroup(app);
+const { getObservable: groups$, remove: removeGroup } = useGroup(app);
 const { getObservable: userGroupRelations$ } = useUserGroupRelation(app);
 
 
