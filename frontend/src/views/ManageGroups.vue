@@ -56,7 +56,7 @@ import useUserGroupRelation from '/src/use/useUserGroupRelation';
 import { app } from '/src/client-app.ts';
 
 const { getObservable: groups$, remove: removeGroup } = useGroup(app);
-const { getObservable: userGroupRelations$ } = useUserGroupRelation(app);
+const { getObservable: userGroupRelations$, remove: removeUserGroupRelation } = useUserGroupRelation(app);
 
 
 
@@ -99,7 +99,7 @@ async function deleteGroup() {
    deletionDialog.value.close()
    try {
       // remove user-group relations
-      await Promise.all(userGroupRelations.value.map(relation => removeGroupRelation(relation.uid)))
+      await Promise.all(userGroupRelations.value.map(relation => removeUserGroupRelation(relation.uid)))
       // remove group
       await removeGroup(groupToDelete.value.uid)
       router.push(`/groups`)

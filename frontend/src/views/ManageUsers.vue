@@ -42,7 +42,6 @@
 import { ref, watch, computed } from 'vue'
 import { useRoute} from 'vue-router'
 import { Observable, from, map, of, merge, combineLatest, forkJoin, firstValueFrom } from 'rxjs'
-import { mergeMap, switchMap, concatMap, scan, tap, catchError, take, debounceTime } from 'rxjs/operators'
 import { useObservable } from '@vueuse/rxjs'
 
 import { selectedUser } from '/src/use/useSelectedUser'
@@ -53,11 +52,13 @@ import router from '/src/router'
 
 import SplitPanel from '/src/components/SplitPanel.vue'
 
+import useUser from '/src/use/useUser';
 import useUserGroupRelation from '/src/use/useUserGroupRelation';
 
 import { app } from '/src/client-app.ts';
 
-const { getObservable: userGroupRelations$ } = useUserGroupRelation(app);
+const { remove: removeUser } = useUser(app);
+const { getObservable: userGroupRelations$, remove: removeUserGroupRelation } = useUserGroupRelation(app);
 
 
 const nameFilter = ref('')
@@ -110,7 +111,7 @@ async function deleteUser(user) {
    if (window.confirm(`Supprimer ${getFullname(user)} ?`)) {
       try {
          // remove user-group relations
-         await Promise.all(userGroupRelations.map(relation => removeGroupRelation(relation.uid)))
+         await Promise.all(userGroupRelations.map(relation => removeUserGroupRelation(relation.uid)))
          // remove user
          await removeUser(user.uid)
          router.push(`/users`)
