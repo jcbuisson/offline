@@ -42,8 +42,8 @@ const group = ref()
 let groupSubscription
 
 function group$(group_uid) {
-   return groups$({ uid: group_uid }).pipe(
-      map(groups => groups.length > 0 ? groups[0] : null)
+   return groups$({}).pipe(
+      map(groups => groups.find(group => group.uid === group_uid) ?? null)
    )
 }
 
@@ -52,6 +52,8 @@ onUnmounted(() => {
 })
 
 watch(() => props.group_uid, async (group_uid) => {
+   if (groupSubscription) groupSubscription.unsubscribe()
+   group.value = null
    groupSubscription = group$(group_uid).subscribe(grp => {
       group.value = grp
    })

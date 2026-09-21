@@ -11,7 +11,7 @@
          
             <!-- fills remaining vertical space -->
             <div class="d-flex flex-column flex-grow-1 overflow-auto">
-               <v-list-item three-line v-for="(group, index) in sortedGroupList":key="index" :value="group" @click="selectGroup(group)" :active="selectedGroup?.uid === group?.uid">
+               <v-list-item three-line v-for="group in sortedGroupList" :key="group.uid" :value="group" :to="`/groups/${group.uid}`" @click="selectedGroup = group" :active="selectedGroup?.uid === group.uid">
                   <v-list-item-title>{{ group.name }}</v-list-item-title>
 
                   <template v-slot:append>
@@ -23,7 +23,7 @@
       </template>
 
       <template v-slot:right-panel>
-         <router-view></router-view>
+         <router-view :key="$route.fullPath"></router-view>
       </template>
    </SplitPanel>
 
@@ -117,13 +117,9 @@ onUnmounted(() => {
 })
 
 const route = useRoute()
-const routeRegex = /\/groups\/([a-z0-9]+)/
-
-watch(() => [route.path, groupList.value], async () => {
-   if (!groupList.value) return
-   const match = route.path.match(routeRegex)
-   if (!match) return
-   const group_uid = match[2]
+watch(() => [route.params.group_uid, groupList.value], () => {
+   const group_uid = route.params.group_uid
+   if (typeof group_uid !== 'string') return
    selectedGroup.value = groupList.value.find(group => group.uid === group_uid)
 }, { immediate: true })
 </script>

@@ -95,9 +95,9 @@ let userTabRelationSubscription
 watch(() => props.user_uid, async (user_uid) => {
    // handle unsubscription carefully - otherwise, a previous subscription for another user_uid will interfere with current subscription
    if (usersSubscription) usersSubscription.unsubscribe()
-   usersSubscription = users$({ uid: user_uid }).subscribe(userList => {
-      if (userList.length === 0) return
-      user.value = userList[0]
+   user.value = undefined
+   usersSubscription = users$({}).subscribe(userList => {
+      user.value = userList.find(candidate => candidate.uid === user_uid)
    })
 
    if (userGroupRelationSubscription) userGroupRelationSubscription.unsubscribe()

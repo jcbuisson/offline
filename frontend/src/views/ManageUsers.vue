@@ -13,7 +13,7 @@
          
             <!-- Fills remaining vertical space -->
             <div class="d-flex flex-column flex-grow-1 overflow-auto">
-               <v-list-item three-line v-for="(userAndGroups, index) in filteredUserAndGroupList" :key="index" :value="userAndGroups?.user" @click="selectUser(userAndGroups.user)" :active="selectedUser?.uid === userAndGroups?.user.uid">
+               <v-list-item three-line v-for="userAndGroups in filteredUserAndGroupList" :key="userAndGroups.user.uid" :value="userAndGroups.user" :to="`/users/${userAndGroups.user.uid}`" @click="selectedUser = userAndGroups.user" :active="selectedUser?.uid === userAndGroups.user.uid">
                   <v-list-item-title>{{ userAndGroups?.user.lastname }} {{ userAndGroups?.user.firstname }}</v-list-item-title>
                   <v-list-item-subtitle>{{ userAndGroups?.user.email }}</v-list-item-subtitle>
                   <v-list-item-subtitle>
@@ -32,7 +32,7 @@
 
 
       <template v-slot:right-panel>
-         <router-view></router-view>
+         <router-view :key="$route.fullPath"></router-view>
       </template>
    </SplitPanel>
 </template>
