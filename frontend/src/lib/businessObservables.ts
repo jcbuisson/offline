@@ -1,46 +1,60 @@
-import { Observable, from, map, of, merge, combineLatest, firstValueFrom } from 'rxjs'
-import { mergeMap, switchMap, scan, tap, catchError } from 'rxjs/operators'
+import { combineLatest, map, shareReplay, startWith } from 'rxjs'
 
-import useUser from '/src/use/useUser';
-import useGroup from '/src/use/useGroup';
-import useUserGroupRelation from '/src/use/useUserGroupRelation';
+import useUser from '/src/use/useUser'
+import useGroup from '/src/use/useGroup'
+import useUserGroupRelation from '/src/use/useUserGroupRelation'
 
-import { app } from '/src/client-app.ts';
+import { app } from '/src/client-app.ts'
 
-const { getObservable: users$ } = useUser(app);
-const { getObservable: groups$ } = useGroup(app);
-const { getObservable: userGroupRelations$ } = useUserGroupRelation(app);
+const { getObservable: users$ } = useUser(app)
+const { getObservable: groups$ } = useGroup(app)
+const { getObservable: userGroupRelations$ } = useUserGroupRelation(app)
 
-
-export function guardCombineLatest(observables) {
-   if (observables.length === 0) {
-      // If the array is empty, immediately return an Observable that emits an empty array
-      return of([])
-   } else {
-      // Otherwise, proceed with combineLatest
-      return combineLatest(observables)
-   }
-}
+// Keep one Shape per table and perform relational joins locally. Opening Shapes
+// per row quickly exhausts the browser's HTTP/1.1 connection limit.
+const allUsers$ = users$({}).pipe(shareReplay({ bufferSize: 1, refCount: true }))
+const allGroups$ = groups$({}).pipe(
+   startWith([]),
+   shareReplay({ bufferSize: 1, refCount: true }),
+)
+const allUserGroupRelations$ = userGroupRelations$({}).pipe(
+   startWith([]),
+   shareReplay({ bufferSize: 1, refCount: true }),
+)
 
 export function userGroups$(user_uid: string) {
-   return userGroupRelations$({ user_uid }).pipe(
-      switchMap(relations =>
-         guardCombineLatest(relations.map(relation => groups$({ uid: relation.group_uid }).pipe(map(groups => groups[0]))))
-      ),
+   return combineLatest([allGroups$, allUserGroupRelations$]).pipe(
+      map(([groups, relations]) => {
+         const groupUIDs = new Set(
+            relations
+               .filter(relation => relation.user_uid === user_uid)
+               .map(relation => relation.group_uid),
+         )
+         return groups.filter(group => groupUIDs.has(group.uid))
+      }),
    )
 }
 
-export const userAndGroups$ = users$({}).pipe(
-   switchMap(users => 
-      guardCombineLatest(
-         users.map(user =>
-            userGroupRelations$({ user_uid: user.uid }).pipe(
-               switchMap(relations =>
-                  guardCombineLatest(relations.map(relation => groups$({ uid: relation.group_uid }).pipe(map(groups => groups[0]))))
-               ),
-               map(groups => ({ user, groups }))
-            )
-         )
-      )
-   ),
+export const userAndGroups$ = combineLatest([
+   allUsers$,
+   allGroups$,
+   allUserGroupRelations$,
+]).pipe(
+   map(([users, groups, relations]) => {
+      const groupsByUID = new Map(groups.map(group => [group.uid, group]))
+      const groupUIDsByUserUID = new Map<string, string[]>()
+
+      for (const relation of relations) {
+         const groupUIDs = groupUIDsByUserUID.get(relation.user_uid) ?? []
+         groupUIDs.push(relation.group_uid)
+         groupUIDsByUserUID.set(relation.user_uid, groupUIDs)
+      }
+
+      return users.map(user => ({
+         user,
+         groups: (groupUIDsByUserUID.get(user.uid) ?? [])
+            .map(groupUID => groupsByUID.get(groupUID))
+            .filter(Boolean),
+      }))
+   }),
 )

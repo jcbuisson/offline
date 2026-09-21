@@ -41,27 +41,13 @@ import OnlineButton from '/src/components/OnlineButton.vue'
 
 import router from '/src/router'
 
-import useUser from '/src/use/useUser';
-import useGroup from '/src/use/useGroup';
-import useUserGroupRelation from '/src/use/useUserGroupRelation';
-
 import { app } from '/src/client-app.ts'
-
-const { synchronizeAll: userSynchronizeAll } = useUser(app);
-const { synchronizeAll: groupSynchronizeAll } = useGroup(app);
-const { synchronizeAll: userGroupRelationSynchronizeAll } = useUserGroupRelation(app);
 
 const isConnected = ref(false);
 
-// synchronize when connection starts or restarts
-// it is located here because of import circularity issues
-app.addConnectListener(async () => {
+// Electric Shapes synchronize model subscriptions automatically.
+app.addConnectListener(() => {
    isConnected.value = true
-   console.log(">>>>>>>>>>>>>>>> SYNC ALL")
-   // order matters
-   await userSynchronizeAll()
-   await groupSynchronizeAll()
-   await userGroupRelationSynchronizeAll()
 })
 
 app.addDisconnectListener(() => {

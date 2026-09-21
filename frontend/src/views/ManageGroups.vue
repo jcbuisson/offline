@@ -62,7 +62,10 @@ const { getObservable: userGroupRelations$, remove: removeUserGroupRelation } = 
 
 const filter = ref('')
 
-const groupList = useObservable(groups$({}), [])
+const groupList = useObservable(groups$({}), {
+   initialValue: [],
+   onError: error => console.error('Failed to load groups from Electric', error),
+})
 const sortedGroupList = computed(() => groupList.value ? groupList.value.toSorted((u1, u2) => (u1.name > u2.name) ? 1 : (u1.name < u2.name) ? -1 : 0) : [])
 
 async function addGroup() {

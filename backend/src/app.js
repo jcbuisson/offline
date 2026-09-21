@@ -1,24 +1,29 @@
 import 'dotenv/config'
-import { expressX, reloadPlugin, offlinePlugin } from '@jcbuisson/express-x'
-// import { expressX, reloadPlugin, offlinePlugin } from '#root/src/server.mjs'
+import { expressX } from '@jcbuisson/express-x/server'
+import { electricOfflinePlugin } from '@jcbuisson/express-x-plugins/electric-server'
+import { reloadPlugin } from '@jcbuisson/express-x-plugins/reload-server'
+import { Pool } from 'pg'
 
 import channels from './channels.js'
-
-import prisma from './prisma.js'
-
 
 const app = expressX({
    WS_TRANSPORT: true,
    WS_PATH: '/offline-socket-io/',
 })
 
-app.set('prisma', prisma)
+const db = new Pool({ connectionString: process.env.DATABASE_URL })
 
 // allows socket data & room transfer on page reload
 app.configure(reloadPlugin)
 
-// add offline synchronization service and add database services for business models
-app.configure(offlinePlugin, ['user', 'group', 'user_group_relation'])
+// Register PostgreSQL mutation services and proxy Electric Shapes to the client.
+app.configure(electricOfflinePlugin, db, [
+   { name: 'user', primaryKey: 'uid' },
+   { name: 'group', primaryKey: 'uid' },
+   { name: 'user_group_relation', primaryKey: 'uid' },
+], {
+   electricUrl: process.env.ELECTRIC_URL || 'http://localhost:3001/v1/shape',
+})
 
 // publish
 app.configure(channels)

@@ -83,7 +83,7 @@ const emailRules = [
    (v) => /^([a-z0-9_.-]+)@([\da-z.-]+)\.([a-z.]{2,6})$/.test(v) || "l'email doit être valide"
 ]
 
-const groupList = useObservable(groups$({}))
+const groupList = useObservable(groups$({}), { initialValue: [] })
 
 const user = ref()
 const userGroups = ref([])

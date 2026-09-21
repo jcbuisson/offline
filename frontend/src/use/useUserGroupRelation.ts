@@ -1,24 +1,23 @@
 
+import { v7 as uuidv7 } from 'uuid'
+
+let model;
+
 export default function(app) {
-   const model = app.createOfflineModel('user_group_relation', ['user_uid', 'group_uid']);
+   if (!model) {
+      const electricModel = app.createElectricModel('user_group_relation', { primaryKey: 'uid' });
+      model = { ...electricModel, create: data => electricModel.create(uuidv7(), data) }
+   }
    return { ...model, groupDifference }
 
 
    /////////////          UTILITY          /////////////
 
    async function groupDifference(user_uid, newGroupUIDs) {
-      const db = model.db
-
       const toAddGroupUIDs = []
       const toRemoveRelationUIDs = []
       // collect active user-group relations with `user_uid`
-      const allUserRelations = await db.values.filter(value => value.user_uid === user_uid).toArray()
-      const currentUserRelations = []
-      for (const relation of allUserRelations) {
-         const metadata = await db.metadata.get(relation.uid)
-         if (metadata.deleted_at) continue
-         currentUserRelations.push(relation)
-      }
+      const currentUserRelations = await model.findMany({ user_uid })
       // relations to add
       for (const group_uid of newGroupUIDs) {
          if (!currentUserRelations.some(relation => relation.group_uid === group_uid)) {

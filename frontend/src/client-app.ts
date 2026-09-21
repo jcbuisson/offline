@@ -1,6 +1,7 @@
 import { io } from "socket.io-client";
-import { createClient, reloadPlugin, offlinePlugin } from "@jcbuisson/express-x-client";
-// import { createClient, reloadPlugin, offlinePlugin } from "/src/client.mts";
+import { createClient } from "@jcbuisson/express-x/client";
+import { electricClientPlugin } from "@jcbuisson/express-x-plugins/electric-client";
+import { reloadPlugin } from "@jcbuisson/express-x-plugins/reload-client";
 
 
 const socketOptions = {
@@ -19,4 +20,9 @@ export const app = createClient(socket, { debug: true });
 
 app.configure(reloadPlugin);
 
-app.configure(offlinePlugin);
+app.configure(electricClientPlugin, {
+   shapePath: import.meta.env.VITE_ELECTRIC_URL
+      || (import.meta.env.DEV
+         ? 'http://localhost:3000/electric/v1/shape'
+         : '/electric/v1/shape'),
+});

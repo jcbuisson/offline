@@ -65,7 +65,7 @@ import useUserGroupRelation from '/src/use/useUserGroupRelation';
 
 import { app } from '/src/client-app.ts';
 
-const { getObservable: users$ } = useUser(app);
+const { getObservable: users$, create: createUser } = useUser(app);
 const { getObservable: groups$ } = useGroup(app);
 const { groupDifference, create: createUserGroupRelation, remove: removeUserGroupRelation } = useUserGroupRelation(app);
 
@@ -77,15 +77,18 @@ const emailRules = [
    (v) => /^([a-z0-9_.-]+)@([\da-z.-]+)\.([a-z.]{2,6})$/.test(v) || "l'email doit être valide"
 ]
 
-const groupList = useObservable(groups$({}))
+const groupList = useObservable(groups$({}), { initialValue: [] })
 
 // make sure all users are eventually synchronized, to allow email check
-const allUsers = useObservable(users$({}))
+const allUsers = useObservable(users$({}), {
+   initialValue: [],
+   onError: error => console.error('Failed to load users from Electric', error),
+})
 
 async function submit() {
    try {
       // check if email is not already used
-      const other = allUsers.value.find(user => user.email === data.value.email)
+      const other = (allUsers.value ?? []).find(user => user.email === data.value.email)
       if (other) {
          alert(`Il existe déjà un utilisateur "${getFullname(other)}" avec cet email : ${data.value.email}`)
       } else {
@@ -105,6 +108,7 @@ async function submit() {
          router.push(`/users/${user.uid}`)
       }
    } catch(err) {
+      console.error('Failed to create user', err)
       displaySnackbar({ text: "Erreur lors de la création...", color: 'error', timeout: 4000 })
    }
 }

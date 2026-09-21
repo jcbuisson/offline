@@ -47,27 +47,50 @@ import { useObservable } from '@vueuse/rxjs'
 import { selectedUser } from '/src/use/useSelectedUser'
 import { displaySnackbar } from '/src/use/useSnackbar'
 
-import { userAndGroups$ } from '/src/lib/businessObservables'
 import router from '/src/router'
 
 import SplitPanel from '/src/components/SplitPanel.vue'
 
 import useUser from '/src/use/useUser';
+import useGroup from '/src/use/useGroup';
 import useUserGroupRelation from '/src/use/useUserGroupRelation';
 
 import { app } from '/src/client-app.ts';
 
-const { remove: removeUser } = useUser(app);
+const { getObservable: users$, remove: removeUser } = useUser(app);
+const { getObservable: groups$ } = useGroup(app);
 const { getObservable: userGroupRelations$, remove: removeUserGroupRelation } = useUserGroupRelation(app);
 
 
 const nameFilter = ref('')
 const groupFilter = ref('')
 
-const userAndGroupsList = useObservable(userAndGroups$)
+const userList = useObservable(users$({}), {
+   initialValue: [],
+   onError: error => console.error('Failed to load users from Electric', error),
+})
+const groupList = useObservable(groups$({}), { initialValue: [] })
+const userGroupRelationList = useObservable(userGroupRelations$({}), { initialValue: [] })
+
+const userAndGroupsList = computed(() => {
+   const groupsByUID = new Map(groupList.value.map(group => [group.uid, group]))
+   const groupUIDsByUserUID = new Map()
+
+   for (const relation of userGroupRelationList.value) {
+      const groupUIDs = groupUIDsByUserUID.get(relation.user_uid) ?? []
+      groupUIDs.push(relation.group_uid)
+      groupUIDsByUserUID.set(relation.user_uid, groupUIDs)
+   }
+
+   return userList.value.map(user => ({
+      user,
+      groups: (groupUIDsByUserUID.get(user.uid) ?? [])
+         .map(groupUID => groupsByUID.get(groupUID))
+         .filter(Boolean),
+   }))
+})
 
 const filteredUserAndGroupList = computed(() => {
-   if (!userAndGroupsList.value) return []
    const nameFilter_ = (nameFilter.value || '').toLowerCase()
    return userAndGroupsList.value.filter(ug => {
       if (nameFilter_.length === 0) return true
@@ -87,20 +110,18 @@ async function addUser() {
 }
 
 const route = useRoute()
-const routeRegex = /\/users\/([a-z0-9]+)/
 
-watch(() => [route.path, userAndGroupsList.value], async () => {
-   if (!userAndGroupsList.value) return
+watch(() => [route.params.user_uid, userAndGroupsList.value], () => {
    selectedUser.value = null
-   const match = route.path.match(routeRegex)
-   if (!match) return
-   const user_uid = route.path.match(routeRegex)[1]
+   const user_uid = route.params.user_uid
+   if (typeof user_uid !== 'string') return
    const user = userAndGroupsList.value.map(userAndGroups => userAndGroups.user).find(user => user.uid === user_uid)
-   selectUser(user)
+   if (user) selectedUser.value = user
 }, { immediate: true })
 
 
 function selectUser(user) {
+   if (!user) return
    selectedUser.value = user
    router.push(`/users/${user.uid}`)
 }
