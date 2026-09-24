@@ -6,16 +6,21 @@ export const syncModels = [
    { name: 'user_group_relation', primaryKey: 'uid', tombstoneData: { user_uid: null, group_uid: null } },
 ]
 
+// add synchronization infrastructure
 export async function prepareSyncSchema(db) {
    const tx = await db.connect()
    try {
       await tx.query('BEGIN')
-      // A deletion can arrive before its offline create. Empty relation tombstones
-      // must be insertable, and must release the unique user/group pair.
+
+      // allows deletion placeholders
       await tx.query(`ALTER TABLE user_group_relation
          ALTER COLUMN user_uid DROP NOT NULL,
          ALTER COLUMN group_uid DROP NOT NULL`)
+      
+      // add a version column, a deleted flag on each synced table, a sequence generating versions,
+      // a mutation cursor table that prevents duplicate or older client mutations from being reapplied
       await prepareElectricSyncSchema(tx, syncModels)
+
       await tx.query('COMMIT')
    } catch (error) {
       await tx.query('ROLLBACK')

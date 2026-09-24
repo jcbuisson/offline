@@ -1,67 +1,65 @@
 <template>
    <div class="pa-4 bg-grey-lighten-4 overflow-auto">
-      <ul>
-         <p>Le développeur peut créer pour son application un schéma de base de données relationnelle quelconque,
-            avec des relations one-to-many et many-to-many, des on-delete-cascade etc.
-         </p>
-         <p>Dans cet exemple, voici le schéma de la base de données :</p>
+      <h2 class="text-h6 mb-2">Les données de l’application</h2>
+      <p>PostgreSQL conserve les utilisateurs, les groupes et leurs associations dans trois tables :
+         <code>user</code>, <code>group</code> et <code>user_group_relation</code>.
+         Un utilisateur peut appartenir à plusieurs groupes, et un groupe peut réunir plusieurs utilisateurs.</p>
+      <p>Chaque objet possède un identifiant <code>uid</code> de type UUID, généré par le client.
+         Il peut ainsi être créé hors ligne sans attendre un identifiant du serveur.
+         Les e-mails, les noms de groupes et les couples utilisateur/groupe sont soumis
+         à des contraintes d’unicité côté serveur.</p>
+
+      <h2 class="text-h6 mt-4 mb-2">Travailler hors ligne</h2>
+      <p>Le navigateur utilise une base locale PGlite, persistée dans IndexedDB.
+         L’interface lit les données locales et réagit à leurs changements grâce à des observables.
+         Les données déjà chargées restent accessibles sans connexion, dans les limites
+         du stockage accordé par le navigateur.</p>
+      <p>Une création, une modification ou une suppression est d’abord enregistrée localement :
+         son résultat apparaît immédiatement. Une file persistante conserve les mutations
+         à transmettre au serveur, y compris après un rechargement de la page.</p>
+
+      <h2 class="text-h6 mt-4 mb-2">Synchroniser avec le serveur</h2>
+      <p>Lorsque la connexion est disponible, le client envoie les mutations en attente via express-x
+         aux services du plugin <code>electricOfflinePlugin</code>.
+         Chaque mutation porte un identifiant de client et un numéro de révision.
+         Le serveur mémorise la dernière révision traitée pour chaque client et chaque objet,
+         afin de ne pas réappliquer une mutation déjà traitée ou plus ancienne.
+         Ce mécanisme ne fusionne pas les modifications concurrentes de clients différents.</p>
+      <p>Dans l’autre sens, Electric transmet les changements de PostgreSQL au navigateur au moyen
+         de flux appelés « Shapes ». Dans cet exemple, les trois modèles sont synchronisés.
+         Les filtres de l’interface sélectionnent ensuite les données locales à afficher.</p>
+      <p>La réponse à une mutation fournit une version attribuée par le serveur.
+         Le client conserve la mutation en attente jusqu’à ce que le flux Electric confirme
+         cette version, ou une version plus récente. Une coupure réseau laisse les mutations
+         en attente pour une nouvelle tentative ; une erreur de validation ou de contrainte
+         peut empêcher leur application.</p>
+
+      <h2 class="text-h6 mt-4 mb-2">Conserver la trace des suppressions</h2>
+      <p>Une suppression synchronisée conserve une ligne marquée <code>deleted = true</code>,
+         appelée « tombstone ». Invisible dans les listes, elle permet de transmettre et de confirmer
+         la suppression, même si celle-ci arrive au serveur avant la création effectuée hors ligne.</p>
+      <p>Les champs soumis à l’unicité sont alors libérés : l’e-mail d’un utilisateur,
+         le nom d’un groupe ou les références d’une association sont mis à <code>NULL</code>.
+         Une nouvelle ligne peut ainsi réutiliser ces valeurs.</p>
+
+      <h2 class="text-h6 mt-4 mb-2">Préparer le schéma au démarrage</h2>
+      <p>Avant d’accepter les requêtes, le serveur appelle <code>prepareSyncSchema(db)</code>.
+         Cette fonction adapte les tables existantes aux besoins de la synchronisation :</p>
+      <ul class="pl-6 my-2">
+         <li>Elle rend les références <code>user_uid</code> et <code>group_uid</code> de la table
+            d’association facultatives pour permettre l’insertion de tombstones.</li>
+         <li>Elle appelle <code>prepareElectricSyncSchema</code> pour ajouter les colonnes
+            <code>version</code> et <code>deleted</code> aux trois tables synchronisées.</li>
+         <li>Elle crée, si nécessaire, la séquence qui fournit les versions et la table
+            <code>electric_mutation_cursor</code>, qui mémorise les révisions déjà traitées.</li>
       </ul>
+      <p>Cette préparation peut être relancée à chaque démarrage. Elle s’exécute dans une transaction :
+         si une étape échoue, ses changements sont annulés et le serveur ne démarre pas.
+         La synchronisation elle-même est ensuite assurée par le plugin.</p>
 
-      <pre>
-      model user {
-         uid                     String     @unique
-         firstname               String?
-         lastname                String?
-         email                   String?    @unique
-
-         user_group_relations    user_group_relation[]
-      }
-
-      model group {
-         uid                     String     @unique
-         name                    String?    @unique(map: "group_name_unique")
-
-         user_group_relations    user_group_relation[]
-      }
-
-      // relations (here: many-to-many between `user` and `group`) need to be explicitely defined
-      model user_group_relation {
-         uid             String     @unique
-         user_uid        String
-         group_uid       String
-
-         user user @relation(fields: [user_uid], references: [uid], onDelete: Cascade, onUpdate: NoAction)
-         group group @relation(fields: [group_uid], references: [uid], onDelete: Cascade, onUpdate: NoAction)
-         @@unique([user_uid, group_uid])
-      }
-      </pre>
-
-      <p>Il y a seulement une contrainte : les clés primaires de ces tables sont des uid et non des identifiants auto-incrémentés</p>
-      <p>Le système de synchronisation gère par ailleurs une table `metadata` qui associe à chaque uid des attributs `created_at`, `updated_at`, `deleted_at`</p>
-
-      <p>Les clients ont des caches dénormalisés pour chaque table/modèle. Ces caches implémentés avec IndexeDB ne sont pas limités en taille.</p>
-      <p>Ces caches permettent toutes les opérations relationnelles : accès aux objets, aux listes, jointures entre modèles, etc.</p>
-      <p>Les clés primaires de ces caches sont les uid, créés explicitement par les clients, pour ne pas avoir de conflit entre les identifiants créés offline par différents clients</p>
-      <p>Le client possède également un cache Indexedb appelé `metadata` qui associe à chaque uid des attributs ‘createdAt’, ‘updatedAt’ et ‘deletedAt’</p>
-
-      <p>Toutes les opérations sont effectuées, d’abord sur ces caches (optimistic updates), puis envoyées à la base de données</p>
-      <p>Les clients doivent expliciter le périmètre de leur synchronisation. Ils ne veulent pas être synchronisés avec toute la BD, seulement avec la partie qui les concerne. Ils le font en précisant les clauses ‘where’ des requêtes de base de données pour les données qui les concernent.</p>
-      <p>Les opérations de base de données donnent lieu à l’envoi d’événements vers les clients, qui peuvent mettre à jour leurs caches en temps-réel. Grace à ces mises à jour en continu, un client qui part d’un état synchronisé avec le serveur, reste synchrone tant qu’il n’y a pas de déconnexion, quelles que soient les opérations que lui ou les autres clients réalisent</p>
-      <p>Le client peut donc toujours considérer que la source de vérité est le contenu de ses caches, après un temps de resynchronisation</p>
-
-      <p>À chaque reconnexion (y compris au démarrage), pour chaque table, et pour chaque requête `where` de son périmètre de synchronisation, le client demande une synchronisation au serveur</p>
-      <ul>Le service de synchronisation reçoit :
-         <li>La requête ‘where’</li>
-         <li>Les meta-data du sous-ensemble du cache du client associé à la requête</li>
-         <li>La date de ‘cutoff’ (dernière déconnexion)</li>
-      </ul>
-      <ul>Le service de synchronisation :
-         <li>Calcule les couples clé/valeur de la base de données associés à la requête ‘where’</li>
-         <li>Compare avec ceux reçus du client, relativement à la date de cutoff</li>
-         <li>Il réalise dans la base de données les changements nécessaires.</li>
-         <li>Il renvoie au client les changements nécessaires de son cache</li>
-      </ul>
-      <p>À l’issue de la synchronisation, le serveur et le client sont dans le même état du point de vue des valeurs relatives à la requête ‘where’</p>
-      <p>Le service de synchronisation côté serveur est en exclusion mutuelle pour que les demandes synchronisation provenant des clients ne se chevauchent pas</p>
+      <h2 class="text-h6 mt-4 mb-2">Partager les données entre onglets</h2>
+      <p>Les onglets partagent la base PGlite locale. Un onglet leader assure la synchronisation réseau
+         et les autres sont informés des changements par un <code>BroadcastChannel</code>.
+         Si le leader change, le nouveau leader prend le relais.</p>
    </div>
 </template>
