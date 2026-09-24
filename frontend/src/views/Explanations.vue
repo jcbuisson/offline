@@ -20,7 +20,7 @@
 
       <h2 class="text-h6 mt-4 mb-2">Synchroniser avec le serveur</h2>
       <p>Lorsque la connexion est disponible, le client envoie les mutations en attente via express-x
-         aux services du plugin <code>electricOfflinePlugin</code>.
+         aux services du plugin <code>electricServerPlugin</code>.
          Chaque mutation porte un identifiant de client et un numéro de révision.
          Le serveur mémorise la dernière révision traitée pour chaque client et chaque objet,
          afin de ne pas réappliquer une mutation déjà traitée ou plus ancienne.

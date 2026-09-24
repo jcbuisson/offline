@@ -1,6 +1,6 @@
 import 'dotenv/config'
 import { expressX } from '@jcbuisson/express-x/server'
-import { electricOfflinePlugin } from '@jcbuisson/express-x-plugins/electric-server'
+import { electricServerPlugin } from '@jcbuisson/express-x-plugins/electric-server'
 import { reloadPlugin } from '@jcbuisson/express-x-plugins/reload-server'
 import { Pool } from 'pg'
 
@@ -19,7 +19,7 @@ await prepareSyncSchema(db)
 app.configure(reloadPlugin)
 
 // Register PostgreSQL mutation services and proxy Electric Shapes to the client.
-app.configure(electricOfflinePlugin, db, syncModels, {
+app.configure(electricServerPlugin, db, syncModels, {
    sync: true,
    electricUrl: process.env.ELECTRIC_URL || 'http://localhost:3001/v1/shape',
 })
