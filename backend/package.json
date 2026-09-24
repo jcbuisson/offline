@@ -36,7 +36,7 @@
     "@jcbuisson/express-x-plugins": "^5.0.1",
     "@prisma/adapter-pg": "^7.4.1",
     "@prisma/client": "^7.4.1",
-    "bcryptjs": "^3.0.3",
+    "bcryptjs": "^2.4.3",
     "dotenv": "^17.3.1",
     "express": "^5.2.1",
     "pg": "^8.18.0",
