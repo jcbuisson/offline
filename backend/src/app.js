@@ -5,7 +5,8 @@ import { reloadPlugin } from '@jcbuisson/express-x-plugins/reload-server'
 import { Pool } from 'pg'
 
 import channels from './channels.js'
-import { prepareSyncSchema, syncModels } from './sync-schema.js'
+// import { prepareSyncSchema, syncModels } from './sync-schema.js'
+import { prepareElectricSyncSchema } from '@jcbuisson/express-x-plugins/electric-server'
 
 const app = expressX({
    WS_TRANSPORT: true,
@@ -13,7 +14,15 @@ const app = expressX({
 })
 
 const db = new Pool({ connectionString: process.env.DATABASE_URL })
-await prepareSyncSchema(db)
+// await prepareSyncSchema(db)
+
+const syncModels = [
+   { name: 'user', primaryKey: 'uid', tombstoneData: { email: null } },
+   { name: 'group', primaryKey: 'uid', tombstoneData: { name: null } },
+   { name: 'user_group_relation', primaryKey: 'uid', tombstoneData: { user_uid: null, group_uid: null } },
+]
+await prepareElectricSyncSchema(tx, syncModels)
+
 
 // allows socket data & room transfer on page reload
 app.configure(reloadPlugin)
