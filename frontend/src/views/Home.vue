@@ -41,9 +41,9 @@ import OnlineButton from '/src/components/OnlineButton.vue'
 
 import router from '/src/router'
 
-import { app } from '/src/client-app.ts'
+import { app, socket } from '/src/client-app.ts'
 
-const isConnected = ref(false);
+const isConnected = ref(socket.connected);
 
 // Electric Shapes synchronize model subscriptions automatically.
 app.addConnectListener(() => {

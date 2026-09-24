@@ -1,52 +1,22 @@
+import { getSyncModel } from '../sync'
 
 import { v7 as uuidv7 } from 'uuid'
-import { BehaviorSubject, filter, firstValueFrom, map } from 'rxjs'
+import { shareReplay } from 'rxjs'
 
 let model;
 
 export default function(app) {
    if (!model) {
-      const electricModel = app.createElectricModel('user_group_relation', { primaryKey: 'uid' });
-      const rows$ = new BehaviorSubject([])
-      let initialized = false
-
-      // Maintain one application-wide relation cache. Local mutation results are
-      // applied immediately; Electric subsequently reconciles the authoritative
-      // PostgreSQL state into the same stream.
-      electricModel.getObservable({}).subscribe(rows => {
-         initialized = true
-         rows$.next(rows)
-      })
-
-      const getObservable = (where = {}) => rows$.pipe(
-         map(rows => rows.filter(row =>
-            Object.entries(where).every(([field, value]) => row[field] === value)
-         )),
+      const electricModel = getSyncModel('user_group_relation');
+      const all$ = electricModel.getObservable({}).pipe(
+         shareReplay({ bufferSize: 1, refCount: true }),
       )
-
-      const create = async data => {
-         const relation = await electricModel.create(uuidv7(), data)
-         rows$.next([...rows$.value.filter(row => row.uid !== relation.uid), relation])
-         return relation
-      }
-
-      const remove = async uid => {
-         const relation = await electricModel.remove(uid)
-         rows$.next(rows$.value.filter(row => row.uid !== uid))
-         return relation
-      }
-
       model = {
          ...electricModel,
-         getObservable,
-         findMany: async (where = {}) => {
-            if (!initialized) {
-               await firstValueFrom(rows$.pipe(filter(() => initialized)))
-            }
-            return firstValueFrom(getObservable(where))
-         },
-         create,
-         remove,
+         getObservable: (where = {}) => Object.keys(where).length === 0
+            ? all$
+            : electricModel.getObservable(where),
+         create: data => electricModel.create({ ...data, uid: uuidv7() }),
       }
    }
    return { ...model, groupDifference }

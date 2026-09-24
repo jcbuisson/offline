@@ -10,6 +10,7 @@
   },
   "dependencies": {
     "@electric-sql/client": "^1.5.24",
+    "@electric-sql/pglite": "^0.5.8",
     "@jcbuisson/express-x": "^4.0.5",
     "@jcbuisson/express-x-plugins": "5.0.0",
     "@mdi/font": "^7.4.47",
@@ -22,6 +23,7 @@
     "graphology": "^0.26.0",
     "graphology-layout": "^0.6.1",
     "idb-keyval": "^6.2.1",
+    "rxjs": "^7.8.2",
     "sigma": "^3.0.1",
     "socket.io-client": "^4.8.1",
     "uuid": "^11.1.0",
@@ -30,7 +32,8 @@
     "vue-d3-network": "^0.1.28",
     "vue-router": "^4.5.0",
     "vuetify": "^3.7.12",
-    "workbox-precaching": "^7.3.0"
+    "workbox-precaching": "^7.3.0",
+    "workbox-routing": "^7.4.1"
   },
   "devDependencies": {
     "@vitejs/plugin-vue": "^5.2.1",

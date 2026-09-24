@@ -5,6 +5,7 @@ import { reloadPlugin } from '@jcbuisson/express-x-plugins/reload-server'
 import { Pool } from 'pg'
 
 import channels from './channels.js'
+import { prepareSyncSchema, syncModels } from './sync-schema.js'
 
 const app = expressX({
    WS_TRANSPORT: true,
@@ -12,16 +13,14 @@ const app = expressX({
 })
 
 const db = new Pool({ connectionString: process.env.DATABASE_URL })
+await prepareSyncSchema(db)
 
 // allows socket data & room transfer on page reload
 app.configure(reloadPlugin)
 
 // Register PostgreSQL mutation services and proxy Electric Shapes to the client.
-app.configure(electricOfflinePlugin, db, [
-   { name: 'user', primaryKey: 'uid' },
-   { name: 'group', primaryKey: 'uid' },
-   { name: 'user_group_relation', primaryKey: 'uid' },
-], {
+app.configure(electricOfflinePlugin, db, syncModels, {
+   sync: true,
    electricUrl: process.env.ELECTRIC_URL || 'http://localhost:3001/v1/shape',
 })
 

@@ -27,7 +27,9 @@
   "contributors": [],
   "scripts": {
     "dev": "node --watch --experimental-strip-types src/app.js",
-    "test": ""
+    "electric:up": "docker compose up -d --wait",
+    "electric:down": "docker compose down",
+    "electric:reset": "docker compose down --volumes"
   },
   "dependencies": {
     "@jcbuisson/express-x": "^4.0.5",

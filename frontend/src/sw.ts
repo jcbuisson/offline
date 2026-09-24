@@ -1,4 +1,5 @@
-import { precacheAndRoute, cleanupOutdatedCaches } from 'workbox-precaching'
+import { precacheAndRoute, cleanupOutdatedCaches, createHandlerBoundToURL } from 'workbox-precaching'
+import { NavigationRoute, registerRoute } from 'workbox-routing'
 
 declare let self: ServiceWorkerGlobalScope
 
@@ -13,3 +14,6 @@ cleanupOutdatedCaches()
 
 // cache assets
 precacheAndRoute(self.__WB_MANIFEST)
+registerRoute(new NavigationRoute(createHandlerBoundToURL('/index.html'), {
+   denylist: [/^\/electric\//, /^\/offline-socket-io\//],
+}))

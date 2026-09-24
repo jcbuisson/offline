@@ -4,6 +4,8 @@ import { VitePWA } from 'vite-plugin-pwa'
 
 // https://vite.dev/config/
 export default defineConfig({
+   optimizeDeps: { exclude: ['@electric-sql/pglite'] },
+   worker: { format: 'es' },
    plugins: [
       vue(),
    
@@ -17,6 +19,11 @@ export default defineConfig({
          filename: "sw.ts",
          includeAssets: ["/favicon.png"],
          strategies: "injectManifest",
+         injectManifest: {
+            // PGlite's runtime and initial database must be available offline.
+            globPatterns: ['**/*.{js,css,html,ico,png,svg,wasm,data}'],
+            maximumFileSizeToCacheInBytes: 12 * 1024 * 1024,
+         },
          manifest: {
             name: "Offline",
             short_name: "Offline",
@@ -50,6 +57,9 @@ export default defineConfig({
       open: true,
       host: true, // allows for external device connection on local network
       proxy: {
+         '/electric/': {
+            target: 'http://localhost:3000',
+         },
          '^/offline-socket-io/.*': {
             target: 'http://localhost:3000',
             ws: true,

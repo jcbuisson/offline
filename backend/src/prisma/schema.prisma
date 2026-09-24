@@ -4,12 +4,14 @@ generator client {
 }
 
 datasource db {
-   provider = "postgresql"
+  provider = "postgresql"
 }
 
 //////////////        BUSINESS MODELS        //////////////
 
 model user {
+  version              BigInt                @default(dbgenerated("nextval('electric_sync_version_seq'::regclass)"))
+  deleted              Boolean               @default(false)
   uid                  String                @id
   firstname            String?
   lastname             String?
@@ -18,6 +20,8 @@ model user {
 }
 
 model group {
+  version              BigInt                @default(dbgenerated("nextval('electric_sync_version_seq'::regclass)"))
+  deleted              Boolean               @default(false)
   uid                  String                @id
   name                 String?               @unique(map: "group_name_unique")
   user_group_relations user_group_relation[]
@@ -25,11 +29,23 @@ model group {
 
 // relations (here: many-to-many between `user` and `group`) need to be explicitely defined
 model user_group_relation {
-  uid       String @id
-  user_uid  String
-  group_uid String
-  group     group  @relation(fields: [group_uid], references: [uid], onDelete: Cascade, onUpdate: NoAction)
-  user      user   @relation(fields: [user_uid], references: [uid], onDelete: Cascade, onUpdate: NoAction)
+  version   BigInt  @default(dbgenerated("nextval('electric_sync_version_seq'::regclass)"))
+  deleted   Boolean @default(false)
+  uid       String  @id
+  user_uid  String?
+  group_uid String?
+  group     group?  @relation(fields: [group_uid], references: [uid], onDelete: Cascade, onUpdate: NoAction)
+  user      user?   @relation(fields: [user_uid], references: [uid], onDelete: Cascade, onUpdate: NoAction)
 
   @@unique([user_uid, group_uid])
+}
+
+model electric_mutation_cursor {
+  table_name String
+  client_id  String @db.Uuid
+  row_id     String
+  revision   BigInt @default(0)
+  result     Json?
+
+  @@id([table_name, client_id, row_id])
 }

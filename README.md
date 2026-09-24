@@ -54,6 +54,9 @@ Create the schema from the Prisma model:
 
 ```bash
 cd backend
+npx prisma db execute --stdin <<'SQL'
+CREATE SEQUENCE IF NOT EXISTS electric_sync_version_seq;
+SQL
 npx prisma db push
 ```
 
@@ -76,6 +79,30 @@ cd frontend
 npm install
 npm run dev
 ```
+
+
+### Sync mode
+
+The backend enables `sync: true` and prepares the sync schema before listening.
+Startup creates `electric_mutation_cursor`, the shared version sequence, and
+`version`/`deleted` columns on the three application tables. Existing data is
+preserved. Prisma also describes these columns and the cursor table.
+
+The frontend prepares a persistent PGlite database in IndexedDB before mounting.
+All three models read and write locally; queued writes are retried and confirmed
+through Electric. Tabs share this database, and only the PGlite leader tab runs
+Electric subscriptions and mutation retries. Another tab takes over when it closes.
+This follows PGlite's [multi-tab worker setup](https://pglite.dev/docs/multi-tab-worker).
+
+Deletes retain versioned tombstones. Deleted users/groups release their unique
+email/name, and deleted relations clear their nullable foreign keys so the same
+membership can be added again. Continue explicitly deleting memberships when
+deleting a user or group: soft deletes do not trigger PostgreSQL cascades.
+
+Production builds precache PGlite's WASM and database assets for offline reloads.
+The development server does not enable the service worker, so a fully offline
+reload should be tested using a production build. Keep browser storage to preserve
+pending edits and the client identity; clearing it discards unsent changes.
 
 
 ## Pros

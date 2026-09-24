@@ -2,6 +2,14 @@ import { io } from "socket.io-client";
 import { createClient } from "@jcbuisson/express-x/client";
 import { electricClientPlugin } from "@jcbuisson/express-x-plugins/electric-client";
 import { reloadPlugin } from "@jcbuisson/express-x-plugins/reload-client";
+import { ShapeStream } from '@electric-sql/client';
+
+// Preserve 64-bit versions exactly while keeping local JSON rows serializable.
+class SyncShapeStream extends ShapeStream {
+   constructor(options) {
+      super({ ...options, parser: { int8: value => value } });
+   }
+}
 
 
 const socketOptions = {
@@ -14,15 +22,16 @@ const socketOptions = {
    },
 };
 
-const socket = io(socketOptions);
+export const socket = io(socketOptions);
 
 export const app = createClient(socket, { debug: true });
 
 app.configure(reloadPlugin);
 
 app.configure(electricClientPlugin, {
-   shapePath: import.meta.env.VITE_ELECTRIC_URL
-      || (import.meta.env.DEV
-         ? 'http://localhost:3000/electric/v1/shape'
-         : '/electric/v1/shape'),
+   ShapeStream: SyncShapeStream,
+   shapePath: new URL(
+      import.meta.env.VITE_ELECTRIC_URL || '/electric/v1/shape',
+      window.location.origin,
+   ).href,
 });

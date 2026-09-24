@@ -2,6 +2,7 @@ import { createApp } from 'vue'
 import '@mdi/font/css/materialdesignicons.css'
 import App from './App.vue'
 import router from './router'
+import { initializeSync } from './sync'
 
 import 'vuetify/styles'
 import { createVuetify } from 'vuetify'
@@ -15,8 +16,11 @@ const vuetify = createVuetify({
    directives,
 })
  
-createApp(App)
+initializeSync().then(() => createApp(App)
    .use(vuetify)
    .use(router)
-   .mount('#app')
+   .mount('#app')).catch(error => {
+      console.error('Could not initialize offline storage', error)
+      document.querySelector('#app').textContent = 'Could not open offline storage. Please reload the page.'
+   })
    
