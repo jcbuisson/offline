@@ -32,8 +32,8 @@ model user_group_relation {
   version   BigInt  @default(dbgenerated("nextval('electric_sync_version_seq'::regclass)"))
   deleted   Boolean @default(false)
   uid       String  @id
-  user_uid  String?
-  group_uid String?
+  user_uid  String? // must be nullable for tombstones
+  group_uid String? // must be nullable for tombstones
   group     group?  @relation(fields: [group_uid], references: [uid], onDelete: Cascade, onUpdate: NoAction)
   user      user?   @relation(fields: [user_uid], references: [uid], onDelete: Cascade, onUpdate: NoAction)
 

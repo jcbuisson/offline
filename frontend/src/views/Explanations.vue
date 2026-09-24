@@ -43,18 +43,18 @@
          Une nouvelle ligne peut ainsi réutiliser ces valeurs.</p>
 
       <h2 class="text-h6 mt-4 mb-2">Préparer le schéma au démarrage</h2>
-      <p>Avant d’accepter les requêtes, le serveur appelle <code>prepareSyncSchema(db)</code>.
+      <p>Avant d’accepter les requêtes, le serveur appelle <code>prepareElectricSyncSchema(db, syncModels)</code>.
          Cette fonction adapte les tables existantes aux besoins de la synchronisation :</p>
       <ul class="pl-6 my-2">
-         <li>Elle rend les références <code>user_uid</code> et <code>group_uid</code> de la table
-            d’association facultatives pour permettre l’insertion de tombstones.</li>
-         <li>Elle appelle <code>prepareElectricSyncSchema</code> pour ajouter les colonnes
-            <code>version</code> et <code>deleted</code> aux trois tables synchronisées.</li>
+         <li>Elle ajoute, si nécessaire, les colonnes <code>version</code> et <code>deleted</code>
+            aux trois tables synchronisées.</li>
          <li>Elle crée, si nécessaire, la séquence qui fournit les versions et la table
             <code>electric_mutation_cursor</code>, qui mémorise les révisions déjà traitées.</li>
       </ul>
-      <p>Cette préparation peut être relancée à chaque démarrage. Elle s’exécute dans une transaction :
-         si une étape échoue, ses changements sont annulés et le serveur ne démarre pas.
+      <p>Les références <code>user_uid</code> et <code>group_uid</code> doivent déjà être facultatives
+         dans la base, conformément au schéma Prisma, pour permettre l’insertion de tombstones.</p>
+      <p>Cette préparation peut être relancée à chaque démarrage. Si une étape échoue, le serveur
+         ne démarre pas ; les étapes déjà terminées restent appliquées.
          La synchronisation elle-même est ensuite assurée par le plugin.</p>
 
       <h2 class="text-h6 mt-4 mb-2">Partager les données entre onglets</h2>
