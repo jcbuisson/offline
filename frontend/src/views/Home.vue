@@ -1,10 +1,10 @@
 <template>
-   <v-app class="h-screen overflow-hidden">
+   <v-app class="app-shell overflow-hidden">
 
       <!-- makes the layout a vertical stack filling the full screen -->
-      <div class="d-flex flex-column fill-height">
+      <div class="app-layout d-flex flex-column">
          <!-- Toolbar (does not grow) -->
-         <v-toolbar>
+         <v-toolbar class="flex-grow-0 flex-shrink-0">
             <v-toolbar-title text="Application offline-first, temps-réel, avec backend relationnel"></v-toolbar-title>
             <!-- <v-toolbar-title text="Why fetch when you can sync?"></v-toolbar-title> -->
 
@@ -17,14 +17,14 @@
          </v-toolbar>
          
          <!-- Tabsbar (does not grow) -->
-         <v-tabs v-model="currentTab">
+         <v-tabs v-model="currentTab" class="flex-shrink-0">
             <v-tab text="Utilisateurs" value="users" @click="router.push('/users')"></v-tab>
             <v-tab text="Groupes" value="groups" @click="router.push('/groups')"></v-tab>
             <v-tab text="Explications" value="explanations" @click="router.push('/explanations')"></v-tab>
          </v-tabs>
 
          <!-- Fills remaining vertical space -->
-         <div class="d-flex flex-column flex-grow-1 overflow-hidden">
+         <div class="app-content d-flex flex-column flex-grow-1 overflow-hidden">
             <router-view />
          </div>
 
@@ -55,11 +55,11 @@ app.addDisconnectListener(() => {
 })
 
 function connect() {
-   app.connect();
+   socket.connect();
 }
 
 function disconnect() {
-   app.disconnect();
+   socket.disconnect();
 }
 
 const currentTab = ref('users')
@@ -75,3 +75,24 @@ watch(() => [route.path], async () => {
    currentTab.value = tab
 }, { immediate: true })
 </script>
+
+<style scoped>
+.app-shell {
+   height: 100vh;
+   height: 100dvh;
+}
+
+.app-shell :deep(.v-application__wrap) {
+   height: 100%;
+   min-height: 0;
+}
+
+.app-layout {
+   flex: 1 1 0;
+   min-height: 0;
+}
+
+.app-content {
+   min-height: 0;
+}
+</style>

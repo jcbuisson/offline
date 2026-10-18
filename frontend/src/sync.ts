@@ -40,11 +40,13 @@ async function prepare() {
    }
    const updateLeader = () => {
       for (const model of owners) {
-         if (db.isLeader) model.start()
+         if (db.isLeader && navigator.onLine) model.start()
          else model.stop()
       }
    }
    db.onLeaderChange(updateLeader)
+   window.addEventListener('offline', updateLeader)
+   window.addEventListener('online', updateLeader)
    updateLeader()
 }
 

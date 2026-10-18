@@ -1,5 +1,5 @@
 <template>
-   <div class="pa-4 bg-grey-lighten-4 overflow-auto">
+   <div class="explanations pa-4 bg-grey-lighten-4 overflow-auto">
       <h2 class="text-h6 mb-2">Les données de l’application</h2>
       <p>PostgreSQL conserve les utilisateurs, les groupes et leurs associations dans trois tables :
          <code>user</code>, <code>group</code> et <code>user_group_relation</code>.
@@ -63,3 +63,11 @@
          Si le leader change, le nouveau leader prend le relais.</p>
    </div>
 </template>
+
+<style scoped>
+.explanations {
+   flex: 1 1 0;
+   min-height: 0;
+   overflow-wrap: anywhere;
+}
+</style>

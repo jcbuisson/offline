@@ -1,51 +1,61 @@
 
 import { createRouter, createWebHistory } from 'vue-router'
 
+// Load every screen before offline navigation needs it.
+import Home from '/src/views/Home.vue'
+import ManageUsers from '/src/views/ManageUsers.vue'
+import CreateUser from '/src/views/CreateUser.vue'
+import EditUser from '/src/views/EditUser.vue'
+import ManageGroups from '/src/views/ManageGroups.vue'
+import CreateGroup from '/src/views/CreateGroup.vue'
+import EditGroup from '/src/views/EditGroup.vue'
+import Explanations from '/src/views/Explanations.vue'
+
 
 const routes = [
    {
       path: '/',
-      component: () => import('/src/views/Home.vue'),
+      component: Home,
       redirect: '/users',
       children: [
          {
             path: 'users',
             props: true,
-            component: () => import('/src/views/ManageUsers.vue'),
+            component: ManageUsers,
             children: [
                {
                   path: 'create',
                   props: true,
-                  component: () => import('/src/views/CreateUser.vue'),
+                  component: CreateUser,
                },
                {
                   path: ':user_uid',
                   props: true,
-                  component: () => import('/src/views/EditUser.vue'),
+                  component: EditUser,
                },
             ],      
          },
          {
             path: 'groups',
             props: true,
-            component: () => import('/src/views/ManageGroups.vue'),
+            component: ManageGroups,
             children: [
                {
                   path: 'create',
                   props: true,
-                  component: () => import('/src/views/CreateGroup.vue'),
+                  component: CreateGroup,
                },
                {
                   path: ':group_uid',
                   props: true,
-                  component: () => import('/src/views/EditGroup.vue'),
+                  component: EditGroup,
                },
             ],      
          },
          {
             path: 'explanations',
             props: true,
-            component: () => import('/src/views/Explanations.vue'),
+            component: Explanations,
          },
       ],
    },

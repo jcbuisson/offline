@@ -3,6 +3,7 @@ name: offline
 services:
   electric:
     image: electricsql/electric:latest
+    restart: unless-stopped
     environment:
       DATABASE_URL: ${ELECTRIC_DATABASE_URL:?Set ELECTRIC_DATABASE_URL to a PostgreSQL URL using host.docker.internal as the hostname}
       # Development only. Configure ELECTRIC_SECRET before exposing this service.
