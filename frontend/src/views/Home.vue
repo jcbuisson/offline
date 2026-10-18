@@ -41,7 +41,7 @@ import OnlineButton from '/src/components/OnlineButton.vue'
 
 import router from '/src/router'
 
-import { app, socket } from '/src/client-app.ts'
+import { app, socket } from '/src/useExpressXClient.ts'
 
 const isConnected = ref(socket.connected);
 

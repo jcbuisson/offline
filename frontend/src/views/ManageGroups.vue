@@ -53,7 +53,7 @@ import { displaySnackbar } from '/src/use/useSnackbar'
 import useGroup from '/src/use/useGroup';
 import useUserGroupRelation from '/src/use/useUserGroupRelation';
 
-import { app } from '/src/client-app.ts';
+import { app } from '/src/useExpressXClient.ts';
 
 const { getObservable: groups$, remove: removeGroup } = useGroup(app);
 const { getObservable: userGroupRelations$, remove: removeUserGroupRelation } = useUserGroupRelation(app);

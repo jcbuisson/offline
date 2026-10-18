@@ -27,7 +27,7 @@ import { displaySnackbar } from '/src/use/useSnackbar'
 
 import useGroup from '/src/use/useGroup';
 
-import { app } from '/src/client-app.ts';
+import { app } from '/src/useExpressXClient.ts';
 
 const { create: createGroup } = useGroup(app);
 

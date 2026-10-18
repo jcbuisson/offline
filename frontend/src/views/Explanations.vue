@@ -58,9 +58,10 @@
          La synchronisation elle-même est ensuite assurée par le plugin.</p>
 
       <h2 class="text-h6 mt-4 mb-2">Partager les données entre onglets</h2>
-      <p>Les onglets partagent la base PGlite locale. Un onglet leader assure la synchronisation réseau
-         et les autres sont informés des changements par un <code>BroadcastChannel</code>.
-         Si le leader change, le nouveau leader prend le relais.</p>
+      <p>Le plugin gère la base PGlite locale partagée entre les onglets.
+         Pour chaque modèle, un verrou élit un onglet qui assure la synchronisation réseau ;
+         les autres sont informés des changements par un <code>BroadcastChannel</code>.
+         Si cet onglet se ferme ou arrête la synchronisation, un autre prend le relais.</p>
    </div>
 </template>
 

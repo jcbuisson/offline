@@ -6,7 +6,7 @@ import { VitePWA } from 'vite-plugin-pwa'
 export default defineConfig({
    // PGlite's module worker requires native top-level await support.
    build: { target: 'esnext' },
-   optimizeDeps: { exclude: ['@electric-sql/pglite'] },
+   optimizeDeps: { exclude: ['@jcbuisson/express-x-plugins', '@electric-sql/pglite'] },
    worker: { format: 'es' },
    plugins: [
       vue(),

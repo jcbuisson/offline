@@ -1,5 +1,3 @@
-import { getSyncModel } from '../sync'
-
 import { v7 as uuidv7 } from 'uuid'
 import { shareReplay } from 'rxjs'
 
@@ -7,7 +5,7 @@ let model;
 
 export default function(app) {
    if (!model) {
-      const electricModel = getSyncModel('user_group_relation');
+      const electricModel = app.createElectricModel('user_group_relation', { primaryKey: 'uid' });
       const all$ = electricModel.getObservable({}).pipe(
          shareReplay({ bufferSize: 1, refCount: true }),
       )

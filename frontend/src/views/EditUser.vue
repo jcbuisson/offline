@@ -65,7 +65,7 @@ import useUser from '/src/use/useUser';
 import useGroup from '/src/use/useGroup';
 import useUserGroupRelation from '/src/use/useUserGroupRelation';
 
-import { app } from '/src/client-app.ts';
+import { app } from '/src/useExpressXClient.ts';
 
 const { getObservable: users$, update: updateUser } = useUser(app);
 const { getObservable: groups$ } = useGroup(app);
