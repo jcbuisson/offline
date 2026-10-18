@@ -2,11 +2,12 @@
   overscroll-behavior: none; /* prevents things like "rubber band" scrolling on iOS. */
 }
 
+html, body, #app {
+   width: 100%;
+   height: 100%;
+   margin: 0;
+}
+
 body {
    font-family: Arial, sans-serif;
-   /* margin: 20px;
-   padding: 20px;
-   height: 100vh; */
-   background-color: red;
-   /* background-color: #f9f9f9; */
 }

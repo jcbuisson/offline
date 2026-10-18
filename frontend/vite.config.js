@@ -31,7 +31,7 @@ export default defineConfig({
             short_name: "Offline",
             theme_color: "#ffffff",
             start_url: "/",
-            display: "standalone",
+            display: "fullscreen",
             background_color: "#ffffff",
             icons: [
                {

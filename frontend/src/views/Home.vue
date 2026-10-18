@@ -90,6 +90,8 @@ watch(() => [route.path], async () => {
 .app-layout {
    flex: 1 1 0;
    min-height: 0;
+   padding: env(safe-area-inset-top, 0px) env(safe-area-inset-right, 0px)
+      env(safe-area-inset-bottom, 0px) env(safe-area-inset-left, 0px);
 }
 
 .app-content {
