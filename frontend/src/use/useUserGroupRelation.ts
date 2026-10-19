@@ -1,11 +1,12 @@
 import { v7 as uuidv7 } from 'uuid'
 import { shareReplay } from 'rxjs'
+import useElectricModel from './useElectricModel'
 
 let model;
 
 export default function(app) {
    if (!model) {
-      const electricModel = app.createElectricModel('user_group_relation', { primaryKey: 'uid' });
+      const electricModel = useElectricModel(app, 'user_group_relation');
       const all$ = electricModel.getObservable({}).pipe(
          shareReplay({ bufferSize: 1, refCount: true }),
       )

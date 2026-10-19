@@ -3,6 +3,7 @@ import { createClient } from '@jcbuisson/express-x/client'
 import { electricClientPlugin } from '@jcbuisson/express-x-plugins/electric-client'
 import { reactive, readonly } from 'vue'
 import { reloadPlugin } from '@jcbuisson/express-x-plugins/reload-client'
+import useElectricModel from './use/useElectricModel'
 
 function createExpressXClient() {
    const state = reactive({
@@ -56,36 +57,13 @@ function createExpressXClient() {
    const disconnectSocket = () => socket.disconnect()
 
    // Prepare every dataset before its screen is opened. The plugin caches models.
-   const models = ['user', 'group', 'user_group_relation'].map(name => ({
-      name,
-      model: app.createElectricModel(name, {
-         primaryKey: 'uid',
-         streamOptions: {
-            // The owner also serves visible tabs while its own tab is hidden.
-            runtimeVisibility: {
-               getCurrentState: () => 'visible',
-               subscribe: () => () => {},
-            },
-         },
-      }),
-   }))
-
-   function updateSyncNetwork() {
-      for (const { name, model } of models) {
-         if (navigator.onLine) {
-            void model.start().catch(error => reportSyncError(error, { modelName: name }))
-         } else model.stop()
-      }
+   for (const name of ['user', 'group', 'user_group_relation']) {
+      useElectricModel(app, name)
    }
-   window.addEventListener('offline', updateSyncNetwork)
-   window.addEventListener('online', updateSyncNetwork)
-   updateSyncNetwork()
 
    let disposal: Promise<void> | undefined
    function dispose() {
       if (disposal) return disposal
-      window.removeEventListener('offline', updateSyncNetwork)
-      window.removeEventListener('online', updateSyncNetwork)
       socket.disconnect()
       socket.removeAllListeners()
       disposal = Promise.resolve().then(() => app.disposeElectricSync())
