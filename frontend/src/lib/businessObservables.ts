@@ -4,7 +4,8 @@ import useUser from '/src/use/useUser'
 import useGroup from '/src/use/useGroup'
 import useUserGroupRelation from '/src/use/useUserGroupRelation'
 
-import { app } from '/src/useExpressXClient.ts'
+import useExpressXClient from '/src/useExpressXClient.ts'
+const { app } = useExpressXClient()
 
 const { getObservable: users$ } = useUser(app)
 const { getObservable: groups$ } = useGroup(app)

@@ -26,7 +26,8 @@ import { displaySnackbar } from '/src/use/useSnackbar'
 
 import useGroup from '/src/use/useGroup';
 
-import { app } from '/src/useExpressXClient.ts';
+import useExpressXClient from '/src/useExpressXClient.ts'
+const { app } = useExpressXClient();
 
 const { getObservable: groups$, update: updateGroup } = useGroup(app);
 

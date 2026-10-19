@@ -33,7 +33,7 @@
 </template>
 
 <script setup>
-import { ref, watch } from 'vue'
+import { computed, ref, watch } from 'vue'
 import { useRoute} from 'vue-router'
 
 import GithubLink from '/src/components/GithubLink.vue'
@@ -41,26 +41,10 @@ import OnlineButton from '/src/components/OnlineButton.vue'
 
 import router from '/src/router'
 
-import { app, socket } from '/src/useExpressXClient.ts'
+import useExpressXClient from '/src/useExpressXClient.ts'
+const { state, connectSocket: connect, disconnectSocket: disconnect } = useExpressXClient()
 
-const isConnected = ref(socket.connected);
-
-// Electric Shapes synchronize model subscriptions automatically.
-app.addConnectListener(() => {
-   isConnected.value = true
-})
-
-app.addDisconnectListener(() => {
-   isConnected.value = false
-})
-
-function connect() {
-   socket.connect();
-}
-
-function disconnect() {
-   socket.disconnect();
-}
+const isConnected = computed(() => state.socketConnected)
 
 const currentTab = ref('users')
 

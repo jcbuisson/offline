@@ -99,10 +99,10 @@ Startup creates `electric_mutation_cursor`, the shared version sequence, and
 `version`/`deleted` columns on the three application tables. Existing data is
 preserved. Prisma also describes these columns and the cursor table.
 
-The frontend prepares a persistent PGlite database in IndexedDB before mounting.
+The frontend plugin prepares a persistent PGlite database in IndexedDB automatically.
 All three models read and write locally; queued writes are retried and confirmed
-through Electric. Tabs share this database, and only the PGlite leader tab runs
-Electric subscriptions and mutation retries. Another tab takes over when it closes.
+through Electric. Tabs share this database; a Web Lock per model elects the tab
+that runs Electric subscriptions and mutation retries. Another tab takes over when it closes.
 This follows PGlite's [multi-tab worker setup](https://pglite.dev/docs/multi-tab-worker).
 
 Deletes retain versioned tombstones. Deleted users/groups release their unique
@@ -114,6 +114,17 @@ Production builds precache PGlite's WASM and database assets for offline reloads
 The development server does not enable the service worker, so a fully offline
 reload should be tested using a production build. Keep browser storage to preserve
 pending edits and the client identity; clearing it discards unsent changes.
+
+Before building a production release, install the frontend dependencies:
+
+```sh
+cd frontend
+npm install
+npm run build
+```
+
+The build checks that the installed plugin supports managed sync. Deploy the
+complete generated `dist` directory, including workers and service worker assets.
 
 
 ## Pros
