@@ -5,7 +5,7 @@
       <div class="app-layout d-flex flex-column">
          <!-- Toolbar (does not grow) -->
          <v-toolbar class="flex-grow-0 flex-shrink-0">
-            <v-toolbar-title text="Application offline-first, temps-réel, avec backend relationnel"></v-toolbar-title>
+            <v-toolbar-title text="Application temps-réel avec backend relationnel"></v-toolbar-title>
             <!-- <v-toolbar-title text="Why fetch when you can sync?"></v-toolbar-title> -->
 
             <template v-slot:append>

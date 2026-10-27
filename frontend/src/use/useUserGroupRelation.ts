@@ -1,4 +1,4 @@
-import { v7 as uuidv7 } from 'uuid'
+import createSqlModel from './createSqlModel'
 import { combineLatest, map, shareReplay } from 'rxjs'
 import useUser from './useUser'
 import useGroup from './useGroup'
@@ -7,13 +7,12 @@ let model;
 
 export default function(app) {
    if (!model) {
-      const electricModel = app.createElectricModel('user_group_relation');
+      const sqlModel = createSqlModel(app, 'user_group_relation');
       const users$ = useUser(app).getObservable({})
       const groups$ = useGroup(app).getObservable({})
-      // Hide memberships immediately when either parent is deleted locally.
-      // Their authoritative tombstones arrive after the server processes the delete.
+      // Parent and membership Shapes can arrive in either order.
       const visibleRelations = (where = {}) => combineLatest([
-         electricModel.getObservable(where), users$, groups$,
+         sqlModel.getObservable(where), users$, groups$,
       ]).pipe(map(([relations, users, groups]) => {
          const userUIDs = new Set(users.map(user => user.uid))
          const groupUIDs = new Set(groups.map(group => group.uid))
@@ -23,11 +22,10 @@ export default function(app) {
          shareReplay({ bufferSize: 1, refCount: true }),
       )
       model = {
-         ...electricModel,
+         ...sqlModel,
          getObservable: (where = {}) => Object.keys(where).length === 0
             ? all$
             : visibleRelations(where),
-         create: data => electricModel.create({ ...data, uid: uuidv7() }),
       }
    }
    return { ...model, groupDifference }

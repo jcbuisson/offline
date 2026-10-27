@@ -88,70 +88,41 @@ host    offline    chris    172.19.0.0/16    scram-sha-256
 
 Verify the sync endpoint:
 ```
-curl -i 'https://offline.jcbuisson.dev/electric/v1/shape/user?offset=-1'
+curl -i 'https://offline.jcbuisson.dev/electric-sql/v1/shape/user?offset=-1'
 ```
 
 
-### Sync mode
+### SQL plugin
 
-The backend enables `sync: true` and prepares the sync schema before listening.
-Startup creates `electric_mutation_cursor`, the shared version sequence, and
-`version`/`deleted` columns on the three application tables. Existing data is
-preserved. Prisma also describes these columns and the cursor table.
+Frontend and backend use express-x-plugins 5.1.0's `electric-sql-client` and
+`electric-sql-server`. Named, parameterized statements are in `backend/src/sql.js`.
+The browser uses `app.sql.query` for writes and `app.sql.watch` for live table rows.
+This public demo allows all clients to access these operations.
 
-The frontend plugin prepares a persistent PGlite database in IndexedDB automatically.
-All three models read and write locally; queued writes are retried and confirmed
-through Electric. Tabs share this database; a Web Lock per model elects the tab
-that runs Electric subscriptions and mutation retries. Another tab takes over when it closes.
-This follows PGlite's [multi-tab worker setup](https://pglite.dev/docs/multi-tab-worker).
+Writes require connectivity. Electric still provides live reads. There is no
+persistent local database or offline write queue. Synchronize any pending edits
+with the previous app before upgrading; the SQL plugin does not replay its queue.
 
-The frontend and backend use Electric plugin 5.0.8. Deletes retain versioned
-tombstones. Deleted users/groups release their unique email/name, and deleted
-relations clear their nullable foreign keys so the same
-membership can be added again. Deleting a user or group queues only that parent
-deletion. The plugin discovers the PostgreSQL `ON DELETE CASCADE` foreign keys
-and atomically tombstones all memberships on the server, including memberships
-created concurrently or unseen by an offline device. Memberships with locally
-deleted parents are hidden immediately while waiting for synchronization.
+Existing sync metadata stays in the database for compatibility. Queries exclude
+legacy tombstones; new deletes use SQL DELETE with PostgreSQL foreign key cascades.
+No destructive schema migration runs at startup.
 
-Writes referencing deleted parents resolve as tombstones and display a warning
-in the app instead of retrying indefinitely. Startup schema preparation repairs
-existing active memberships of soft-deleted parents. Keep the same complete
-`syncModels` configuration for schema preparation and the server plugin. Upgrade
-both frontend and backend together; relational sync writes use a shared server
-transaction lock. Other foreign-key delete policies retain their existing behavior.
-
-Production builds precache PGlite's WASM and database assets for offline reloads.
-The development server does not enable the service worker, so a fully offline
-reload should be tested using a production build. Keep browser storage to preserve
-pending edits and the client identity; clearing it discards unsent changes.
-
-Before building a production release, install the frontend dependencies:
-
-```sh
-cd frontend
-npm install
-npm run build
-```
-
-The build checks that the installed plugin supports managed sync. Deploy the
-complete generated `dist` directory, including workers and service worker assets.
-
-Run `cd frontend && npm run test:sync` to check offline parent deletion,
-concurrent membership creation, local visibility, and rejected offline writes
-against temporary embedded databases using the app's sync model configuration.
+Build with `cd frontend && npm install && npm run build`. Deploy the complete
+`dist` directory. Application files are cached for offline opening, but loading
+data after a reload requires connectivity. Run `npm run test:sync` in `frontend`
+to verify writes, subscriptions, and cascading membership deletion.
 
 ## Pros
 
 - a relational database schema!
 - real-time!
-- offline-first!
+- parameterized SQL writes
 - extensive use of observables, ideal for all types of reactive frameworks (React, Vue, etc.)
 
 ## Cons
 
 - no autoincremented ids, only uuids (v7)
-- many-to-many relations must be explicitly described
+- writes require connectivity
 - extensive use of observables
 
 ## Typical usage

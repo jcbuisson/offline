@@ -12,9 +12,8 @@
   },
   "dependencies": {
     "@electric-sql/client": "^1.5.24",
-    "@electric-sql/pglite": "^0.5.8",
     "@jcbuisson/express-x": "^4.0.5",
-    "@jcbuisson/express-x-plugins": "5.0.8",
+    "@jcbuisson/express-x-plugins": "^5.1.0",
     "@mdi/font": "^7.4.47",
     "@vueuse/integrations": "^12.5.0",
     "@vueuse/rxjs": "^12.5.0",
@@ -38,6 +37,7 @@
     "workbox-routing": "^7.4.1"
   },
   "devDependencies": {
+    "@electric-sql/pglite": "^0.5.12",
     "@vitejs/plugin-vue": "^5.2.1",
     "vite": "^6.0.5"
   }

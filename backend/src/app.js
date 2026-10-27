@@ -1,11 +1,10 @@
 import 'dotenv/config'
 import { expressX } from '@jcbuisson/express-x/server'
-import { electricServerPlugin, prepareElectricSyncSchema } from '@jcbuisson/express-x-plugins/electric-server'
+import { electricSqlServerPlugin } from '@jcbuisson/express-x-plugins/electric-sql-server'
 import { reloadPlugin } from '@jcbuisson/express-x-plugins/reload-server'
 import { Pool } from 'pg'
 
-import channels from './channels.js'
-import syncModels from './syncModels.js'
+import { tables, statements } from './sql.js'
 
 const app = expressX({
    WS_TRANSPORT: true,
@@ -14,20 +13,17 @@ const app = expressX({
 
 const db = new Pool({ connectionString: process.env.DATABASE_URL })
 
-// add synchronization infrastructure
-await prepareElectricSyncSchema(db, syncModels)
-
-// Register PostgreSQL mutation services and proxy Electric Shapes to the client.
-app.configure(electricServerPlugin, db, syncModels, {
-   sync: true,
+// This public demo allows all clients to use its named statements and Shapes.
+app.configure(electricSqlServerPlugin, db, {
+   tables,
+   statements,
+   authorize: () => true,
    electricUrl: process.env.ELECTRIC_URL || 'http://localhost:3001/v1/shape',
 })
 
 // allows socket data & room transfer on page reload
 app.configure(reloadPlugin)
 
-// publish
-app.configure(channels)
 // subscribe
 app.on('connection', (socket) => {
    app.joinChannel('anonymous', socket)

@@ -15,5 +15,5 @@ cleanupOutdatedCaches()
 // cache assets
 precacheAndRoute(self.__WB_MANIFEST)
 registerRoute(new NavigationRoute(createHandlerBoundToURL('/index.html'), {
-   denylist: [/^\/electric\//, /^\/offline-socket-io\//],
+   denylist: [/^\/electric-sql\//, /^\/offline-socket-io\//],
 }))

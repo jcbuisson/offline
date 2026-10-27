@@ -1,67 +1,20 @@
 <template>
    <div class="explanations pa-4 bg-grey-lighten-4 overflow-auto">
       <h2 class="text-h6 mb-2">Les données de l’application</h2>
-      <p>PostgreSQL conserve les utilisateurs, les groupes et leurs associations dans trois tables :
-         <code>user</code>, <code>group</code> et <code>user_group_relation</code>.
-         Un utilisateur peut appartenir à plusieurs groupes, et un groupe peut réunir plusieurs utilisateurs.</p>
-      <p>Chaque objet possède un identifiant <code>uid</code> de type UUID, généré par le client.
-         Il peut ainsi être créé hors ligne sans attendre un identifiant du serveur.
-         Les e-mails, les noms de groupes et les couples utilisateur/groupe sont soumis
-         à des contraintes d’unicité côté serveur.</p>
-
-      <h2 class="text-h6 mt-4 mb-2">Travailler hors ligne</h2>
-      <p>Le navigateur utilise une base locale PGlite, persistée dans IndexedDB.
-         L’interface lit les données locales et réagit à leurs changements grâce à des observables.
-         Les données déjà chargées restent accessibles sans connexion, dans les limites
-         du stockage accordé par le navigateur.</p>
-      <p>Une création, une modification ou une suppression est d’abord enregistrée localement :
-         son résultat apparaît immédiatement. Une file persistante conserve les mutations
-         à transmettre au serveur, y compris après un rechargement de la page.</p>
-
-      <h2 class="text-h6 mt-4 mb-2">Synchroniser avec le serveur</h2>
-      <p>Lorsque la connexion est disponible, le client envoie les mutations en attente via express-x
-         aux services du plugin <code>electricServerPlugin</code>.
-         Chaque mutation porte un identifiant de client et un numéro de révision.
-         Le serveur mémorise la dernière révision traitée pour chaque client et chaque objet,
-         afin de ne pas réappliquer une mutation déjà traitée ou plus ancienne.
-         Ce mécanisme ne fusionne pas les modifications concurrentes de clients différents.</p>
-      <p>Dans l’autre sens, Electric transmet les changements de PostgreSQL au navigateur au moyen
-         de flux appelés « Shapes ». Dans cet exemple, les trois modèles sont synchronisés.
-         Les filtres de l’interface sélectionnent ensuite les données locales à afficher.</p>
-      <p>La réponse à une mutation fournit une version attribuée par le serveur.
-         Le client conserve la mutation en attente jusqu’à ce que le flux Electric confirme
-         cette version, ou une version plus récente. Une coupure réseau laisse les mutations
-         en attente pour une nouvelle tentative ; une erreur de validation ou de contrainte
-         peut empêcher leur application.</p>
-
-      <h2 class="text-h6 mt-4 mb-2">Conserver la trace des suppressions</h2>
-      <p>Une suppression synchronisée conserve une ligne marquée <code>deleted = true</code>,
-         appelée « tombstone ». Invisible dans les listes, elle permet de transmettre et de confirmer
-         la suppression, même si celle-ci arrive au serveur avant la création effectuée hors ligne.</p>
-      <p>Les champs soumis à l’unicité sont alors libérés : l’e-mail d’un utilisateur,
-         le nom d’un groupe ou les références d’une association sont mis à <code>NULL</code>.
-         Une nouvelle ligne peut ainsi réutiliser ces valeurs.</p>
-
-      <h2 class="text-h6 mt-4 mb-2">Préparer le schéma au démarrage</h2>
-      <p>Avant d’accepter les requêtes, le serveur appelle <code>prepareElectricSyncSchema(db, syncModels)</code>.
-         Cette fonction adapte les tables existantes aux besoins de la synchronisation :</p>
-      <ul class="pl-6 my-2">
-         <li>Elle ajoute, si nécessaire, les colonnes <code>version</code> et <code>deleted</code>
-            aux trois tables synchronisées.</li>
-         <li>Elle crée, si nécessaire, la séquence qui fournit les versions et la table
-            <code>electric_mutation_cursor</code>, qui mémorise les révisions déjà traitées.</li>
-      </ul>
-      <p>Les références <code>user_uid</code> et <code>group_uid</code> doivent déjà être facultatives
-         dans la base, conformément au schéma Prisma, pour permettre l’insertion de tombstones.</p>
-      <p>Cette préparation peut être relancée à chaque démarrage. Si une étape échoue, le serveur
-         ne démarre pas ; les étapes déjà terminées restent appliquées.
-         La synchronisation elle-même est ensuite assurée par le plugin.</p>
-
-      <h2 class="text-h6 mt-4 mb-2">Partager les données entre onglets</h2>
-      <p>Le plugin gère la base PGlite locale partagée entre les onglets.
-         Pour chaque modèle, un verrou élit un onglet qui assure la synchronisation réseau ;
-         les autres sont informés des changements par un <code>BroadcastChannel</code>.
-         Si cet onglet se ferme ou arrête la synchronisation, un autre prend le relais.</p>
+      <p>PostgreSQL conserve les utilisateurs, les groupes et leurs associations.
+         Les contraintes d’unicité et les clés étrangères sont vérifiées dans la base.
+         Supprimer un utilisateur ou un groupe supprime aussi ses associations.</p>
+      <h2 class="text-h6 mt-4 mb-2">Écrire avec SQL</h2>
+      <p>Le client appelle des requêtes nommées via express-x. Le serveur conserve le SQL
+         et transmet les valeurs séparément à PostgreSQL. Les écritures nécessitent une
+         connexion ; aucune file d’écriture hors ligne n’est conservée.</p>
+      <h2 class="text-h6 mt-4 mb-2">Recevoir les changements</h2>
+      <p>Electric transmet les lignes des trois tables avec des flux « Shapes ».
+         Des observables mettent les listes à jour. Les données restent en mémoire pendant
+         la session ; elles ne sont pas enregistrées dans une base locale persistante.</p>
+      <h2 class="text-h6 mt-4 mb-2">Disponibilité hors ligne</h2>
+      <p>Le service worker conserve les fichiers de l’application après une première visite.
+         Charger les données et enregistrer des changements demande une connexion au serveur.</p>
    </div>
 </template>
 
