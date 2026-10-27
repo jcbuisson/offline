@@ -1,20 +1,32 @@
 import { v7 as uuidv7 } from 'uuid'
-import { shareReplay } from 'rxjs'
-import useElectricModel from './useElectricModel'
+import { combineLatest, map, shareReplay } from 'rxjs'
+import useUser from './useUser'
+import useGroup from './useGroup'
 
 let model;
 
 export default function(app) {
    if (!model) {
-      const electricModel = useElectricModel(app, 'user_group_relation');
-      const all$ = electricModel.getObservable({}).pipe(
+      const electricModel = app.createElectricModel('user_group_relation');
+      const users$ = useUser(app).getObservable({})
+      const groups$ = useGroup(app).getObservable({})
+      // Hide memberships immediately when either parent is deleted locally.
+      // Their authoritative tombstones arrive after the server processes the delete.
+      const visibleRelations = (where = {}) => combineLatest([
+         electricModel.getObservable(where), users$, groups$,
+      ]).pipe(map(([relations, users, groups]) => {
+         const userUIDs = new Set(users.map(user => user.uid))
+         const groupUIDs = new Set(groups.map(group => group.uid))
+         return relations.filter(relation => userUIDs.has(relation.user_uid) && groupUIDs.has(relation.group_uid))
+      }))
+      const all$ = visibleRelations().pipe(
          shareReplay({ bufferSize: 1, refCount: true }),
       )
       model = {
          ...electricModel,
          getObservable: (where = {}) => Object.keys(where).length === 0
             ? all$
-            : electricModel.getObservable(where),
+            : visibleRelations(where),
          create: data => electricModel.create({ ...data, uid: uuidv7() }),
       }
    }

@@ -58,6 +58,7 @@ import { useObservable } from '@vueuse/rxjs'
 
 import router from '/src/router'
 import { displaySnackbar } from '/src/use/useSnackbar'
+import getFullname from '/src/lib/getFullname'
 
 import useUser from '/src/use/useUser';
 import useGroup from '/src/use/useGroup';

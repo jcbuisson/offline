@@ -1,5 +1,13 @@
 import assert from 'node:assert/strict'
+import { readFileSync } from 'node:fs'
 import { electricClientPlugin } from '@jcbuisson/express-x-plugins/electric-client'
+
+const { version } = JSON.parse(readFileSync(new URL('../package.json', import.meta.resolve('@jcbuisson/express-x-plugins/electric-client')), 'utf8'))
+const [major, minor, patch] = version.split('.').map(Number)
+assert.ok(
+   major > 5 || major === 5 && (minor > 0 || minor === 0 && patch >= 8),
+   'Installed express-x-plugins lacks relational delete protection (requires 5.0.8+). Reinstall frontend dependencies.',
+)
 
 // Older plugin installations silently ignore sync: true and return online-only
 // models. Catch that mismatch before producing a deployable bundle.

@@ -5,6 +5,7 @@ import { reloadPlugin } from '@jcbuisson/express-x-plugins/reload-server'
 import { Pool } from 'pg'
 
 import channels from './channels.js'
+import syncModels from './syncModels.js'
 
 const app = expressX({
    WS_TRANSPORT: true,
@@ -13,11 +14,6 @@ const app = expressX({
 
 const db = new Pool({ connectionString: process.env.DATABASE_URL })
 
-const syncModels = [
-   { name: 'user', primaryKey: 'uid', tombstoneData: { email: null } },
-   { name: 'group', primaryKey: 'uid', tombstoneData: { name: null } },
-   { name: 'user_group_relation', primaryKey: 'uid', tombstoneData: { user_uid: null, group_uid: null } },
-]
 // add synchronization infrastructure
 await prepareElectricSyncSchema(db, syncModels)
 

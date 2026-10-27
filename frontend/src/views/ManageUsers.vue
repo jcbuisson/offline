@@ -23,7 +23,7 @@
                   </v-list-item-subtitle>
 
                   <template v-slot:append>
-                     <v-btn color="grey-lighten-1" icon="mdi-delete" variant="text" @click="deleteUser(userAndGroups.user)"></v-btn>
+                     <v-btn color="grey-lighten-1" icon="mdi-delete" variant="text" @click.stop.prevent="deleteUser(userAndGroups.user)"></v-btn>
                   </template>
                </v-list-item>
             </div>
@@ -41,11 +41,11 @@
 <script setup lang="ts">
 import { ref, watch, computed } from 'vue'
 import { useRoute} from 'vue-router'
-import { Observable, from, map, of, merge, combineLatest, forkJoin, firstValueFrom } from 'rxjs'
 import { useObservable } from '@vueuse/rxjs'
 
 import { selectedUser } from '/src/use/useSelectedUser'
 import { displaySnackbar } from '/src/use/useSnackbar'
+import getFullname from '/src/lib/getFullname'
 
 import router from '/src/router'
 
@@ -60,7 +60,7 @@ const { app } = useExpressXClient();
 
 const { getObservable: users$, remove: removeUser } = useUser(app);
 const { getObservable: groups$ } = useGroup(app);
-const { getObservable: userGroupRelations$, remove: removeUserGroupRelation } = useUserGroupRelation(app);
+const { getObservable: userGroupRelations$ } = useUserGroupRelation(app);
 
 
 const nameFilter = ref('')
@@ -95,8 +95,8 @@ const filteredUserAndGroupList = computed(() => {
    const nameFilter_ = (nameFilter.value || '').toLowerCase()
    return userAndGroupsList.value.filter(ug => {
       if (nameFilter_.length === 0) return true
-      if (ug.user.firstname.toLowerCase().indexOf(nameFilter_) > -1) return true
-      if (ug.user.lastname.toLowerCase().indexOf(nameFilter_) > -1) return true
+      if ((ug.user.firstname ?? '').toLowerCase().includes(nameFilter_)) return true
+      if ((ug.user.lastname ?? '').toLowerCase().includes(nameFilter_)) return true
       return false
    }).filter(ug => {
       if (!groupFilter.value) return true
@@ -128,13 +128,9 @@ function selectUser(user) {
 }
 
 async function deleteUser(user) {
-   const userGroupRelations = await firstValueFrom(userGroupRelations$({ user_uid: user.uid }))
-   console.log('userGroupRelations', userGroupRelations)
    if (window.confirm(`Supprimer ${getFullname(user)} ?`)) {
       try {
-         // remove user-group relations
-         await Promise.all(userGroupRelations.map(relation => removeUserGroupRelation(relation.uid)))
-         // remove user
+         // The server atomically tombstones every membership, including unseen ones.
          await removeUser(user.uid)
          router.push(`/users`)
          displaySnackbar({ text: "Suppression effectuée avec succès !", color: 'success', timeout: 2000 })

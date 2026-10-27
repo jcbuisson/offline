@@ -15,7 +15,7 @@
                   <v-list-item-title>{{ group.name }}</v-list-item-title>
 
                   <template v-slot:append>
-                     <v-btn color="grey-lighten-1" icon="mdi-delete" variant="text" @click="startDeletingGroup(group)"></v-btn>
+                     <v-btn color="grey-lighten-1" icon="mdi-delete" variant="text" @click.stop.prevent="startDeletingGroup(group)"></v-btn>
                   </template>
                </v-list-item>
             </div>
@@ -57,7 +57,7 @@ import useExpressXClient from '/src/useExpressXClient.ts'
 const { app } = useExpressXClient();
 
 const { getObservable: groups$, remove: removeGroup } = useGroup(app);
-const { getObservable: userGroupRelations$, remove: removeUserGroupRelation } = useUserGroupRelation(app);
+const { getObservable: userGroupRelations$ } = useUserGroupRelation(app);
 
 
 
@@ -67,7 +67,12 @@ const groupList = useObservable(groups$({}), {
    initialValue: [],
    onError: error => console.error('Failed to load groups from Electric', error),
 })
-const sortedGroupList = computed(() => groupList.value ? groupList.value.toSorted((u1, u2) => (u1.name > u2.name) ? 1 : (u1.name < u2.name) ? -1 : 0) : [])
+const sortedGroupList = computed(() => {
+   const query = (filter.value || '').toLowerCase()
+   return (groupList.value ?? [])
+      .filter(group => (group.name ?? '').toLowerCase().includes(query))
+      .sort((u1, u2) => (u1.name > u2.name) ? 1 : (u1.name < u2.name) ? -1 : 0)
+})
 
 async function addGroup() {
    router.push(`/groups/create`)
@@ -102,9 +107,7 @@ function cancelDelete() {
 async function deleteGroup() {
    deletionDialog.value.close()
    try {
-      // remove user-group relations
-      await Promise.all(userGroupRelations.value.map(relation => removeUserGroupRelation(relation.uid)))
-      // remove group
+      // The server atomically tombstones every membership, including unseen ones.
       await removeGroup(groupToDelete.value.uid)
       router.push(`/groups`)
       displaySnackbar({ text: "Suppression effectuée avec succès !", color: 'success', timeout: 2000 })

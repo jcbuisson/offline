@@ -3,7 +3,7 @@ import { createClient } from '@jcbuisson/express-x/client'
 import { electricClientPlugin } from '@jcbuisson/express-x-plugins/electric-client'
 import { reactive, readonly } from 'vue'
 import { reloadPlugin } from '@jcbuisson/express-x-plugins/reload-client'
-import useElectricModel from './use/useElectricModel'
+import { displaySnackbar } from './use/useSnackbar'
 
 function createExpressXClient() {
    const state = reactive({
@@ -26,8 +26,19 @@ function createExpressXClient() {
       const previous = state.syncErrors[modelName]
       state.syncErrors[modelName] = error
       // Keep storage and initialization failures visible, including while offline.
-      if (previous?.message !== error.message) {
+      const conflict = error as Error & { code?: string; rowId?: string }
+      const previousConflict = previous as typeof conflict | undefined
+      if (previous?.message !== error.message || previousConflict?.rowId !== conflict.rowId) {
          console.error(`Electric sync failed for ${modelName}`, error)
+         if (conflict.code === 'sync-parent-deleted' || conflict.code === 'sync-row-deleted') {
+            displaySnackbar({
+               text: modelName === 'user_group_relation'
+                  ? 'Modification annulée : cet utilisateur, ce groupe ou cette appartenance a été supprimé.'
+                  : 'Modification annulée : cet élément a été supprimé.',
+               color: 'warning',
+               timeout: 8000,
+            })
+         }
       }
    }
 
@@ -56,9 +67,9 @@ function createExpressXClient() {
    const connectSocket = () => socket.connect()
    const disconnectSocket = () => socket.disconnect()
 
-   // Prepare every dataset before its screen is opened. The plugin caches models.
+   // Prepare every dataset so queued writes synchronize even before its screen opens.
    for (const name of ['user', 'group', 'user_group_relation']) {
-      useElectricModel(app, name)
+      app.createElectricModel(name)
    }
 
    let disposal: Promise<void> | undefined
