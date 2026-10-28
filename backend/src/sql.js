@@ -1,4 +1,5 @@
 export const tables = ['user', 'group', 'user_group_relation']
+
 const columns = {
    user: ['firstname', 'lastname', 'email'],
    group: ['name'],
