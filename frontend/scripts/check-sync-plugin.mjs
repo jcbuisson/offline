@@ -5,8 +5,8 @@ import { electricClientPlugin } from '@jcbuisson/express-x-plugins/electric-clie
 const { version } = JSON.parse(readFileSync(new URL('../package.json', import.meta.resolve('@jcbuisson/express-x-plugins/electric-client')), 'utf8'))
 const [major, minor, patch] = version.split('.').map(Number)
 assert.ok(
-   major > 5 || major === 5 && (minor > 0 || minor === 0 && patch >= 8),
-   'Installed express-x-plugins lacks relational delete protection (requires 5.0.8+). Reinstall frontend dependencies.',
+   major > 5 || major === 5 && (minor > 1 || minor === 1 && patch >= 2),
+   'Installed express-x-plugins lacks shared query observables (requires 5.1.2+). Reinstall frontend dependencies.',
 )
 
 // Older plugin installations silently ignore sync: true and return online-only

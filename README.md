@@ -105,7 +105,9 @@ through Electric. Tabs share this database; a Web Lock per model elects the tab
 that runs Electric subscriptions and mutation retries. Another tab takes over when it closes.
 This follows PGlite's [multi-tab worker setup](https://pglite.dev/docs/multi-tab-worker).
 
-The frontend and backend use Electric plugin 5.0.8. Deletes retain versioned
+The frontend and backend use Electric plugin 5.1.2 from npm. Equivalent observable
+queries share their underlying subscription and latest result; the last unsubscribe
+releases the subscription and cache entry. Deletes retain versioned
 tombstones. Deleted users/groups release their unique email/name, and deleted
 relations clear their nullable foreign keys so the same
 membership can be added again. Deleting a user or group queues only that parent

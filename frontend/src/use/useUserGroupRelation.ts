@@ -10,6 +10,7 @@ export default function(app) {
       const electricModel = app.createElectricModel('user_group_relation');
       const users$ = useUser(app).getObservable({})
       const groups$ = useGroup(app).getObservable({})
+
       // Hide memberships immediately when either parent is deleted locally.
       // Their authoritative tombstones arrive after the server processes the delete.
       const visibleRelations = (where = {}) => combineLatest([
@@ -17,16 +18,13 @@ export default function(app) {
       ]).pipe(map(([relations, users, groups]) => {
          const userUIDs = new Set(users.map(user => user.uid))
          const groupUIDs = new Set(groups.map(group => group.uid))
+         // keep only relations whose both ends exist locally
          return relations.filter(relation => userUIDs.has(relation.user_uid) && groupUIDs.has(relation.group_uid))
       }))
-      const all$ = visibleRelations().pipe(
-         shareReplay({ bufferSize: 1, refCount: true }),
-      )
+      
       model = {
          ...electricModel,
-         getObservable: (where = {}) => Object.keys(where).length === 0
-            ? all$
-            : visibleRelations(where),
+         getObservable: (where = {}) => visibleRelations(where),
          create: data => electricModel.create({ ...data, uid: uuidv7() }),
       }
    }

@@ -33,7 +33,7 @@
   },
   "dependencies": {
     "@jcbuisson/express-x": "^4.0.5",
-    "@jcbuisson/express-x-plugins": "5.0.8",
+    "@jcbuisson/express-x-plugins": "5.1.2",
     "@prisma/adapter-pg": "^7.4.1",
     "@prisma/client": "^7.4.1",
     "bcryptjs": "^2.4.3",
