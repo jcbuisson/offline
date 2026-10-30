@@ -110,11 +110,11 @@ queries share their underlying subscription and latest result; the last unsubscr
 releases the subscription and cache entry. Deletes retain versioned
 tombstones. Deleted users/groups release their unique email/name, and deleted
 relations clear their nullable foreign keys so the same
-membership can be added again. Deleting a user or group queues only that parent
-deletion. The plugin discovers the PostgreSQL `ON DELETE CASCADE` foreign keys
-and atomically tombstones all memberships on the server, including memberships
-created concurrently or unseen by an offline device. Memberships with locally
-deleted parents are hidden immediately while waiting for synchronization.
+membership can be added again.
+
+Deleting a user or group queues only that parent deletion. The plugin discovers the PostgreSQL `ON DELETE CASCADE` foreign keys
+and atomically tombstones all memberships on the server, including memberships created concurrently or unseen by an offline device.
+Memberships with locally deleted parents are hidden immediately while waiting for synchronization.
 
 Writes referencing deleted parents resolve as tombstones and display a warning
 in the app instead of retrying indefinitely. Startup schema preparation repairs
