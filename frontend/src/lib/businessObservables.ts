@@ -1,4 +1,4 @@
-import { combineLatest, map, shareReplay, startWith } from 'rxjs'
+import { combineLatest, map } from 'rxjs'
 
 import useUser from '/src/use/useUser'
 import useGroup from '/src/use/useGroup'
@@ -13,15 +13,9 @@ const { getObservable: userGroupRelations$ } = useUserGroupRelation(app)
 
 // Keep one Shape per table and perform relational joins locally. Opening Shapes
 // per row quickly exhausts the browser's HTTP/1.1 connection limit.
-export const allUsers$ = users$({}).pipe(shareReplay({ bufferSize: 1, refCount: true }))
-export const allGroups$ = groups$({}).pipe(
-   startWith([]),
-   shareReplay({ bufferSize: 1, refCount: true }),
-)
-export const allUserGroupRelations$ = userGroupRelations$({}).pipe(
-   startWith([]),
-   shareReplay({ bufferSize: 1, refCount: true }),
-)
+export const allUsers$ = users$({})
+export const allGroups$ = groups$({}, { initialValue: [] })
+export const allUserGroupRelations$ = userGroupRelations$({}, { initialValue: [] })
 
 export function userGroups$(user_uid: string) {
    return combineLatest([allGroups$, allUserGroupRelations$]).pipe(
