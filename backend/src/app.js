@@ -6,6 +6,7 @@ import { Pool } from 'pg'
 
 import channels from './channels.js'
 import syncModels from './syncModels.js'
+import { validateUserMutation } from './validateUser.js'
 
 const app = expressX({
    WS_TRANSPORT: true,
@@ -21,6 +22,13 @@ await prepareElectricSyncSchema(db, syncModels)
 app.configure(electricServerPlugin, db, syncModels, {
    sync: true,
    electricUrl: process.env.ELECTRIC_URL || 'http://localhost:3001/v1/shape',
+})
+
+app.service('user').hooks({
+   before: {
+      create: [context => validateUserMutation(context, 'create')],
+      update: [context => validateUserMutation(context, 'update')],
+   },
 })
 
 // allows socket data & room transfer on page reload

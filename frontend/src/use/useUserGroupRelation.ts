@@ -1,37 +1,36 @@
 import { v7 as uuidv7 } from 'uuid'
-import { combineLatest, map, shareReplay } from 'rxjs'
-import useUser from './useUser'
-import useGroup from './useGroup'
 
 let model;
+const membershipWrites = new Map();
 
 export default function(app) {
    if (!model) {
       const electricModel = app.createElectricModel('user_group_relation');
-      const users$ = useUser(app).getObservable({})
-      const groups$ = useGroup(app).getObservable({})
-
-      // Hide memberships immediately when either parent is deleted locally.
-      // Their authoritative tombstones arrive after the server processes the delete.
-      const visibleRelations = (where = {}) => combineLatest([
-         electricModel.getObservable(where), users$, groups$,
-      ]).pipe(map(([relations, users, groups]) => {
-         const userUIDs = new Set(users.map(user => user.uid))
-         const groupUIDs = new Set(groups.map(group => group.uid))
-         // keep only relations whose both ends exist locally
-         return relations.filter(relation => userUIDs.has(relation.user_uid) && groupUIDs.has(relation.group_uid))
-      }))
-      
       model = {
          ...electricModel,
-         getObservable: (where = {}) => visibleRelations(where),
          create: data => electricModel.create({ ...data, uid: uuidv7() }),
       }
    }
-   return { ...model, groupDifference }
+   return { ...model, groupDifference, setGroups }
 
 
    /////////////          UTILITY          /////////////
+
+   function setGroups(user_uid, groupUIDs) {
+      const selected = [...new Set(groupUIDs)]
+      const previous = membershipWrites.get(user_uid) ?? Promise.resolve()
+      const write = previous.catch(() => {}).then(async () => {
+         const [toAdd, toRemove] = await groupDifference(user_uid, selected)
+         for (const group_uid of toAdd) await model.create({ user_uid, group_uid })
+         for (const uid of toRemove) await model.remove(uid)
+      })
+      membershipWrites.set(user_uid, write)
+      const cleanup = () => {
+         if (membershipWrites.get(user_uid) === write) membershipWrites.delete(user_uid)
+      }
+      void write.then(cleanup, cleanup)
+      return write
+   }
 
    async function groupDifference(user_uid, newGroupUIDs) {
       const toAddGroupUIDs = []

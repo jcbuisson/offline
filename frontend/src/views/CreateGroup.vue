@@ -40,11 +40,10 @@ async function submit() {
    try {
       const group = await createGroup(data.value)
       displaySnackbar({ text: "Création effectuée avec succès !", color: 'success', timeout: 2000 })
-      router.push(`/groups/${group.uid}`)
+      await router.push(`/groups/${group.uid}`)
    } catch(err) {
       displaySnackbar({ text: "Erreur lors de la création...", color: 'error', timeout: 4000 })
    }
-   router.back()
 }
 </script>
 

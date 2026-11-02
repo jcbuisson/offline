@@ -1,6 +1,8 @@
 <template>
    <ReloadPrompt></ReloadPrompt>
 
+   <SyncStatus />
+
    <router-view></router-view>
 
    <v-snackbar v-model="snackbar.visible" :timeout="snackbar.timeout" :color="snackbar.color">
@@ -11,5 +13,6 @@
 
 <script setup>
 import ReloadPrompt from '/src/components/ReloadPrompt.vue'
+import SyncStatus from '/src/components/SyncStatus.vue'
 import { snackbar } from '/src/use/useSnackbar'
 </script>

@@ -43,9 +43,20 @@ function createExpressXClient() {
    }
 
    app.configure(reloadPlugin)
+
+   let syncEnabled = true
+   const network = {
+      get onLine() { return syncEnabled && navigator.onLine },
+   }
+
    app.configure(electricClientPlugin, {
       sync: true,
       databaseName: 'offline-sync',
+      network,
+      relations: [
+         { child: 'user_group_relation', parent: 'user', column: 'user_uid' },
+         { child: 'user_group_relation', parent: 'group', column: 'group_uid' },
+      ],
       shapePath: new URL(
          import.meta.env.VITE_ELECTRIC_URL || '/electric/v1/shape',
          window.location.origin,
@@ -63,13 +74,20 @@ function createExpressXClient() {
       state.socketError = error
    })
 
-   // These controls affect RPC transport; Electric sync has its own connection.
-   const connectSocket = () => socket.connect()
-   const disconnectSocket = () => socket.disconnect()
-
    // Prepare every dataset so queued writes synchronize even before its screen opens.
-   for (const name of ['user', 'group', 'user_group_relation']) {
-      app.createElectricModel(name)
+   const models = ['user', 'group', 'user_group_relation'].map(name => app.createElectricModel(name))
+
+   const connectSocket = () => {
+      syncEnabled = true
+      socket.connect()
+      for (const model of models) {
+         void model.start().catch(error => console.error('Failed to resume Electric sync', error))
+      }
+   }
+   const disconnectSocket = () => {
+      syncEnabled = false
+      for (const model of models) model.stop()
+      socket.disconnect()
    }
 
    let disposal: Promise<void> | undefined

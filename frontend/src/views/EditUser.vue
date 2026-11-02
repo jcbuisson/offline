@@ -6,8 +6,9 @@
                <v-col cols="12" md="3">
                   <v-text-field
                      label="email"
-                     :modelValue="user?.email"
-                     @input="(e) => onFieldInputDebounced('email', e.target.value)"
+                     v-model="emailDraft"
+                     @blur="saveEmail"
+                     @keydown.enter.prevent="saveEmail"
                      :rules="emailRules"
                      variant="underlined"
                   ></v-text-field>
@@ -19,7 +20,7 @@
                   <v-text-field
                      label="Nom"
                      :modelValue="user?.lastname"
-                     @input="(e) => onFieldInputDebounced('lastname', e.target.value)"
+                     @input="(e) => onFieldInput('lastname', e.target.value)"
                      variant="underlined"
                   ></v-text-field>
                </v-col>
@@ -27,7 +28,7 @@
                   <v-text-field
                      label="Prénom"
                      :modelValue="user?.firstname"
-                     @input="(e) => onFieldInputDebounced('firstname', e.target.value)"
+                     @input="(e) => onFieldInput('firstname', e.target.value)"
                      variant="underlined"
                   ></v-text-field>
                </v-col>
@@ -55,7 +56,6 @@
 
 <script setup>
 import { ref, watch, onUnmounted } from 'vue'
-import { useDebounceFn } from '@vueuse/core'
 import { useObservable } from '@vueuse/rxjs'
 import { map } from 'rxjs'
 
@@ -70,7 +70,7 @@ const { app } = useExpressXClient();
 
 const { getObservable: users$, update: updateUser } = useUser(app);
 const { getObservable: groups$ } = useGroup(app);
-const { getObservable: userGroupRelations$, groupDifference, create: createUserGroupRelation, remove: removeUserGroupRelation } = useUserGroupRelation(app);
+const { getObservable: userGroupRelations$, setGroups } = useUserGroupRelation(app);
 
 
 const props = defineProps({
@@ -87,6 +87,10 @@ const emailRules = [
 const groupList = useObservable(groups$({}), { initialValue: [] })
 
 const user = ref()
+const emailDraft = ref('')
+let emailDirty = false
+watch(emailDraft, () => { emailDirty = emailDraft.value !== (user.value?.email ?? '') }, { flush: 'sync' })
+const pendingGroupWrites = ref(0)
 const userGroups = ref([])
 
 let usersSubscription
@@ -99,13 +103,14 @@ watch(() => props.user_uid, async (user_uid) => {
    user.value = undefined
    usersSubscription = users$({}).subscribe(userList => {
       user.value = userList.find(candidate => candidate.uid === user_uid)
+      if (!emailDirty) emailDraft.value = user.value?.email ?? ''
    })
 
    if (userGroupRelationSubscription) userGroupRelationSubscription.unsubscribe()
    userGroupRelationSubscription = userGroupRelations$({ user_uid }).pipe(
       map(relationList => relationList.map(relation => relation.group_uid))
    ).subscribe(groupUIDs => {
-      userGroups.value = groupUIDs
+      if (!pendingGroupWrites.value) userGroups.value = groupUIDs
    })
 },
    { immediate: true } // so that it's called on component mount
@@ -119,31 +124,43 @@ onUnmounted(() => {
 
 //////////////////////        TEXT FIELD EDITING        //////////////////////
 
+async function saveEmail() {
+   if (emailRules.some(rule => rule(emailDraft.value) !== true)) return
+   if (emailDraft.value === user.value?.email) return
+   await onFieldInput('email', emailDraft.value)
+}
+
 const onFieldInput = async (field, value) => {
    try {
       await updateUser(props.user_uid, { [field]: value })
+      if (field === 'email' && emailDraft.value === value) emailDirty = false
       displaySnackbar({ text: "Modification effectuée avec succès !", color: 'success', timeout: 2000 })
    } catch(err) {
       displaySnackbar({ text: "Erreur lors de la sauvegarde...", color: 'error', timeout: 4000 })
    }
 }
-const onFieldInputDebounced = useDebounceFn(onFieldInput, 500)
 
 
 //////////////////////        USER-GROUP RELATIONS        //////////////////////
 
 const onGroupChange = async (groupUIDs) => {
+   const user_uid = props.user_uid
+   pendingGroupWrites.value++
    try {
-      const [toAddGroupUIDs, toRemoveRelationUIDs] = await groupDifference(props.user_uid, groupUIDs)
-      for (const group_uid of toAddGroupUIDs) {
-         await createUserGroupRelation({ user_uid: props.user_uid, group_uid })
-      }
-      for (const relation_uid of toRemoveRelationUIDs) {
-         await removeUserGroupRelation(relation_uid)
-      }
+      await setGroups(user_uid, groupUIDs)
       displaySnackbar({ text: "Modification effectuée avec succès !", color: 'success', timeout: 2000 })
    } catch(err) {
       displaySnackbar({ text: "Erreur lors de l'enregistrement...", color: 'error', timeout: 4000 })
+   } finally {
+      pendingGroupWrites.value--
+      if (!pendingGroupWrites.value) {
+         try {
+            const relations = await useUserGroupRelation(app).findMany({ user_uid })
+            if (!pendingGroupWrites.value && props.user_uid === user_uid) {
+               userGroups.value = relations.map(relation => relation.group_uid)
+            }
+         } catch (error) { console.error('Failed to refresh memberships', error) }
+      }
    }
 }
 </script>

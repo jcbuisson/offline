@@ -67,7 +67,13 @@ test('app memberships remain consistent through offline parent deletions and rej
    const errors = []
    const network = { onLine: false }
    const client = { service: name => services.get(name) }
-   electricClientPlugin(client, { ShapeStream: Stream, Shape })
+   electricClientPlugin(client, {
+      ShapeStream: Stream, Shape,
+      relations: [
+         { child: 'user_group_relation', parent: 'user', column: 'user_uid' },
+         { child: 'user_group_relation', parent: 'group', column: 'group_uid' },
+      ],
+   })
    for (const { name } of syncModels) {
       const model = client.createElectricModel(name, {
          localDb: local, network, retryMs: 60_000, onError: error => errors.push(error),
@@ -104,7 +110,7 @@ test('app memberships remain consistent through offline parent deletions and rej
       await visible({ user_uid: user }, 1)
       await groups.remove(group)
       await visible({ user_uid: user }, 0)
-      assert.equal((await models.get('user_group_relation').findMany()).length, 1, 'local child cleanup waits for the server')
+      assert.equal((await relations.findMany()).length, 0, 'the plugin hides children of locally deleted parents')
       assert.deepEqual((await local.query('SELECT model_name FROM electric_mutation_queue')).rows, [{ model_name: 'group' }])
       const anotherUser = crypto.randomUUID()
       await services.get('user').create(anotherUser, { email: 'concurrent@example.com' }, metadata())
@@ -153,4 +159,36 @@ test('app memberships remain consistent through offline parent deletions and rej
       assert.equal((await models.get('user_group_relation').findMany({ user_uid: user })).length, 0)
       assert.ok(await groups.findUnique({ uid: group }))
    })
+   await t.test('rapid membership changes preserve the last requested selection', async () => {
+      const user = crypto.randomUUID()
+      const group = crypto.randomUUID()
+      await services.get('user').create(user, { email: 'rapid@example.com' }, metadata())
+      await services.get('group').create(group, { name: 'Rapid selection' }, metadata())
+      await deliver()
+      await Promise.all([
+         relations.setGroups(user, [group]),
+         relations.setGroups(user, []),
+         relations.setGroups(user, [group]),
+         relations.setGroups(user, []),
+      ])
+      assert.deepEqual(await relations.findMany({ user_uid: user }), [])
+      await Promise.all([
+         relations.setGroups(user, [group]),
+         relations.setGroups(user, [group]),
+      ])
+      assert.equal((await relations.findMany({ user_uid: user })).length, 1)
+   })
+
+   await t.test('permanent uniqueness failures remain available to the error banner', async () => {
+      await services.get('group').create(crypto.randomUUID(), { name: 'Unique group' }, metadata())
+      await deliver()
+      await groups.create({ name: 'Unique group' })
+      network.onLine = true
+      await models.get('group').flushQueue()
+      network.onLine = false
+      const status = await models.get('group').getStatus()
+      assert.equal(status.failed, 1)
+      assert.match(status.error, /unique|duplicate/i)
+   })
+
 })
