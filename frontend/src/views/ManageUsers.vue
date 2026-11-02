@@ -39,6 +39,7 @@
 
 
 <script setup lang="ts">
+import { allUsers$, allGroups$, allUserGroupRelations$ } from '/src/lib/businessObservables'
 import { ref, watch, computed } from 'vue'
 import { useRoute} from 'vue-router'
 import { useObservable } from '@vueuse/rxjs'
@@ -52,26 +53,22 @@ import router from '/src/router'
 import SplitPanel from '/src/components/SplitPanel.vue'
 
 import useUser from '/src/use/useUser';
-import useGroup from '/src/use/useGroup';
-import useUserGroupRelation from '/src/use/useUserGroupRelation';
 
 import useExpressXClient from '/src/useExpressXClient.ts'
 const { app } = useExpressXClient();
 
-const { getObservable: users$, remove: removeUser } = useUser(app);
-const { getObservable: groups$ } = useGroup(app);
-const { getObservable: userGroupRelations$ } = useUserGroupRelation(app);
+const { remove: removeUser } = useUser(app);
 
 
 const nameFilter = ref('')
 const groupFilter = ref('')
 
-const userList = useObservable(users$({}), {
+const userList = useObservable(allUsers$, {
    initialValue: [],
    onError: error => console.error('Failed to load users from Electric', error),
 })
-const groupList = useObservable(groups$({}), { initialValue: [] })
-const userGroupRelationList = useObservable(userGroupRelations$({}), { initialValue: [] })
+const groupList = useObservable(allGroups$, { initialValue: [] })
+const userGroupRelationList = useObservable(allUserGroupRelations$, { initialValue: [] })
 
 const userAndGroupsList = computed(() => {
    const groupsByUID = new Map(groupList.value.map(group => [group.uid, group]))

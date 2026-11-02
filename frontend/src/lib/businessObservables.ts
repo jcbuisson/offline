@@ -13,12 +13,12 @@ const { getObservable: userGroupRelations$ } = useUserGroupRelation(app)
 
 // Keep one Shape per table and perform relational joins locally. Opening Shapes
 // per row quickly exhausts the browser's HTTP/1.1 connection limit.
-const allUsers$ = users$({}).pipe(shareReplay({ bufferSize: 1, refCount: true }))
-const allGroups$ = groups$({}).pipe(
+export const allUsers$ = users$({}).pipe(shareReplay({ bufferSize: 1, refCount: true }))
+export const allGroups$ = groups$({}).pipe(
    startWith([]),
    shareReplay({ bufferSize: 1, refCount: true }),
 )
-const allUserGroupRelations$ = userGroupRelations$({}).pipe(
+export const allUserGroupRelations$ = userGroupRelations$({}).pipe(
    startWith([]),
    shareReplay({ bufferSize: 1, refCount: true }),
 )

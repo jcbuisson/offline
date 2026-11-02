@@ -41,6 +41,7 @@
 
 
 <script setup>
+import { allGroups$ } from '/src/lib/businessObservables'
 import { ref, onUnmounted, watch, computed } from 'vue'
 import { useRoute} from 'vue-router'
 import { useObservable } from '@vueuse/rxjs'
@@ -56,14 +57,14 @@ import useUserGroupRelation from '/src/use/useUserGroupRelation';
 import useExpressXClient from '/src/useExpressXClient.ts'
 const { app } = useExpressXClient();
 
-const { getObservable: groups$, remove: removeGroup } = useGroup(app);
+const { remove: removeGroup } = useGroup(app);
 const { getObservable: userGroupRelations$ } = useUserGroupRelation(app);
 
 
 
 const filter = ref('')
 
-const groupList = useObservable(groups$({}), {
+const groupList = useObservable(allGroups$, {
    initialValue: [],
    onError: error => console.error('Failed to load groups from Electric', error),
 })
