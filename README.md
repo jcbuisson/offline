@@ -1,173 +1,171 @@
-# Offline
+# Offline — PGCouch
 
-Excellent review: https://www.smashingmagazine.com/2026/05/architecture-local-first-web-development/
+Local-first users, groups and memberships using express-x-plugins 5.3.0 PGCouch.
+PostgreSQL is authoritative; PGlite serves local queries and durable offline
+transactions; PouchDB/CouchDB replicate proposals and server decisions.
 
-## Local Electric
+## Setup
 
-Electric runs in Docker and connects to the PostgreSQL server installed on the
-host. PostgreSQL must have logical replication enabled (`wal_level=logical`),
-and the database user must have the `REPLICATION` role.
+### Prerequisites and dependencies
 
-Set Electric's database URL using `host.docker.internal` rather than `localhost`
-(because `localhost` inside the container refers to the container itself), then
-start the service:
+Use Node.js 22.18+ (or Node.js 24+) and npm. The backend runs TypeScript from
+its generated Prisma client using Node's type stripping. You also need a running
+PostgreSQL server, the `psql` and `createdb` commands, and Docker with Compose v2
+for CouchDB. Use a browser with IndexedDB and Web Locks on localhost or HTTPS.
 
-```bash
-export ELECTRIC_DATABASE_URL='postgresql://USER:PASSWORD@host.docker.internal:5432/offline?sslmode=disable'
-docker compose -f backend/docker-compose.yml up -d
-```
-
-Electric is available at `http://localhost:3001`. Check it with
-`docker compose -f backend/docker-compose.yml ps`, view its output with
-`docker compose -f backend/docker-compose.yml logs -f electric`, and stop it
-with `docker compose -f backend/docker-compose.yml down`. The backend continues
-to use its existing `DATABASE_URL` in `backend/.env` and can connect to
-PostgreSQL through `localhost` as before.
-
-`ELECTRIC_INSECURE` is enabled for local development. Configure
-`ELECTRIC_SECRET` before exposing Electric outside your machine.
-
-### First-time database setup
-
-Create the empty database and grant the application user replication rights.
-Run these commands as a PostgreSQL administrator, replacing `APP_USER` as
-needed:
-
-```sql
-CREATE DATABASE offline;
-ALTER ROLE APP_USER WITH REPLICATION;
-```
-
-PostgreSQL must also be started with `wal_level=logical`. Verify it with:
-
-```bash
-psql -d offline -c "SHOW wal_level;"
-```
-
-Set `backend/.env` to the host-side connection URL, for example:
-
-```dotenv
-DATABASE_URL="postgresql://APP_USER:PASSWORD@localhost:5432/offline"
-```
-
-Create the schema from the Prisma model:
-
-```bash
-cd backend
-npx prisma db execute --stdin <<'SQL'
-CREATE SEQUENCE IF NOT EXISTS electric_sync_version_seq;
-SQL
-npx prisma db push
-```
-
-### Development
-
-Run each process in a separate terminal from the repository root:
-
-```bash
-# Terminal 1: Electric
-export ELECTRIC_DATABASE_URL='postgresql://APP_USER:PASSWORD@host.docker.internal:5432/offline?sslmode=disable'
-docker compose -f backend/docker-compose.yml up
-
-# Terminal 2: backend (http://localhost:3000)
-cd backend
-npm install
-npm run dev
-
-# Terminal 3: frontend (http://localhost:8080)
-cd frontend
-npm install
-npm run dev
-```
-
-### Production
-Add this to /etc/postgresql/17/main/pg_hba.conf to allow Electric’s Docker network to access offline:
-```
-host    offline    chris    172.19.0.0/16    scram-sha-256
-```
-
-Verify the sync endpoint:
-```
-curl -i 'https://offline.jcbuisson.dev/electric/v1/shape/user?offset=-1'
-```
-
-
-### Sync mode
-
-The backend enables `sync: true` and prepares the sync schema before listening.
-Startup creates `electric_mutation_cursor`, the shared version sequence, and
-`version`/`deleted` columns on the three application tables. Existing data is
-preserved. Prisma also describes these columns and the cursor table.
-
-The frontend plugin prepares a persistent PGlite database in IndexedDB automatically.
-All three models read and write locally; queued writes are retried and confirmed
-through Electric. Tabs share this database; a Web Lock per model elects the tab
-that runs Electric subscriptions and mutation retries. Another tab takes over when it closes.
-This follows PGlite's [multi-tab worker setup](https://pglite.dev/docs/multi-tab-worker).
-
-The frontend and backend use Electric plugin 5.1.2 from npm. Equivalent observable
-queries share their underlying subscription and latest result; the last unsubscribe
-releases the subscription and cache entry. Deletes retain versioned
-tombstones. Deleted users/groups release their unique email/name, and deleted
-relations clear their nullable foreign keys so the same
-membership can be added again.
-
-Deleting a user or group queues only that parent deletion. The plugin discovers the PostgreSQL `ON DELETE CASCADE` foreign keys
-and atomically tombstones all memberships on the server, including memberships created concurrently or unseen by an offline device.
-Memberships with locally deleted parents are hidden immediately while waiting for synchronization.
-
-Writes referencing deleted parents resolve as tombstones and display a warning
-in the app instead of retrying indefinitely. Startup schema preparation repairs
-existing active memberships of soft-deleted parents. Keep the same complete
-`syncModels` configuration for schema preparation and the server plugin. Upgrade
-both frontend and backend together; relational sync writes use a shared server
-transaction lock. Other foreign-key delete policies retain their existing behavior.
-
-Production builds precache PGlite's WASM and database assets for offline reloads.
-The development server does not enable the service worker, so a fully offline
-reload should be tested using a production build. Keep browser storage to preserve
-pending edits and the client identity; clearing it discards unsent changes.
-
-Before building a production release, install the frontend dependencies:
+Run these commands from the repository root:
 
 ```sh
-cd frontend
-npm install
-npm run build
+npm --prefix backend install
+npm --prefix frontend install
 ```
 
-The build checks that the installed plugin supports managed sync. Deploy the
-complete generated `dist` directory, including workers and service worker assets.
+### PostgreSQL and environment
 
-Run `cd frontend && npm run test:sync` to check offline parent deletion,
-concurrent membership creation, local visibility, and rejected offline writes
-against temporary embedded databases using the app's sync model configuration.
+For a fresh local installation, create the database using your local PostgreSQL
+account (adjust the connection URL for your username and password):
 
-## Pros
-
-- a relational database schema!
-- real-time!
-- offline-first!
-- extensive use of observables, ideal for all types of reactive frameworks (React, Vue, etc.)
-
-## Cons
-
-- no autoincremented ids, only uuids (v7)
-- many-to-many relations must be explicitly described
-- extensive use of observables
-
-## Typical usage
-
+```sh
+createdb offline
 ```
-const { getObservable: groups$, remove: removeGroup } = useGroup()
-const { getObservable: groupRelations$ } = useGroupRelation()
-...
-const groupList = useObservable(groups$(), [])
-...
-watch(() => props.group_uid, (group_uid) => {
-    if (subscription) subscription.unsubscribe()
-    subscription = groupRelations$({ group_uid }).subscribe(groupRelationList => {
-        ...
-    }
-}, { immediate: true })
+
+Create or update `backend/.env` with your own values:
+
+```dotenv
+DATABASE_URL=postgresql://YOUR_USER:YOUR_PASSWORD@localhost:5432/offline
+PORT=3000
+COUCHDB_USER=offline-admin
+COUCHDB_PASSWORD=CHANGE_ME_ADMIN_PASSWORD
+COUCH_DATABASE_URL=http://offline-server:CHANGE_ME_SERVER_PASSWORD@localhost:5984/offline
 ```
+
+`COUCHDB_USER` and `COUCHDB_PASSWORD` provision the CouchDB administrator;
+`COUCH_DATABASE_URL` uses a separate application account created below.
+URL-encode special characters in credentials embedded in URLs. Keep `.env` local.
+The frontend needs no environment file for the default local proxy setup.
+
+Export the same PostgreSQL URL in your shell before applying the schema;
+`psql` does not automatically load `backend/.env`:
+
+```sh
+export DATABASE_URL='postgresql://YOUR_USER:YOUR_PASSWORD@localhost:5432/offline'
+```
+
+Before migrating an existing Electric installation, synchronize all pending
+browser edits, stop the old backend/Electric, and back up PostgreSQL. The new
+client uses separate IndexedDB databases; old unsent edits are not imported.
+Apply the schema to a new or existing database:
+
+```sh
+psql "$DATABASE_URL" -v ON_ERROR_STOP=1 -f backend/sql/pgcouch.sql
+```
+
+This preserves active rows, removes already deleted Electric tombstones, drops
+Electric's per-row sync columns, and makes membership foreign keys deferrable.
+Run it once during migration, before starting PGCouch. Prisma describes business
+tables; after future Prisma schema pushes, ensure foreign keys remain deferrable.
+The plugin creates its own receipt/outbox tables at startup.
+
+### CouchDB and replication accounts
+
+Start CouchDB from the repository root. Explicitly load the backend environment
+so Compose receives the administrator credentials:
+
+```sh
+docker compose --env-file backend/.env -f backend/docker-compose.yml up -d --wait
+```
+
+Provision the replication database once, using an admin URL including its name:
+
+```sh
+cd backend
+COUCH_ADMIN_DATABASE_URL=http://offline-admin:CHANGE_ME_ADMIN_PASSWORD@localhost:5984/offline npm run pgcouch:setup
+```
+
+Open CouchDB's Fauxton interface at <http://localhost:5984/_utils/> and sign in
+with the administrator credentials. Complete single-node setup if prompted.
+In the `_users` database, create these documents, replacing the passwords:
+
+```json
+{"_id":"org.couchdb.user:offline-server","name":"offline-server","password":"CHANGE_ME_SERVER_PASSWORD","roles":["pgcouch-server"],"type":"user"}
+```
+
+```json
+{"_id":"org.couchdb.user:offline-browser","name":"offline-browser","password":"CHANGE_ME_BROWSER_PASSWORD","roles":[],"type":"user"}
+```
+
+In the `offline` database's Permissions settings, add `offline-server` and
+`offline-browser` as member names. The resulting database `_security` should be:
+
+```json
+{"admins":{"names":[],"roles":[]},"members":{"names":["offline-server","offline-browser"],"roles":[]}}
+```
+
+Before enabling replication, configure these memberships and application accounts. Give the backend account the `pgcouch-server` role and
+normal browser users membership without that role. The installed validator makes
+protocol documents immutable and restricts server decisions to server accounts.
+All members can read the entire dataset. This demo has a shared read/write scope;
+server authorization validates user emails for both socket and replicated writes.
+
+Set `COUCH_DATABASE_URL` in `backend/.env` to the authenticated server account URL.
+The browser defaults to `/couchdb/offline`; configure CouchDB cookie authentication
+or your authenticated reverse proxy there. Never put server/admin credentials in
+frontend environment variables. `VITE_COUCH_DATABASE_URL` can override the URL.
+Vite proxies `/couchdb/` to localhost:5984. Production needs the equivalent proxy
+and the existing `/offline-socket-io/` WebSocket route. No Electric service or
+logical PostgreSQL replication configuration is needed.
+
+### Run locally
+
+From the repository root, start each process in a separate terminal:
+
+```sh
+npm --prefix backend run dev
+```
+
+```sh
+npm --prefix frontend run dev
+```
+
+The backend listens on <http://localhost:3000>; the app runs at
+<http://localhost:8080>. With Vite running, open
+<http://localhost:8080/couchdb/_utils/> and sign in as `offline-browser` to establish
+a CouchDB session on the app's origin. Then open or reload the app. Signing in
+on port 5984 alone does not establish a session through every proxy setup.
+
+Create a user or group and check that replication succeeds. Use the disconnect
+control to queue an edit locally, then reconnect and confirm it synchronizes.
+If replication returns 401 or 403, check the browser session, database membership,
+and the backend account's `pgcouch-server` role. Keep the backend on port 3000
+unless you also update the WebSocket proxy in `frontend/vite.config.js`.
+
+To stop CouchDB without deleting its persistent data:
+
+```sh
+docker compose --env-file backend/.env -f backend/docker-compose.yml stop
+```
+
+## Offline behavior and deployment
+
+The app owns and initializes the PGlite and PouchDB stores. A Web Lock gives one
+tab exclusive database ownership; additional tabs wait until it closes. Browser
+storage must be retained to preserve unsent edits. The disconnect control pauses
+Couch replication; local transactions still commit and queue.
+
+Run the sync checks and production build from the repository root:
+
+```sh
+npm --prefix frontend run test:sync
+npm --prefix frontend run build
+```
+
+Deploy the complete
+`frontend/dist` output. Production builds precache PGlite assets; test offline
+reloads with a production build because development disables the service worker.
+
+PGCouch sends a complete snapshot of all configured tables with each decision,
+so this demo is intended for bounded datasets. All replicated writes must go
+through PGCouch; external SQL writes are not automatically captured. Do not prune
+Couch protocol documents or PostgreSQL receipts, which provide ordering and
+idempotency. Transactions rejected by the server are rolled back locally and
+remain counted in the status banner; users can submit a corrected edit.

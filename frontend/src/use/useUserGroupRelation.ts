@@ -5,10 +5,10 @@ const membershipWrites = new Map();
 
 export default function(app) {
    if (!model) {
-      const electricModel = app.createElectricModel('user_group_relation');
+      const pgcouchModel = app.createPGCouchModel('user_group_relation');
       model = {
-         ...electricModel,
-         create: data => electricModel.create({ ...data, uid: uuidv7() }),
+         ...pgcouchModel,
+         create: data => pgcouchModel.create({ ...data, uid: uuidv7() }),
       }
    }
    return { ...model, groupDifference, setGroups }

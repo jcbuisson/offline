@@ -66,7 +66,7 @@ const filter = ref('')
 
 const groupList = useObservable(allGroups$, {
    initialValue: [],
-   onError: error => console.error('Failed to load groups from Electric', error),
+   onError: error => console.error('Failed to load groups from PGCouch', error),
 })
 const sortedGroupList = computed(() => {
    const query = (filter.value || '').toLowerCase()

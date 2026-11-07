@@ -27,19 +27,20 @@
   "contributors": [],
   "scripts": {
     "dev": "node --watch --experimental-strip-types src/app.js",
-    "electric:up": "docker compose up -d --wait",
-    "electric:down": "docker compose down",
-    "electric:reset": "docker compose down --volumes"
+    "couch:up": "docker compose up -d --wait",
+    "couch:down": "docker compose down",
+    "pgcouch:setup": "node scripts/setup-pgcouch.mjs"
   },
   "dependencies": {
     "@jcbuisson/express-x": "^4.0.5",
-    "@jcbuisson/express-x-plugins": "^5.2.1",
+    "@jcbuisson/express-x-plugins": "^5.3.0",
     "@prisma/adapter-pg": "^7.4.1",
     "@prisma/client": "^7.4.1",
     "bcryptjs": "^2.4.3",
     "dotenv": "^17.3.1",
     "express": "^5.2.1",
     "pg": "^8.18.0",
+    "pouchdb": "^9.0.0",
     "socket.ui": "^0.0.1-1"
   },
   "devDependencies": {

@@ -1,9 +1,26 @@
 import { io } from 'socket.io-client'
 import { createClient } from '@jcbuisson/express-x/client'
-import { electricClientPlugin } from '@jcbuisson/express-x-plugins/electric-client'
+import { pgcouchClientPlugin } from '@jcbuisson/express-x-plugins/pgcouch-client'
+import { PGlite } from '@electric-sql/pglite'
+import PouchDB from 'pouchdb-browser'
+import schema from './local-schema.sql?raw'
 import { reactive, readonly } from 'vue'
 import { reloadPlugin } from '@jcbuisson/express-x-plugins/reload-client'
 import { displaySnackbar } from './use/useSnackbar'
+
+
+// Hold ownership until disposal; another tab waits before opening IndexedDB.
+let releaseOwnership: () => void
+let acquired!: () => void
+const ownership = new Promise<void>(resolve => { acquired = resolve })
+const lock = navigator.locks.request('offline-pgcouch-owner', async () => {
+   acquired()
+   await new Promise<void>(resolve => { releaseOwnership = resolve })
+})
+await ownership
+const localDb = new PGlite('idb://offline-pgcouch-relational')
+await localDb.exec(schema)
+const couch = new PouchDB('offline-pgcouch-transactions')
 
 function createExpressXClient() {
    const state = reactive({
@@ -21,23 +38,18 @@ function createExpressXClient() {
    })
    const app = createClient(socket, { debug: import.meta.env.DEV })
 
-   function reportSyncError(cause: unknown, { modelName }: { modelName: string }) {
-      const error = cause instanceof Error ? cause : new Error(String(cause))
+   function reportSyncError(cause: unknown) {
+      const modelName = 'pgcouch'
+      const error = cause instanceof Error ? cause : Object.assign(
+         new Error(typeof cause === 'object' && cause !== null && 'message' in cause ? String(cause.message) : String(cause)),
+         typeof cause === 'object' && cause !== null ? cause : {},
+      )
       const previous = state.syncErrors[modelName]
       state.syncErrors[modelName] = error
-      // Keep storage and initialization failures visible, including while offline.
-      const conflict = error as Error & { code?: string; rowId?: string }
-      const previousConflict = previous as typeof conflict | undefined
-      if (previous?.message !== error.message || previousConflict?.rowId !== conflict.rowId) {
-         console.error(`Electric sync failed for ${modelName}`, error)
-         if (conflict.code === 'sync-parent-deleted' || conflict.code === 'sync-row-deleted') {
-            displaySnackbar({
-               text: modelName === 'user_group_relation'
-                  ? 'Modification annulée : cet utilisateur, ce groupe ou cette appartenance a été supprimé.'
-                  : 'Modification annulée : cet élément a été supprimé.',
-               color: 'warning',
-               timeout: 8000,
-            })
+      if (previous?.message !== error.message) {
+         console.error('PGCouch sync failed', error)
+         if ((error as Error & { transactionId?: string }).transactionId) {
+            displaySnackbar({ text: 'Modification refusée par le serveur et annulée localement.', color: 'warning', timeout: 8000 })
          }
       }
    }
@@ -49,20 +61,26 @@ function createExpressXClient() {
       get onLine() { return syncEnabled && navigator.onLine },
    }
 
-   app.configure(electricClientPlugin, {
-      sync: true,
-      databaseName: 'offline-sync',
+   app.configure(pgcouchClientPlugin, {
+      models: ['user', 'group', 'user_group_relation'],
+      localDb,
+      couch,
+      remote: new URL(import.meta.env.VITE_COUCH_DATABASE_URL || '/couchdb/offline', window.location.origin).href,
       network,
-      relations: [
-         { child: 'user_group_relation', parent: 'user', column: 'user_uid' },
-         { child: 'user_group_relation', parent: 'group', column: 'group_uid' },
-      ],
-      shapePath: new URL(
-         import.meta.env.VITE_ELECTRIC_URL || '/electric/v1/shape',
-         window.location.origin,
-      ).href,
       onError: reportSyncError,
    })
+
+   // Older immutable snapshots include soft-deleted rows. Keep them out of reads.
+   const createModel = app.createPGCouchModel.bind(app)
+   app.createPGCouchModel = (name, options) => {
+      const model = createModel(name, options)
+      return {
+         ...model,
+         findMany: (where = {}, queryOptions = {}) => model.findMany({ ...where, deleted: false }, queryOptions),
+         findUnique: async (where) => (await model.findMany({ ...where, deleted: false }, { limit: 1 }))[0] ?? null,
+         getObservable: (where = {}, queryOptions = {}) => model.getObservable({ ...where, deleted: false }, queryOptions),
+      }
+   }
 
    socket.on('connect', () => {
       state.socketConnected = true
@@ -75,13 +93,13 @@ function createExpressXClient() {
    })
 
    // Prepare every dataset so queued writes synchronize even before its screen opens.
-   const models = ['user', 'group', 'user_group_relation'].map(name => app.createElectricModel(name))
+   const models = ['user', 'group', 'user_group_relation'].map(name => app.createPGCouchModel(name))
 
    const connectSocket = () => {
       syncEnabled = true
       socket.connect()
       for (const model of models) {
-         void model.start().catch(error => console.error('Failed to resume Electric sync', error))
+         void model.start().catch(error => console.error('Failed to resume PGCouch sync', error))
       }
    }
    const disconnectSocket = () => {
@@ -95,7 +113,13 @@ function createExpressXClient() {
       if (disposal) return disposal
       socket.disconnect()
       socket.removeAllListeners()
-      disposal = Promise.resolve().then(() => app.disposeElectricSync())
+      disposal = Promise.resolve().then(async () => {
+         await app.disposePGCouchSync()
+         await couch.close()
+         await localDb.close()
+         releaseOwnership()
+         await lock
+      })
       return disposal
    }
 

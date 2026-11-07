@@ -1,15 +1,14 @@
 name: offline
-
 services:
-  electric:
-    image: electricsql/electric:latest
+  couchdb:
+    image: couchdb:3
     restart: unless-stopped
     environment:
-      DATABASE_URL: ${ELECTRIC_DATABASE_URL:?Set ELECTRIC_DATABASE_URL to a PostgreSQL URL using host.docker.internal as the hostname}
-      # Development only. Configure ELECTRIC_SECRET before exposing this service.
-      ELECTRIC_INSECURE: "true"
+      COUCHDB_USER: ${COUCHDB_USER:?Set COUCHDB_USER}
+      COUCHDB_PASSWORD: ${COUCHDB_PASSWORD:?Set COUCHDB_PASSWORD}
     ports:
-      - "3001:3000"
-    extra_hosts:
-      - "host.docker.internal:host-gateway"
-    restart: unless-stopped
+      - "127.0.0.1:5984:5984"
+    volumes:
+      - couchdb-data:/opt/couchdb/data
+volumes:
+  couchdb-data:

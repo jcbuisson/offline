@@ -84,7 +84,7 @@ const groupList = useObservable(groups$({}), { initialValue: [] })
 // make sure all users are eventually synchronized, to allow email check
 const allUsers = useObservable(users$({}), {
    initialValue: [],
-   onError: error => console.error('Failed to load users from Electric', error),
+   onError: error => console.error('Failed to load users from PGCouch', error),
 })
 
 async function submit() {

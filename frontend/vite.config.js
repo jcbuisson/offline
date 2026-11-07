@@ -4,7 +4,7 @@ import { VitePWA } from 'vite-plugin-pwa'
 
 // https://vite.dev/config/
 export default defineConfig({
-   // PGlite's module worker requires native top-level await support.
+   // Local database initialization uses top-level await.
    build: { target: 'esnext' },
    optimizeDeps: { exclude: ['@jcbuisson/express-x-plugins', '@electric-sql/pglite'] },
    worker: { format: 'es' },
@@ -59,8 +59,11 @@ export default defineConfig({
       open: true,
       host: true, // allows for external device connection on local network
       proxy: {
-         '/electric/': {
-            target: 'http://localhost:3000',
+         '/couchdb/': {
+            target: 'https://couchdb.jcbuisson.dev',
+            changeOrigin: true,
+            cookiePathRewrite: '/couchdb',
+            rewrite: path => path.replace(/^\/couchdb/, ''),
          },
          '^/offline-socket-io/.*': {
             target: 'http://localhost:3000',

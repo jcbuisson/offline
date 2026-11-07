@@ -65,7 +65,7 @@ const groupFilter = ref('')
 
 const userList = useObservable(allUsers$, {
    initialValue: [],
-   onError: error => console.error('Failed to load users from Electric', error),
+   onError: error => console.error('Failed to load users from PGCouch', error),
 })
 const groupList = useObservable(allGroups$, { initialValue: [] })
 const userGroupRelationList = useObservable(allUserGroupRelations$, { initialValue: [] })

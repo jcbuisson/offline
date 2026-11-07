@@ -1,74 +1,23 @@
 <template>
-   <div class="explanations pa-4 bg-grey-lighten-4 overflow-auto">
+   <div class="pa-4 bg-grey-lighten-4 overflow-auto" style="flex: 1 1 0; min-height: 0">
       <h2 class="text-h6 mb-2">Les données de l’application</h2>
-      <p>PostgreSQL conserve les utilisateurs, les groupes et leurs associations dans trois tables :
-         <code>user</code>, <code>group</code> et <code>user_group_relation</code>.
-         Un utilisateur peut appartenir à plusieurs groupes, et un groupe peut réunir plusieurs utilisateurs.</p>
-      <p>Chaque objet possède un identifiant <code>uid</code> de type UUID, généré par le client.
-         Il peut ainsi être créé hors ligne sans attendre un identifiant du serveur.
-         Les e-mails, les noms de groupes et les couples utilisateur/groupe sont soumis
-         à des contraintes d’unicité côté serveur.</p>
-
+      <p>PostgreSQL conserve les utilisateurs, les groupes et leurs appartenances.
+         Les identifiants UUID sont créés dans le navigateur. Les contraintes d’unicité
+         et les suppressions en cascade sont appliquées dans les bases relationnelles.</p>
       <h2 class="text-h6 mt-4 mb-2">Travailler hors ligne</h2>
-      <p>Le navigateur utilise une base locale PGlite, persistée dans IndexedDB.
-         L’interface lit les données locales et réagit à leurs changements grâce à des observables.
-         Les données déjà chargées restent accessibles sans connexion, dans les limites
-         du stockage accordé par le navigateur.</p>
-      <p>Une création, une modification ou une suppression est d’abord enregistrée localement :
-         son résultat apparaît immédiatement. Une file persistante conserve les mutations
-         à transmettre au serveur, y compris après un rechargement de la page.</p>
-
-      <h2 class="text-h6 mt-4 mb-2">Synchroniser avec le serveur</h2>
-      <p>Lorsque la connexion est disponible, le client envoie les mutations en attente via express-x
-         aux services du plugin <code>electricServerPlugin</code>.
-         Chaque mutation porte un identifiant de client et un numéro de révision.
-         Le serveur mémorise la dernière révision traitée pour chaque client et chaque objet,
-         afin de ne pas réappliquer une mutation déjà traitée ou plus ancienne.
-         Ce mécanisme ne fusionne pas les modifications concurrentes de clients différents.</p>
-      <p>Dans l’autre sens, Electric transmet les changements de PostgreSQL au navigateur au moyen
-         de flux appelés « Shapes ». Dans cet exemple, les trois modèles sont synchronisés.
-         Les filtres de l’interface sélectionnent ensuite les données locales à afficher.</p>
-      <p>La réponse à une mutation fournit une version attribuée par le serveur.
-         Le client conserve la mutation en attente jusqu’à ce que le flux Electric confirme
-         cette version, ou une version plus récente. Une coupure réseau laisse les mutations
-         en attente pour une nouvelle tentative ; une erreur de validation ou de contrainte
-         peut empêcher leur application.</p>
-
-      <h2 class="text-h6 mt-4 mb-2">Conserver la trace des suppressions</h2>
-      <p>Une suppression synchronisée conserve une ligne marquée <code>deleted = true</code>,
-         appelée « tombstone ». Invisible dans les listes, elle permet de transmettre et de confirmer
-         la suppression, même si celle-ci arrive au serveur avant la création effectuée hors ligne.</p>
-      <p>Les champs soumis à l’unicité sont alors libérés : l’e-mail d’un utilisateur,
-         le nom d’un groupe ou les références d’une association sont mis à <code>NULL</code>.
-         Une nouvelle ligne peut ainsi réutiliser ces valeurs.</p>
-
-      <h2 class="text-h6 mt-4 mb-2">Préparer le schéma au démarrage</h2>
-      <p>Avant d’accepter les requêtes, le serveur appelle <code>prepareElectricSyncSchema(db, syncModels)</code>.
-         Cette fonction adapte les tables existantes aux besoins de la synchronisation :</p>
-      <ul class="pl-6 my-2">
-         <li>Elle ajoute, si nécessaire, les colonnes <code>version</code> et <code>deleted</code>
-            aux trois tables synchronisées.</li>
-         <li>Elle crée, si nécessaire, la séquence qui fournit les versions et la table
-            <code>electric_mutation_cursor</code>, qui mémorise les révisions déjà traitées.</li>
-      </ul>
-      <p>Les références <code>user_uid</code> et <code>group_uid</code> doivent déjà être facultatives
-         dans la base, conformément au schéma Prisma, pour permettre l’insertion de tombstones.</p>
-      <p>Cette préparation peut être relancée à chaque démarrage. Si une étape échoue, le serveur
-         ne démarre pas ; les étapes déjà terminées restent appliquées.
-         La synchronisation elle-même est ensuite assurée par le plugin.</p>
-
-      <h2 class="text-h6 mt-4 mb-2">Partager les données entre onglets</h2>
-      <p>Le plugin gère la base PGlite locale partagée entre les onglets.
-         Pour chaque modèle, un verrou élit un onglet qui assure la synchronisation réseau ;
-         les autres sont informés des changements par un <code>BroadcastChannel</code>.
-         Si cet onglet se ferme ou arrête la synchronisation, un autre prend le relais.</p>
+      <p>L’interface utilise une base PGlite persistante et des observables.
+         Chaque modification est enregistrée localement avec une transaction en attente.
+         PouchDB conserve les documents à répliquer, même après un rechargement.</p>
+      <h2 class="text-h6 mt-4 mb-2">Synchroniser avec PGCouch</h2>
+      <p>PouchDB réplique les transactions vers CouchDB. Le serveur les valide et les applique
+         atomiquement dans PostgreSQL. Il publie une décision et un instantané des trois tables.
+         Le navigateur applique cet instantané puis rejoue ses transactions encore en attente.</p>
+      <p>Une transaction refusée est annulée localement et signalée dans l’interface.
+         Les suppressions retirent les lignes et leurs appartenances en cascade.
+         Les modifications concurrentes sont ordonnées par le serveur ; une contrainte
+         incompatible entraîne le refus de toute la transaction.</p>
+      <h2 class="text-h6 mt-4 mb-2">Plusieurs onglets</h2>
+      <p>Un seul onglet utilise la base locale à la fois. Un autre onglet attend que le premier
+         soit fermé pour ouvrir la même base et reprendre la synchronisation.</p>
    </div>
 </template>
-
-<style scoped>
-.explanations {
-   flex: 1 1 0;
-   min-height: 0;
-   overflow-wrap: anywhere;
-}
-</style>

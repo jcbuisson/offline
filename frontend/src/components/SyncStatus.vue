@@ -1,24 +1,34 @@
 <template>
+   <v-alert v-if="syncError" type="warning" class="ma-2" role="alert">
+      <template v-if="authenticationRequired">
+         Connectez-vous à CouchDB pour charger les utilisateurs et les groupes.
+         <a :href="signInUrl" target="_blank" rel="noopener noreferrer">Se connecter à CouchDB</a>.
+         Revenez ensuite ici et rechargez la page.
+      </template>
+      <template v-else>
+         La synchronisation a échoué : {{ syncError.message }}
+      </template>
+   </v-alert>
    <v-alert v-if="failures.length" type="error" class="ma-2" role="alert">
       Certaines modifications ne sont pas synchronisées avec le serveur.
       <div v-for="failure in failures" :key="failure.name">
          {{ failure.label }} : {{ failure.message }}
       </div>
-      Corrigez les données concernées pour relancer leur synchronisation.
+      Les modifications refusées ont été annulées. Vous pouvez saisir une nouvelle modification.
    </v-alert>
 </template>
 
 <script setup>
-import { ref, onMounted, onUnmounted } from 'vue'
+import { computed, ref, onMounted, onUnmounted } from 'vue'
 import useExpressXClient from '/src/useExpressXClient.ts'
 
-const { app } = useExpressXClient()
+const { app, state } = useExpressXClient()
+const syncError = computed(() => state.syncErrors.pgcouch)
+const authenticationRequired = computed(() => [401, 403].includes(syncError.value?.status))
+const remoteUrl = new URL(import.meta.env.VITE_COUCH_DATABASE_URL || '/couchdb/offline', window.location.origin)
+const signInUrl = new URL('./_utils/', remoteUrl).href
 const failures = ref([])
-const models = [
-   ['user', 'Utilisateurs'],
-   ['group', 'Groupes'],
-   ['user_group_relation', 'Appartenances'],
-].map(([name, label]) => ({ name, label, model: app.createElectricModel(name) }))
+const models = [{ name: 'pgcouch', label: 'Transactions', model: app.createPGCouchModel('user') }]
 let timer
 let disposed = false
 

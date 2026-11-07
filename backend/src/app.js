@@ -1,6 +1,7 @@
 import 'dotenv/config'
 import { expressX } from '@jcbuisson/express-x/server'
-import { electricServerPlugin, prepareElectricSyncSchema } from '@jcbuisson/express-x-plugins/electric-server'
+import { pgcouchServerPlugin } from '@jcbuisson/express-x-plugins/pgcouch-server'
+import PouchDB from 'pouchdb'
 import { reloadPlugin } from '@jcbuisson/express-x-plugins/reload-server'
 import { Pool } from 'pg'
 
@@ -15,21 +16,20 @@ const app = expressX({
 
 const db = new Pool({ connectionString: process.env.DATABASE_URL })
 
-// add synchronization infrastructure
-await prepareElectricSyncSchema(db, syncModels)
-
-// Register PostgreSQL mutation services and proxy Electric Shapes to the client.
-app.configure(electricServerPlugin, db, syncModels, {
-   sync: true,
-   electricUrl: process.env.ELECTRIC_URL || 'http://localhost:3001/v1/shape',
-})
-
-app.service('user').hooks({
-   before: {
-      create: [context => validateUserMutation(context, 'create')],
-      update: [context => validateUserMutation(context, 'update')],
+if (!process.env.COUCH_DATABASE_URL) throw new Error('Set COUCH_DATABASE_URL to the authenticated CouchDB database URL')
+const couch = new PouchDB(process.env.COUCH_DATABASE_URL)
+const sync = pgcouchServerPlugin(app, db, syncModels, {
+   couch,
+   authorize(context, { modelName, action, args }) {
+      if (modelName === 'user' && ['create', 'update'].includes(action)) {
+         try { validateUserMutation({ args }, action) }
+         catch { throw new TypeError("L'email doit être valide et non vide.") }
+      }
+      return true
    },
+   onError: error => console.error('PGCouch sync failed', error),
 })
+await sync.ready
 
 // allows socket data & room transfer on page reload
 app.configure(reloadPlugin)
@@ -43,3 +43,12 @@ app.on('connection', (socket) => {
 
 const PORT = process.env.PORT || 3000
 app.httpServer.listen(PORT, () => console.log(`App listening at http://localhost:${PORT}`))
+
+async function shutdown() {
+   app.httpServer.close()
+   await sync.dispose()
+   await couch.close()
+   await db.end()
+}
+process.once('SIGTERM', shutdown)
+process.once('SIGINT', shutdown)
