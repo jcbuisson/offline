@@ -1,6 +1,6 @@
 # Offline — PGCouch
 
-Local-first users, groups and memberships using express-x-plugins 5.3.0 PGCouch.
+Local-first users, groups and memberships using express-x-plugins 5.4.1 PGCouch.
 PostgreSQL is authoritative; PGlite serves local queries and durable offline
 transactions; PouchDB/CouchDB replicate proposals and server decisions.
 
