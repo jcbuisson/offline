@@ -12,7 +12,8 @@
             </v-toolbar>
          
             <!-- Fills remaining vertical space -->
-            <div class="d-flex flex-column flex-grow-1 overflow-auto">
+            <div class="d-flex flex-column flex-grow-1 overflow-auto" :aria-busy="listLoading">
+               <LoadingIndicator v-if="listLoading" label="Chargement des utilisateurs…" />
                <v-list-item three-line v-for="userAndGroups in filteredUserAndGroupList" :key="userAndGroups.user.uid" :value="userAndGroups.user" :to="`/users/${userAndGroups.user.uid}`" @click="selectedUser = userAndGroups.user" :active="selectedUser?.uid === userAndGroups.user.uid">
                   <v-list-item-title>{{ userAndGroups?.user.lastname }} {{ userAndGroups?.user.firstname }}</v-list-item-title>
                   <v-list-item-subtitle>{{ userAndGroups?.user.email }}</v-list-item-subtitle>
@@ -23,7 +24,7 @@
                   </v-list-item-subtitle>
 
                   <template v-slot:append>
-                     <v-btn color="grey-lighten-1" icon="mdi-delete" variant="text" @click.stop.prevent="deleteUser(userAndGroups.user)"></v-btn>
+                     <v-btn color="grey-lighten-1" icon="mdi-delete" variant="text" :loading="deletingUserUID === userAndGroups.user.uid" :disabled="!!deletingUserUID" @click.stop.prevent="deleteUser(userAndGroups.user)"></v-btn>
                   </template>
                </v-list-item>
             </div>
@@ -51,11 +52,13 @@ import getFullname from '/src/lib/getFullname'
 import router from '/src/router'
 
 import SplitPanel from '/src/components/SplitPanel.vue'
+import LoadingIndicator from '/src/components/LoadingIndicator.vue'
 
 import useUser from '/src/use/useUser';
 
 import useExpressXClient from '/src/useExpressXClient.ts'
-const { app } = useExpressXClient();
+const { app, state } = useExpressXClient();
+const listLoading = computed(() => state.activity.initializing || (state.activity.initialSync && !state.syncErrors.pgcouch) || (state.activity.modelReads.user ?? 0) > 0)
 
 const { remove: removeUser } = useUser(app);
 
@@ -124,8 +127,11 @@ function selectUser(user) {
    router.push(`/users/${user.uid}`)
 }
 
+const deletingUserUID = ref(null)
 async function deleteUser(user) {
+   if (deletingUserUID.value) return
    if (window.confirm(`Supprimer ${getFullname(user)} ?`)) {
+      deletingUserUID.value = user.uid
       try {
          // The server atomically tombstones every membership, including unseen ones.
          await removeUser(user.uid)
@@ -133,6 +139,8 @@ async function deleteUser(user) {
          displaySnackbar({ text: "Suppression effectuée avec succès !", color: 'success', timeout: 2000 })
       } catch(err) {
          displaySnackbar({ text: "Erreur lors de la suppression...", color: 'error', timeout: 4000 })
+      } finally {
+         deletingUserUID.value = null
       }
    }
 }

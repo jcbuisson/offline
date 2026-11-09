@@ -14,8 +14,8 @@ const { getObservable: userGroupRelations$ } = useUserGroupRelation(app)
 // Keep one Shape per table and perform relational joins locally. Opening Shapes
 // per row quickly exhausts the browser's HTTP/1.1 connection limit.
 export const allUsers$ = users$({})
-export const allGroups$ = groups$({}, { initialValue: [] })
-export const allUserGroupRelations$ = userGroupRelations$({}, { initialValue: [] })
+export const allGroups$ = groups$({})
+export const allUserGroupRelations$ = userGroupRelations$({})
 
 export function userGroups$(user_uid: string) {
    return combineLatest([allGroups$, allUserGroupRelations$]).pipe(

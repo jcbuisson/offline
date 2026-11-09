@@ -7,9 +7,15 @@
     <meta name="apple-mobile-web-app-capable" content="yes" />
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
     <title>Offline demo</title>
+    <style>
+      .boot-loading { min-height: 70vh; display: flex; align-items: center; justify-content: center; gap: 12px; font: 16px system-ui, sans-serif; color: #555; }
+      .boot-spinner { width: 28px; height: 28px; border: 3px solid #ddd; border-top-color: #b71c1c; border-radius: 50%; animation: boot-spin 0.8s linear infinite; }
+      @keyframes boot-spin { to { transform: rotate(360deg); } }
+      @media (prefers-reduced-motion: reduce) { .boot-spinner { animation-duration: 2s; } }
+    </style>
   </head>
   <body>
-    <div id="app"></div>
+    <div id="app"><div class="boot-loading" role="status"><span class="boot-spinner" aria-hidden="true"></span>Chargement de l’application…</div></div>
     <script type="module" src="/src/main.js"></script>
   </body>
 </html>

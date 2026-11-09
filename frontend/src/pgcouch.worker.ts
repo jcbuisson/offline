@@ -9,6 +9,12 @@ const ports = new Set<MessagePort>()
 const errors = new Map<string, unknown>()
 const app: any = {}
 let syncEnabled = true
+let localDb: PGlite
+const runtime = { ready: false, syncing: false }
+function updateRuntime(value: Partial<typeof runtime>) {
+   Object.assign(runtime, value)
+   for (const port of ports) port.postMessage({ type: 'sync-state', ...runtime })
+}
 function errorData(error: any) {
    return { message: error?.message ?? String(error), status: error?.status,
       code: error?.code, transactionId: error?.transactionId }
@@ -23,9 +29,15 @@ function report(error: unknown) {
 const ready = new Promise<void>((resolve, reject) => {
    void navigator.locks.request(pgcouchConfig.lock, async () => {
       try {
-         const localDb = new PGlite(pgcouchConfig.relational)
+         localDb = new PGlite(pgcouchConfig.relational)
          await localDb.exec(schema)
          const couch = new PouchDB(pgcouchConfig.transactions)
+         const replicate = couch.sync.bind(couch)
+         couch.sync = (...args: any[]) => replicate(...args)
+            .on('active', () => updateRuntime({ syncing: true }))
+            .on('paused', (error: unknown) => { updateRuntime({ syncing: false }); if (error) report(error) })
+            .on('error', () => updateRuntime({ syncing: false }))
+            .on('complete', () => updateRuntime({ syncing: false }))
          pgcouchClientPlugin(app, {
             models: ['user', 'group', 'user_group_relation'], localDb, couch,
             remote: pgcouchConfig.remote,
@@ -33,9 +45,10 @@ const ready = new Promise<void>((resolve, reject) => {
             onError: report,
          })
          await app.pgcouchReady
+         updateRuntime({ ready: true })
          resolve()
          await new Promise(() => {})
-      } catch (error) { reject(error) }
+      } catch (error) { updateRuntime({ ready: true, syncing: false }); reject(error) }
    }).catch(reject)
 })
 void ready.catch(report)
@@ -48,6 +61,7 @@ const methods = new Set(['findMany', 'findUnique', 'create', 'update', 'remove',
    let active = true
    const cancelled = new Set<string>()
    const subscriptions = new Map<string, { unsubscribe(): void }>()
+   port.postMessage({ type: 'sync-state', ...runtime })
    for (const error of errors.values()) port.postMessage({ type: 'sync-error', error })
    port.onmessage = async ({ data }) => {
       const { id, type, model, method, args = [] } = data
@@ -81,10 +95,16 @@ const methods = new Set(['findMany', 'findUnique', 'create', 'update', 'remove',
             if (syncEnabled) await sync.start()
             else sync.stop()
          } else if (type === 'transaction') value = await app.pgcouchTransaction(...args)
-         else if (type === 'call' && methods.has(method)) value = await app.createPGCouchModel(model)[method](...args)
+         else if (type === 'call' && methods.has(method)) {
+            value = await app.createPGCouchModel(model)[method](...args)
+            if (method === 'getStatus') {
+               const { rows } = await localDb.query('SELECT initialized FROM pgcouch_local_state WHERE id = 1')
+               value = { ...value, initialized: rows[0]?.initialized === true }
+            }
+         }
          else throw new Error('Unknown sync request')
          port.postMessage({ type: 'result', id, value })
-      } catch (error) { port.postMessage({ type: 'result', id, error: errorData(error) }) }
+      } catch (error) { port.postMessage({ type: type === 'subscribe' ? 'subscription-error' : 'result', id, error: errorData(error) }) }
    }
    port.start()
 }

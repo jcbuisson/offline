@@ -1,6 +1,8 @@
 <template>
    <v-card>
-      <v-form>
+      <LoadingIndicator v-if="loadingUser" label="Chargement de l’utilisateur…" />
+      <LoadingIndicator v-else-if="(state.activity.modelWrites.user ?? 0) > 0 || pendingGroupWrites" label="Enregistrement…" />
+      <v-form :disabled="loadingUser">
          <v-container>
             <v-row>
                <v-col cols="12" md="3">
@@ -60,13 +62,14 @@ import { useObservable } from '@vueuse/rxjs'
 import { map } from 'rxjs'
 
 import { displaySnackbar } from '/src/use/useSnackbar'
+import LoadingIndicator from '/src/components/LoadingIndicator.vue'
 
 import useUser from '/src/use/useUser';
 import useGroup from '/src/use/useGroup';
 import useUserGroupRelation from '/src/use/useUserGroupRelation';
 
 import useExpressXClient from '/src/useExpressXClient.ts'
-const { app } = useExpressXClient();
+const { app, state } = useExpressXClient();
 
 const { getObservable: users$, update: updateUser } = useUser(app);
 const { getObservable: groups$ } = useGroup(app);
@@ -87,6 +90,7 @@ const emailRules = [
 const groupList = useObservable(groups$({}), { initialValue: [] })
 
 const user = ref()
+const loadingUser = ref(true)
 const emailDraft = ref('')
 let emailDirty = false
 watch(emailDraft, () => { emailDirty = emailDraft.value !== (user.value?.email ?? '') }, { flush: 'sync' })
@@ -101,10 +105,12 @@ watch(() => props.user_uid, async (user_uid) => {
    // handle unsubscription carefully - otherwise, a previous subscription for another user_uid will interfere with current subscription
    if (usersSubscription) usersSubscription.unsubscribe()
    user.value = undefined
-   usersSubscription = users$({}).subscribe(userList => {
+   loadingUser.value = true
+   usersSubscription = users$({}).subscribe({ next: userList => {
+      loadingUser.value = false
       user.value = userList.find(candidate => candidate.uid === user_uid)
       if (!emailDirty) emailDraft.value = user.value?.email ?? ''
-   })
+   }, error: error => { loadingUser.value = false; console.error('Failed to load user', error) } })
 
    if (userGroupRelationSubscription) userGroupRelationSubscription.unsubscribe()
    userGroupRelationSubscription = userGroupRelations$({ user_uid }).pipe(

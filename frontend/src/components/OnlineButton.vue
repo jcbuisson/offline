@@ -1,6 +1,7 @@
 <template>
-   <div class="button" :class="{ on: isOnline, off: !isOnline }" @click="onClick">
-      {{ isOnline ? "ON-LINE" : "OFF-LINE" }}
+   <div class="button" :class="{ on: isOnline, off: !isOnline }" :aria-busy="loading" @click="onClick">
+      <v-progress-circular v-if="loading" indeterminate :size="16" :width="2" class="mr-2" aria-label="Connexion en cours" />
+      {{ loading ? 'CONNEXION…' : isOnline ? "ON-LINE" : "OFF-LINE" }}
    </div>
 </template>
 
@@ -8,6 +9,7 @@
 <script setup>
 const props = defineProps({
    isOnline: Boolean,
+   loading: Boolean,
 })
 
 const emit = defineEmits(['connect', 'disconnect'])

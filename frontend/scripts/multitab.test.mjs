@@ -172,3 +172,81 @@ test('switching remote databases isolates stores and switching back preserves pe
    assert.equal((await page.evaluate(() => window.modelCall('group', 'getStatus'))).pending, 1)
    await context.close()
 })
+
+test('spinners cover startup, database loading, saves and deletes and clear on failure', { timeout: 60000 }, async t => {
+   let releaseScript, releaseDatabase
+   const scriptGate = new Promise(resolve => { releaseScript = resolve })
+   const databaseGate = new Promise(resolve => { releaseDatabase = resolve })
+   let browser
+   const server = await preview({
+      logLevel: 'error', preview: { host: '127.0.0.1', port: 0, proxy: {} },
+      plugins: [{ name: 'delayed-startup', configurePreviewServer(server) {
+         server.middlewares.use((req, res, next) => {
+            if (/^\/assets\/index-.*\.js$/.test(req.url)) { void scriptGate.then(() => next()); return }
+            if (/\.wasm$/.test(req.url)) { void databaseGate.then(() => next()); return }
+            if (req.url.startsWith('/couchdb/')) {
+               res.statusCode = 401; res.setHeader('Content-Type', 'application/json')
+               res.end(JSON.stringify({ error: 'unauthorized', reason: 'Test authentication failure' }))
+               return
+            }
+            next()
+         })
+      } }],
+   })
+   t.after(async () => { releaseScript(); releaseDatabase(); await browser?.close(); await server.close() })
+   browser = await chromium.launch({ headless: true })
+   const context = await browser.newContext({ serviceWorkers: 'block' })
+   const page = await context.newPage()
+   page.setDefaultTimeout(15000)
+   const errors = []
+   page.on('pageerror', error => errors.push(error.message))
+   await page.addInitScript(() => {
+      const post = MessagePort.prototype.postMessage
+      MessagePort.prototype.postMessage = function(message, ...args) {
+         if (message.type === 'call' && ['create', 'update', 'remove', 'delete'].includes(message.method)) {
+            setTimeout(() => post.call(this, message, ...args), 700)
+         } else return post.call(this, message, ...args)
+      }
+   })
+   const origin = `http://127.0.0.1:${server.httpServer.address().port}`
+   await page.goto(`${origin}/groups/create`, { waitUntil: 'commit' })
+   await page.getByRole('status').filter({ hasText: 'Chargement de l’application' }).waitFor()
+   releaseScript()
+   await page.getByRole('status').filter({ hasText: 'Préparation des données' }).waitFor()
+   await page.getByRole('status').filter({ hasText: 'Chargement des groupes' }).waitFor()
+   releaseDatabase()
+   await page.waitForFunction(() => !document.body.textContent.includes('Préparation des données'))
+   await page.getByRole('alert').filter({ hasText: 'Connectez-vous à CouchDB' }).waitFor()
+   await page.waitForFunction(() => !document.querySelector('[role="status"]'))
+
+   await page.getByLabel('Nom', { exact: true }).fill('Spinner test')
+   await page.getByRole('button', { name: 'Créer groupe' }).click()
+   await page.locator('.v-btn--loading').waitFor()
+   await page.getByRole('status').filter({ hasText: 'Enregistrement' }).first().waitFor()
+   await page.waitForURL(/\/groups\/(?!create)[^/]+$/)
+   await page.getByText('Spinner test', { exact: true }).waitFor()
+   await page.waitForFunction(() => !document.body.textContent.includes('Enregistrement…'))
+
+   await page.getByLabel('Nom', { exact: true }).fill('Updated spinner test')
+   await page.getByRole('status').filter({ hasText: 'Enregistrement' }).first().waitFor()
+   await page.getByText('Updated spinner test', { exact: true }).waitFor()
+   await page.waitForFunction(() => !document.body.textContent.includes('Enregistrement…'))
+
+   // Attempt a duplicate creation: rejected operations must stop their spinners.
+   await page.goto(`${origin}/groups/create`)
+   await page.getByLabel('Nom', { exact: true }).fill('Updated spinner test')
+   await page.getByRole('button', { name: 'Créer groupe' }).click()
+   await page.locator('.v-btn--loading').waitFor()
+   await page.getByText('Erreur lors de la création...', { exact: true }).waitFor()
+   await page.waitForFunction(() => !document.querySelector('.v-btn--loading'))
+   assert.equal(await page.getByRole('button', { name: 'Créer groupe' }).isEnabled(), true)
+
+   await page.locator('.v-list-item').filter({ hasText: 'Updated spinner test' }).getByRole('button').click()
+   const confirm = page.locator('dialog').getByRole('button', { name: 'Supprimer', exact: true })
+   await confirm.click()
+   await page.locator('dialog .v-btn--loading').waitFor()
+   await page.waitForFunction(() => !document.querySelector('dialog[open]'))
+   await page.waitForFunction(() => !document.querySelector('.v-list-item'))
+   assert.deepEqual(errors, [])
+   await context.close()
+})

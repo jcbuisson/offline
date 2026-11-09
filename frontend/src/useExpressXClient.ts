@@ -9,7 +9,14 @@ import { displaySnackbar } from './use/useSnackbar'
 function createExpressXClient() {
    const state = reactive({
       socketConnected: false,
+      socketConnecting: true,
       socketError: null as Error | null,
+      activity: {
+         initializing: true, initialSync: true, syncing: false,
+         reads: 0, writes: 0,
+         modelReads: {} as Record<string, number>,
+         modelWrites: {} as Record<string, number>,
+      },
       // Last reported error per model; current queue status is model.getStatus().
       syncErrors: {} as Record<string, Error>,
    })
@@ -40,7 +47,7 @@ function createExpressXClient() {
 
    app.configure(reloadPlugin)
 
-   configureSharedPGCouch(app, reportSyncError)
+   configureSharedPGCouch(app, reportSyncError, state.activity)
 
    // Older immutable snapshots include soft-deleted rows. Keep them out of reads.
    const createModel = app.createPGCouchModel.bind(app)
@@ -56,11 +63,14 @@ function createExpressXClient() {
 
    socket.on('connect', () => {
       state.socketConnected = true
+      state.socketConnecting = false
       state.socketError = null
    })
-   socket.on('disconnect', () => { state.socketConnected = false })
+   socket.on('disconnect', () => { state.socketConnected = false; state.socketConnecting = socket.active && navigator.onLine })
+   socket.io.on('reconnect_attempt', () => { state.socketConnecting = navigator.onLine })
    socket.on('connect_error', (error: Error) => {
       state.socketConnected = false
+      state.socketConnecting = false
       state.socketError = error
    })
 
@@ -68,12 +78,14 @@ function createExpressXClient() {
    const models = ['user', 'group', 'user_group_relation'].map(name => app.createPGCouchModel(name))
 
    const connectSocket = () => {
+      state.socketConnecting = true
       socket.connect()
       for (const model of models) {
          void model.start().catch(error => console.error('Failed to resume PGCouch sync', error))
       }
    }
    const disconnectSocket = () => {
+      state.socketConnecting = false
       for (const model of models) model.stop()
       socket.disconnect()
    }

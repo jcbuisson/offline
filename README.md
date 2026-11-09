@@ -214,6 +214,41 @@ For individual permissions, authenticate users in the application and derive
 CouchDB access from their authenticated sessions instead of using a shared
 account. The local Vite proxy still uses the cookie login described below.
 
+### Compress static assets for faster first loads
+
+A fresh browser profile or private session must download and initialize PGlite
+before the lists can load. Its WebAssembly runtime and initial database together
+are roughly 16 MB uncompressed. Enable compression for the static assets by
+adding this location inside the production HTTPS `server` block:
+
+```nginx
+location ^~ /assets/ {
+    try_files $uri =404;
+    add_header Cache-Control "public, max-age=31536000, immutable";
+
+    gzip on;
+    gzip_vary on;
+    gzip_min_length 1024;
+    gzip_comp_level 5;
+    gzip_types application/wasm application/octet-stream
+               application/javascript text/javascript text/css application/json;
+}
+```
+
+Include `application/octet-stream`: this is the content type normally served for
+PGlite's `.data` file. The location inherits the frontend `dist` root from the
+server block. After `sudo nginx -t && sudo service nginx reload`, check a current
+`.wasm` and `.data` asset URL from the browser's Network panel:
+
+```sh
+curl -sSI -H 'Accept-Encoding: gzip' https://offline.jcbuisson.dev/assets/ACTUAL_ASSET_FILENAME
+```
+
+Expect `Content-Encoding: gzip` and `Vary: Accept-Encoding`. Asset filenames
+change with builds; use the deployed names. Compression reduces transfer size,
+but a fresh session still needs time for WebAssembly initialization, local
+database creation and the first CouchDB replication.
+
 ### Run locally
 
 From the repository root, start each process in a separate terminal:

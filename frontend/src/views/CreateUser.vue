@@ -1,6 +1,6 @@
 <template>
    <v-card>
-      <v-form v-model="valid" lazy-validation>
+      <v-form v-model="valid" lazy-validation :disabled="submitting" :aria-busy="submitting">
          <v-container>
             <v-row>
                <v-col cols="12" sm="6">
@@ -46,7 +46,7 @@
             </v-row>
          </v-container>
          <div class="submit-block">
-            <v-btn @click="submit" :disabled="!valid" flat size="large" color="primary" style="min-width: 300px;;">Créer utilisateur</v-btn>
+            <v-btn @click="submit" :disabled="!valid || submitting" :loading="submitting" flat size="large" color="primary" style="min-width: 300px;;">Créer utilisateur</v-btn>
          </div>
       </v-form>
    </v-card>
@@ -73,6 +73,7 @@ const { groupDifference, create: createUserGroupRelation, remove: removeUserGrou
 
 const data = ref({})
 const valid = ref()
+const submitting = ref(false)
 
 const emailRules = [
    (v) => !!v || "L'email est obligatoire",
@@ -88,6 +89,8 @@ const allUsers = useObservable(users$({}), {
 })
 
 async function submit() {
+   if (submitting.value) return
+   submitting.value = true
    try {
       // check if email is not already used
       const other = (allUsers.value ?? []).find(user => user.email === data.value.email)
@@ -107,11 +110,13 @@ async function submit() {
             await removeUserGroupRelation(relationUID)
          }
          displaySnackbar({ text: "Création effectuée avec succès !", color: 'success', timeout: 2000 })
-         router.push(`/users/${user.uid}`)
+         await router.push(`/users/${user.uid}`)
       }
    } catch(err) {
       console.error('Failed to create user', err)
       displaySnackbar({ text: "Erreur lors de la création...", color: 'error', timeout: 4000 })
+   } finally {
+      submitting.value = false
    }
 }
 </script>

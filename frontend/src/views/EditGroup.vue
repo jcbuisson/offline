@@ -1,6 +1,8 @@
 <template>
    <v-card>
-      <v-form>
+      <LoadingIndicator v-if="loadingGroup" label="Chargement du groupe…" />
+      <LoadingIndicator v-else-if="saving" label="Enregistrement…" />
+      <v-form :disabled="loadingGroup">
          <v-container>
             <v-row>
                <v-col cols="12" md="6">
@@ -23,6 +25,7 @@ import { useDebounceFn } from '@vueuse/core'
 import { map } from 'rxjs'
 
 import { displaySnackbar } from '/src/use/useSnackbar'
+import LoadingIndicator from '/src/components/LoadingIndicator.vue'
 
 import useGroup from '/src/use/useGroup';
 
@@ -39,6 +42,9 @@ const props = defineProps({
 })
 
 const group = ref()
+const loadingGroup = ref(true)
+const saving = ref(false)
+let draftVersion = 0
 
 let groupSubscription
 
@@ -55,9 +61,11 @@ onUnmounted(() => {
 watch(() => props.group_uid, async (group_uid) => {
    if (groupSubscription) groupSubscription.unsubscribe()
    group.value = null
-   groupSubscription = group$(group_uid).subscribe(grp => {
+   loadingGroup.value = true
+   groupSubscription = group$(group_uid).subscribe({ next: grp => {
+      loadingGroup.value = false
       group.value = grp
-   })
+   }, error: error => { loadingGroup.value = false; console.error('Failed to load group', error) } })
 }, { immediate: true })
 
 
@@ -71,5 +79,15 @@ const onFieldInput = async (field, value) => {
       displaySnackbar({ text: "Erreur lors de la sauvegarde...", color: 'error', timeout: 4000 })
    }
 }
-const onFieldInputDebounced = useDebounceFn(onFieldInput, 500)
+const saveDebounced = useDebounceFn(async (uid, field, value, version) => {
+   try {
+      if (uid === props.group_uid) await onFieldInput(field, value)
+   } finally {
+      if (version === draftVersion) saving.value = false
+   }
+}, 500)
+const onFieldInputDebounced = (field, value) => {
+   saving.value = true
+   void saveDebounced(props.group_uid, field, value, ++draftVersion)
+}
 </script>

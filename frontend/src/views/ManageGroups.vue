@@ -10,7 +10,8 @@
             </v-toolbar>
          
             <!-- fills remaining vertical space -->
-            <div class="d-flex flex-column flex-grow-1 overflow-auto">
+            <div class="d-flex flex-column flex-grow-1 overflow-auto" :aria-busy="listLoading">
+               <LoadingIndicator v-if="listLoading" label="Chargement des groupes…" />
                <v-list-item three-line v-for="group in sortedGroupList" :key="group.uid" :value="group" :to="`/groups/${group.uid}`" @click="selectedGroup = group" :active="selectedGroup?.uid === group.uid">
                   <v-list-item-title>{{ group.name }}</v-list-item-title>
 
@@ -31,9 +32,10 @@
       <v-card>
          <v-card-title>Confirmer</v-card-title>
          <v-card-text>Supprimer le groupe {{groupToDelete?.name}} ? (nombre d'utilisateurs membres : {{userGroupRelations?.length}})</v-card-text>
+         <LoadingIndicator v-if="relationsLoading" label="Chargement des membres…" />
          <v-card-actions>
-            <v-btn @click="cancelDelete">Annuler</v-btn>
-            <v-btn @click="deleteGroup">Supprimer</v-btn>
+            <v-btn @click="cancelDelete" :disabled="deleting">Annuler</v-btn>
+            <v-btn @click="deleteGroup" :loading="deleting" :disabled="deleting || relationsLoading">Supprimer</v-btn>
          </v-card-actions>
       </v-card>
    </dialog>
@@ -49,13 +51,15 @@ import { useObservable } from '@vueuse/rxjs'
 import router from '/src/router'
 
 import SplitPanel from '/src/components/SplitPanel.vue'
+import LoadingIndicator from '/src/components/LoadingIndicator.vue'
 import { displaySnackbar } from '/src/use/useSnackbar'
 
 import useGroup from '/src/use/useGroup';
 import useUserGroupRelation from '/src/use/useUserGroupRelation';
 
 import useExpressXClient from '/src/useExpressXClient.ts'
-const { app } = useExpressXClient();
+const { app, state } = useExpressXClient();
+const listLoading = computed(() => state.activity.initializing || (state.activity.initialSync && !state.syncErrors.pgcouch) || (state.activity.modelReads.group ?? 0) > 0)
 
 const { remove: removeGroup } = useGroup(app);
 const { getObservable: userGroupRelations$ } = useUserGroupRelation(app);
@@ -89,15 +93,19 @@ function selectGroup(group) {
 const deletionDialog = ref(null)
 const groupToDelete = ref()
 const userGroupRelations = ref()
+const deleting = ref(false)
+const relationsLoading = ref(false)
 let subscription
 
 function startDeletingGroup(group) {
    groupToDelete.value = group
    if (subscription) subscription.unsubscribe()
-   subscription = userGroupRelations$({ group_uid: group.uid }).subscribe(relations => {
+   relationsLoading.value = true
+   subscription = userGroupRelations$({ group_uid: group.uid }).subscribe({ next: relations => {
+      relationsLoading.value = false
       // modal dialog will show the real-time count of group members
       userGroupRelations.value = relations
-   })
+   }, error: error => { relationsLoading.value = false; console.error('Failed to load group members', error) } })
    deletionDialog.value.showModal()
 }
 
@@ -106,14 +114,18 @@ function cancelDelete() {
 }
 
 async function deleteGroup() {
-   deletionDialog.value.close()
+   if (deleting.value) return
+   deleting.value = true
    try {
       // The server atomically tombstones every membership, including unseen ones.
       await removeGroup(groupToDelete.value.uid)
+      deletionDialog.value.close()
       router.push(`/groups`)
       displaySnackbar({ text: "Suppression effectuée avec succès !", color: 'success', timeout: 2000 })
    } catch(err) {
       displaySnackbar({ text: "Erreur lors de la suppression...", color: 'error', timeout: 4000 })
+   } finally {
+      deleting.value = false
    }
 }
 

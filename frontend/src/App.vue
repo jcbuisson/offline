@@ -2,6 +2,7 @@
    <ReloadPrompt></ReloadPrompt>
 
    <SyncStatus />
+   <ActivityStatus />
 
    <router-view></router-view>
 
@@ -23,5 +24,6 @@ for (const list$ of [allUsers$, allGroups$, allUserGroupRelations$]) {
 
 import ReloadPrompt from '/src/components/ReloadPrompt.vue'
 import SyncStatus from '/src/components/SyncStatus.vue'
+import ActivityStatus from '/src/components/ActivityStatus.vue'
 import { snackbar } from '/src/use/useSnackbar'
 </script>
