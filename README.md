@@ -137,6 +137,83 @@ strips `/couchdb/` before forwarding. Test with `sudo nginx -t`, then reload wit
 than the app's HTML. CouchDB navigation URLs must also bypass the service worker's
 app-shell fallback; rebuild and deploy the frontend after changing that rule.
 
+### Automatic CouchDB authentication in production
+
+For this shared demo, Nginx can authenticate replication requests as
+`offline-browser`, so visitors do not need to sign in to Fauxton. Use the browser
+account created above: it must be a database member with no `_admin` or
+`pgcouch-server` role. Keep the backend's server account separate.
+
+Generate the browser account's Basic authentication value on the server:
+
+```sh
+printf '%s' 'offline-browser:CHANGE_ME_BROWSER_PASSWORD' | base64 | tr -d '\n'
+```
+
+Replace the password with the account's actual password. Treat the resulting
+Base64 value as a password and keep it in the server's Nginx configuration, never
+in frontend code or `VITE_` variables.
+
+Add these locations inside the production HTTPS `server` block, alongside the
+general `/couchdb/` proxy above. The longer database-specific location supplies
+automatic credentials only for the intended database, leaving Fauxton and other
+CouchDB endpoints on their normal authentication flow:
+
+```nginx
+location = /couchdb/offline {
+    return 307 /couchdb/offline/;
+}
+
+location ^~ /couchdb/offline/ {
+    proxy_pass https://couchdb.jcbuisson.dev/offline/;
+    proxy_ssl_server_name on;
+    proxy_set_header Host couchdb.jcbuisson.dev;
+    proxy_http_version 1.1;
+
+    proxy_set_header Authorization "Basic REPLACE_WITH_BASE64_VALUE";
+    proxy_set_header Cookie "";
+
+    proxy_buffering off;
+    proxy_cache off;
+    proxy_read_timeout 120s;
+}
+```
+
+The `Authorization` header authenticates upstream requests. Clearing `Cookie`
+prevents an existing CouchDB session from overriding the shared account. Use your
+actual upstream host, and replace `offline` consistently in both locations and
+`proxy_pass` if your database is named differently, for example `offline-v3`.
+Do not add these shared credentials to the general `/couchdb/` location.
+
+Keep the frontend URL on the app's origin and free of credentials:
+
+```dotenv
+VITE_COUCH_DATABASE_URL=/couchdb/offline
+```
+
+Apply the Nginx configuration:
+
+```sh
+sudo nginx -t && sudo service nginx reload
+```
+
+If you changed the frontend environment variable, rebuild and deploy
+`frontend/dist`. Verify access without a browser session:
+
+```sh
+curl -i https://offline.jcbuisson.dev/couchdb/offline/
+```
+
+Expect HTTP 200 and CouchDB database JSON, rather than HTTP 401 or the app's HTML.
+A fresh private browser window should then synchronize without a Fauxton login.
+`/couchdb/_session` remains unauthenticated unless you explicitly sign in, because
+automatic authentication is scoped to the database route.
+
+Every visitor using this proxy receives the shared account's read/write access.
+For individual permissions, authenticate users in the application and derive
+CouchDB access from their authenticated sessions instead of using a shared
+account. The local Vite proxy still uses the cookie login described below.
+
 ### Run locally
 
 From the repository root, start each process in a separate terminal:
