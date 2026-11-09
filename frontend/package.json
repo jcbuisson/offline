@@ -25,6 +25,7 @@
     "graphology": "^0.26.0",
     "graphology-layout": "^0.6.1",
     "idb-keyval": "^6.2.1",
+    "pouchdb-adapter-indexeddb": "^9.0.0",
     "pouchdb-browser": "^9.0.0",
     "rxjs": "^7.8.2",
     "sigma": "^3.0.1",

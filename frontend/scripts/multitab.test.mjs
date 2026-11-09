@@ -3,7 +3,7 @@ import test from 'node:test'
 import { readFile, mkdtemp, rm } from 'node:fs/promises'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
-import { chromium } from 'playwright'
+import { chromium, webkit, devices } from 'playwright'
 import { build, preview } from 'vite'
 import { storageForRemote } from '../src/pgcouchStorage.mjs'
 
@@ -248,5 +248,70 @@ test('spinners cover startup, database loading, saves and deletes and clear on f
    await page.waitForFunction(() => !document.querySelector('dialog[open]'))
    await page.waitForFunction(() => !document.querySelector('.v-list-item'))
    assert.deepEqual(errors, [])
+   await context.close()
+})
+
+test('WebKit with an iPhone profile initializes, loads lists and preserves offline edits on reload', { timeout: 60000 }, async t => {
+   let browser
+   const server = await preview({
+      logLevel: 'error', preview: { host: '127.0.0.1', port: 0, proxy: {} },
+      plugins: [{ name: 'unavailable-sync-for-offline-test', configurePreviewServer(server) {
+         server.middlewares.use('/couchdb/', (_req, res) => {
+            res.statusCode = 401; res.setHeader('Content-Type', 'application/json')
+            res.end(JSON.stringify({ error: 'unauthorized', reason: 'Test offline editing' }))
+         })
+      } }],
+   })
+   t.after(async () => { await browser?.close(); await server.close() })
+   browser = await webkit.launch({ headless: true })
+   const context = await browser.newContext({ ...devices['iPhone 13'], serviceWorkers: 'block' })
+   const page = await context.newPage()
+   page.setDefaultTimeout(20000)
+   const errors = []
+   page.on('pageerror', error => errors.push(error.message))
+   const origin = `http://127.0.0.1:${server.httpServer.address().port}`
+   await page.goto(`${origin}/groups`)
+   await page.getByRole('alert').filter({ hasText: 'Connectez-vous à CouchDB' }).waitFor()
+   await page.waitForFunction(() => !document.querySelector('[role="status"]'))
+   const html = await readFile(new URL('../dist/index.html', import.meta.url), 'utf8')
+   const mainPath = html.match(/src="([^"]+\.js)"/)[1]
+   const bundle = await readFile(new URL(`../dist${mainPath}`, import.meta.url), 'utf8')
+   const workerPath = bundle.match(/\/assets\/pgcouch\.worker-[^" ]+\.js/)[0]
+   const storage = await storageForRemote('/couchdb/offline', origin)
+   await attachProbe(page, workerPath, storage.worker)
+   await page.evaluate(() => window.modelCall('group', 'create', [{ uid: 'iphone', name: 'iPhone group' }]))
+   await page.getByText('iPhone group', { exact: true }).waitFor()
+   await page.reload()
+   await page.getByText('iPhone group', { exact: true }).waitFor()
+   await page.waitForFunction(() => !document.body.textContent.includes('Préparation des données'))
+   await attachProbe(page, workerPath, storage.worker)
+   assert.equal((await page.evaluate(() => window.modelCall('group', 'getStatus'))).pending, 1)
+   assert.deepEqual(errors, [])
+   await context.close()
+})
+
+test('stalled initialization stops its spinners and offers a non-destructive retry', { timeout: 30000 }, async t => {
+   let release, browser
+   const gate = new Promise(resolve => { release = resolve })
+   const server = await preview({
+      logLevel: 'error', preview: { host: '127.0.0.1', port: 0, proxy: {} },
+      plugins: [{ name: 'stalled-database', configurePreviewServer(server) {
+         server.middlewares.use((req, _res, next) => {
+            if (/\.wasm$/.test(req.url)) { void gate.then(() => next()); return }
+            next()
+         })
+      } }],
+   })
+   t.after(async () => { release(); await browser?.close(); await server.close() })
+   browser = await chromium.launch({ headless: true })
+   const context = await browser.newContext({ serviceWorkers: 'block' })
+   const page = await context.newPage()
+   await page.clock.install()
+   await page.goto(`http://127.0.0.1:${server.httpServer.address().port}/groups`)
+   await page.getByRole('status').filter({ hasText: 'Préparation des données' }).waitFor()
+   await page.clock.runFor(61000)
+   await page.getByRole('alert').filter({ hasText: 'La préparation des données prend trop de temps' }).waitFor()
+   await page.getByRole('button', { name: 'Réessayer', exact: true }).waitFor()
+   assert.equal(await page.locator('[role="status"]').count(), 0)
    await context.close()
 })

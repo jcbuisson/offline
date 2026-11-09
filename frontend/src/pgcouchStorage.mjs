@@ -13,7 +13,7 @@ export async function storageForRemote(remote, origin) {
    return {
       remote: url.href,
       relational: `idb://offline-pgcouch-relational-${namespace}`,
-      transactions: `offline-pgcouch-transactions-${namespace}`,
+      transactions: `offline-pgcouch-transactions-${namespace}-indexeddb`,
       lock: `offline-pgcouch-owner-${namespace}`,
       worker: `offline-pgcouch-${namespace}`,
    }

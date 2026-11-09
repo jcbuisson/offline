@@ -1,8 +1,12 @@
 import { PGlite } from '@electric-sql/pglite'
 import PouchDB from 'pouchdb-browser'
+import indexeddb from 'pouchdb-adapter-indexeddb'
 import { pgcouchClientPlugin } from '@jcbuisson/express-x-plugins/pgcouch-client'
 import schema from './local-schema.sql?raw'
-import { pgcouchConfig } from './pgcouchConfig'
+import { storageForRemote } from './pgcouchStorage.mjs'
+import { prepareLocalTransport } from './prepareLocalTransport.mjs'
+
+PouchDB.plugin(indexeddb)
 
 // One database, transaction queue and replication feed for every tab.
 const ports = new Set<MessagePort>()
@@ -10,7 +14,7 @@ const errors = new Map<string, unknown>()
 const app: any = {}
 let syncEnabled = true
 let localDb: PGlite
-const runtime = { ready: false, syncing: false }
+const runtime = { ready: false, syncing: false, stage: 'waiting-lock' }
 function updateRuntime(value: Partial<typeof runtime>) {
    Object.assign(runtime, value)
    for (const port of ports) port.postMessage({ type: 'sync-state', ...runtime })
@@ -27,29 +31,39 @@ function report(error: unknown) {
 
 // Only workers for the same remote database compete for database ownership.
 const ready = new Promise<void>((resolve, reject) => {
-   void navigator.locks.request(pgcouchConfig.lock, async () => {
-      try {
-         localDb = new PGlite(pgcouchConfig.relational)
-         await localDb.exec(schema)
-         const couch = new PouchDB(pgcouchConfig.transactions)
-         const replicate = couch.sync.bind(couch)
-         couch.sync = (...args: any[]) => replicate(...args)
-            .on('active', () => updateRuntime({ syncing: true }))
-            .on('paused', (error: unknown) => { updateRuntime({ syncing: false }); if (error) report(error) })
-            .on('error', () => updateRuntime({ syncing: false }))
-            .on('complete', () => updateRuntime({ syncing: false }))
-         pgcouchClientPlugin(app, {
-            models: ['user', 'group', 'user_group_relation'], localDb, couch,
-            remote: pgcouchConfig.remote,
-            network: { get onLine() { return syncEnabled && navigator.onLine } },
-            onError: report,
-         })
-         await app.pgcouchReady
-         updateRuntime({ ready: true })
-         resolve()
-         await new Promise(() => {})
-      } catch (error) { updateRuntime({ ready: true, syncing: false }); reject(error) }
-   }).catch(reject)
+   // Register onconnect synchronously below: WebKit can dispatch the first
+   // connection while a module's top-level await is still pending.
+   void storageForRemote(import.meta.env.VITE_COUCH_DATABASE_URL || '/couchdb/offline', self.location.origin)
+      .then(pgcouchConfig => navigator.locks.request(pgcouchConfig.lock, async () => {
+         try {
+            updateRuntime({ stage: 'loading-database' })
+            localDb = new PGlite(pgcouchConfig.relational)
+            await localDb.waitReady
+            updateRuntime({ stage: 'preparing-schema' })
+            await localDb.exec(schema)
+            await prepareLocalTransport(localDb, pgcouchConfig.transactions)
+            updateRuntime({ stage: 'opening-transport' })
+            const couch = new PouchDB(pgcouchConfig.transactions, { adapter: 'indexeddb' })
+            await couch.info()
+            const replicate = couch.sync.bind(couch)
+            couch.sync = (...args: any[]) => replicate(...args)
+               .on('active', () => updateRuntime({ syncing: true }))
+               .on('paused', (error: unknown) => { updateRuntime({ syncing: false }); if (error) report(error) })
+               .on('error', () => updateRuntime({ syncing: false }))
+               .on('complete', () => updateRuntime({ syncing: false }))
+            pgcouchClientPlugin(app, {
+               models: ['user', 'group', 'user_group_relation'], localDb, couch,
+               remote: pgcouchConfig.remote,
+               network: { get onLine() { return syncEnabled && navigator.onLine } },
+               onError: report,
+            })
+            updateRuntime({ stage: 'starting-sync' })
+            await app.pgcouchReady
+            updateRuntime({ ready: true, stage: 'ready' })
+            resolve()
+            await new Promise(() => {})
+         } catch (error) { updateRuntime({ ready: true, syncing: false, stage: 'failed' }); reject(error) }
+   })).catch(error => { updateRuntime({ ready: true, syncing: false, stage: 'failed' }); reject(error) })
 })
 void ready.catch(report)
 

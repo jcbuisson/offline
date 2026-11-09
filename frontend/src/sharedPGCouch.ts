@@ -9,6 +9,19 @@ export function configureSharedPGCouch(app: any, onError: (error: unknown) => vo
    const observers = new Map<string, any>()
    let closed = false
    let failure: Error | undefined
+   let connected = false
+   const outgoing: any[] = []
+   function send(message: any) {
+      if (connected) port.postMessage(message)
+      else outgoing.push(structuredClone(message))
+   }
+   let startupStage = 'starting-worker'
+   const startupTimer = window.setTimeout(() => {
+      const message = startupStage === 'waiting-lock'
+         ? 'La préparation attend une autre session. Fermez les autres onglets de l’application, puis réessayez.'
+         : 'La préparation des données prend trop de temps. Vérifiez votre connexion, puis réessayez.'
+      fail(Object.assign(new Error(message), { code: 'startup-timeout' }))
+   }, 60000)
    const asError = (value: any) => Object.assign(new Error(value.message), value)
    function track(kind: 'reads' | 'writes', model: string) {
       const counts = kind === 'reads' ? activity.modelReads : activity.modelWrites
@@ -21,12 +34,24 @@ export function configureSharedPGCouch(app: any, onError: (error: unknown) => vo
       }
    }
    port.onmessage = ({ data }) => {
+      if (failure || closed) return
       if (data.type === 'sync-state') {
+         startupStage = data.stage ?? startupStage
+         if (data.ready) window.clearTimeout(startupTimer)
+         if (data.ready && !connected) {
+            connected = true
+            for (const message of outgoing.splice(0)) port.postMessage(message)
+         }
          activity.initializing = !data.ready
          activity.syncing = data.syncing
          return
       }
-      if (data.type === 'sync-error') { activity.initializing = false; activity.initialSync = false; onError(asError(data.error)); return }
+      if (data.type === 'sync-error') {
+         activity.initializing = false; activity.initialSync = false
+         if (startupStage === 'failed') fail(asError(data.error))
+         else onError(asError(data.error))
+         return
+      }
       if (data.type === 'value') { observers.get(data.id)?.next(data.value); return }
       if (data.type === 'subscription-error') { observers.get(data.id)?.error(asError(data.error)); return }
       const request = pending.get(data.id)
@@ -37,9 +62,13 @@ export function configureSharedPGCouch(app: any, onError: (error: unknown) => vo
       if (data.error) request.reject(asError(data.error))
       else request.resolve(data.value)
    }
-   worker.onerror = () => {
-      const error = new Error('Unable to start shared browser database')
+   function fail(error: Error) {
+      if (failure || closed) return
       failure = error
+      outgoing.length = 0
+      window.clearTimeout(startupTimer)
+      port.postMessage({ type: 'dispose' })
+      port.close()
       onError(error)
       activity.initializing = false; activity.initialSync = false; activity.syncing = false
       for (const request of pending.values()) { request.finish(); request.reject(error) }
@@ -47,6 +76,7 @@ export function configureSharedPGCouch(app: any, onError: (error: unknown) => vo
       for (const observer of observers.values()) observer.error(error)
       observers.clear()
    }
+   worker.onerror = () => fail(new Error('Impossible de démarrer la base de données du navigateur.'))
    port.start()
    function request(type: string, extra: any = {}) {
       if (closed || failure) return Promise.reject(failure ?? new Error('Sync connection closed'))
@@ -56,7 +86,7 @@ export function configureSharedPGCouch(app: any, onError: (error: unknown) => vo
       const finish = writing || reading ? track(writing ? 'writes' : 'reads', extra.model ?? 'transaction') : () => {}
       return new Promise<any>((resolve, reject) => {
          pending.set(id, { resolve, reject, finish, method: extra.method })
-         try { port.postMessage({ type, id, ...extra }) }
+         try { send({ type, id, ...extra }) }
          catch (error) { pending.delete(id); finish(); reject(error) }
       })
    }
@@ -78,8 +108,9 @@ export function configureSharedPGCouch(app: any, onError: (error: unknown) => vo
             error(error: unknown) { finish(); subscriber.error(error) },
             complete() { finish(); subscriber.complete() },
          })
-         port.postMessage({ type: 'subscribe', id, model: name, args: [where, options] })
-         return () => { finish(); observers.delete(id); if (!closed) port.postMessage({ type: 'unsubscribe', id }) }
+         try { send({ type: 'subscribe', id, model: name, args: [where, options] }) }
+         catch (error) { finish(); observers.delete(id); subscriber.error(error) }
+         return () => { finish(); observers.delete(id); if (!closed && !failure) send({ type: 'unsubscribe', id }) }
       })
       cache.set(name, model)
       return model
@@ -88,6 +119,8 @@ export function configureSharedPGCouch(app: any, onError: (error: unknown) => vo
    app.disposePGCouchSync = async () => {
       if (closed) return
       closed = true
+      outgoing.length = 0
+      window.clearTimeout(startupTimer)
       window.removeEventListener('pagehide', release)
       port.postMessage({ type: 'dispose' })
       port.close()

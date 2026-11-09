@@ -7,6 +7,7 @@
       </template>
       <template v-else>
          La synchronisation a échoué : {{ syncError.message }}
+         <v-btn v-if="syncError.code === 'startup-timeout'" class="ml-3" size="small" @click="retryStartup">Réessayer</v-btn>
       </template>
    </v-alert>
    <v-alert v-if="failures.length" type="error" class="ma-2" role="alert">
@@ -25,6 +26,7 @@ import { pgcouchConfig } from '/src/pgcouchConfig'
 
 const { app, state } = useExpressXClient()
 const syncError = computed(() => state.syncErrors.pgcouch)
+const retryStartup = () => window.location.reload()
 const authenticationRequired = computed(() => [401, 403].includes(syncError.value?.status))
 const remoteUrl = new URL(pgcouchConfig.remote)
 const signInUrl = new URL('./_utils/', remoteUrl).href
@@ -41,6 +43,9 @@ async function refresh() {
             ? { name, label, message: `${status.failed} modification(s) refusée(s). ${status.error ?? ''}` }
             : null
       } catch (error) {
+         // Startup/transport errors already have their own alert and do not
+         // imply that any user transaction was rejected.
+         if (state.syncErrors.pgcouch) return null
          return { name, label, message: error.message }
       }
    }))

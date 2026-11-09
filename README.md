@@ -304,9 +304,16 @@ The production multi-tab browser regression check uses Playwright Chromium:
 
 ```sh
 cd frontend
-npx playwright install chromium
+npx playwright install chromium webkit
 npm run test:tabs
 ```
+
+Browser checks cover Chromium and WebKit with an iPhone profile. The transport
+uses PouchDB's `indexeddb` adapter in a separate namespaced store for Safari
+compatibility. On upgrade, the app resets only the transport's change cursor;
+cached relational data and pending edits remain in PGlite and are replayed.
+Worker requests wait for an explicit ready message. If startup stalls for a
+minute, the app stops its spinners and offers a retry without clearing storage.
 
 Deploy the complete
 `frontend/dist` output. Production builds precache PGlite assets; test offline
