@@ -8,7 +8,8 @@
     "dev": "vite",
     "build": "vite build",
     "preview": "vite preview",
-    "test:sync": "node --test scripts/relational-sync.test.mjs"
+    "test:sync": "node --test scripts/relational-sync.test.mjs",
+    "test:tabs": "npm run build && node --test scripts/multitab.test.mjs"
   },
   "dependencies": {
     "@electric-sql/pglite": "^0.5.8",
@@ -39,6 +40,7 @@
   },
   "devDependencies": {
     "@vitejs/plugin-vue": "^5.2.1",
+    "playwright": "1.60.0",
     "pouchdb": "^9.0.0",
     "pouchdb-adapter-memory": "^9.0.0",
     "vite": "^6.0.5"

@@ -147,8 +147,11 @@ docker compose --env-file backend/.env -f backend/docker-compose.yml stop
 
 ## Offline behavior and deployment
 
-The app owns and initializes the PGlite and PouchDB stores. A Web Lock gives one
-tab exclusive database ownership; additional tabs wait until it closes. Browser
+The app initializes the PGlite and PouchDB stores in a SharedWorker. All tabs
+share its database, transaction queue, replication feed and offline switch;
+queries stream updates back to each tab. A Web Lock prevents concurrent database
+ownership during upgrades from older builds. Close all old app tabs when first
+deploying this worker version. The browser must support SharedWorker. Browser
 storage must be retained to preserve unsent edits. The disconnect control pauses
 Couch replication; local transactions still commit and queue.
 
@@ -157,6 +160,14 @@ Run the sync checks and production build from the repository root:
 ```sh
 npm --prefix frontend run test:sync
 npm --prefix frontend run build
+```
+
+The production multi-tab browser regression check uses Playwright Chromium:
+
+```sh
+cd frontend
+npx playwright install chromium
+npm run test:tabs
 ```
 
 Deploy the complete
