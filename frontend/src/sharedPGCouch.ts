@@ -1,7 +1,9 @@
 import { Observable } from 'rxjs'
+import { pgcouchConfig } from './pgcouchConfig'
+import workerUrl from './pgcouch.worker.ts?sharedworker&url'
 
 export function configureSharedPGCouch(app: any, onError: (error: unknown) => void) {
-   const worker = new SharedWorker(new URL('./pgcouch.worker.ts', import.meta.url), { type: 'module', name: 'offline-pgcouch' })
+   const worker = new SharedWorker(workerUrl, { type: 'module', name: pgcouchConfig.worker })
    const port = worker.port
    const pending = new Map<string, { resolve(value: any): void, reject(error: unknown): void }>()
    const observers = new Map<string, any>()

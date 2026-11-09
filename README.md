@@ -171,9 +171,13 @@ docker compose --env-file backend/.env -f backend/docker-compose.yml stop
 
 The app initializes the PGlite and PouchDB stores in a SharedWorker. All tabs
 share its database, transaction queue, replication feed and offline switch;
-queries stream updates back to each tab. A Web Lock prevents concurrent database
-ownership during upgrades from older builds. Close all old app tabs when first
-deploying this worker version. The browser must support SharedWorker. Browser
+queries stream updates back to each tab. Both local stores, the worker and its
+Web Lock are namespaced by the remote database URL (host and path, excluding
+credentials). Changing `VITE_COUCH_DATABASE_URL` and rebuilding selects separate
+storage; switching back resumes that database's pending edits. Existing stores
+with the old fixed names are retained but are never automatically imported into
+a remote database. Close all old app tabs when first deploying this version.
+The browser must support SharedWorker. Browser
 storage must be retained to preserve unsent edits. The disconnect control pauses
 Couch replication; local transactions still commit and queue.
 

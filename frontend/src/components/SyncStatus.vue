@@ -21,11 +21,12 @@
 <script setup>
 import { computed, ref, onMounted, onUnmounted } from 'vue'
 import useExpressXClient from '/src/useExpressXClient.ts'
+import { pgcouchConfig } from '/src/pgcouchConfig'
 
 const { app, state } = useExpressXClient()
 const syncError = computed(() => state.syncErrors.pgcouch)
 const authenticationRequired = computed(() => [401, 403].includes(syncError.value?.status))
-const remoteUrl = new URL(import.meta.env.VITE_COUCH_DATABASE_URL || '/couchdb/offline', window.location.origin)
+const remoteUrl = new URL(pgcouchConfig.remote)
 const signInUrl = new URL('./_utils/', remoteUrl).href
 const failures = ref([])
 const models = [{ name: 'pgcouch', label: 'Transactions', model: app.createPGCouchModel('user') }]

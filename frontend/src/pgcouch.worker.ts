@@ -2,6 +2,7 @@ import { PGlite } from '@electric-sql/pglite'
 import PouchDB from 'pouchdb-browser'
 import { pgcouchClientPlugin } from '@jcbuisson/express-x-plugins/pgcouch-client'
 import schema from './local-schema.sql?raw'
+import { pgcouchConfig } from './pgcouchConfig'
 
 // One database, transaction queue and replication feed for every tab.
 const ports = new Set<MessagePort>()
@@ -18,16 +19,16 @@ function report(error: unknown) {
    for (const port of ports) port.postMessage({ type: 'sync-error', error: value })
 }
 
-// Also coordinate with an older app tab during a deployment.
+// Only workers for the same remote database compete for database ownership.
 const ready = new Promise<void>((resolve, reject) => {
-   void navigator.locks.request('offline-pgcouch-owner', async () => {
+   void navigator.locks.request(pgcouchConfig.lock, async () => {
       try {
-         const localDb = new PGlite('idb://offline-pgcouch-relational')
+         const localDb = new PGlite(pgcouchConfig.relational)
          await localDb.exec(schema)
-         const couch = new PouchDB('offline-pgcouch-transactions')
+         const couch = new PouchDB(pgcouchConfig.transactions)
          pgcouchClientPlugin(app, {
             models: ['user', 'group', 'user_group_relation'], localDb, couch,
-            remote: new URL(import.meta.env.VITE_COUCH_DATABASE_URL || '/couchdb/offline', self.location.origin).href,
+            remote: pgcouchConfig.remote,
             network: { get onLine() { return syncEnabled && navigator.onLine } },
             onError: report,
          })

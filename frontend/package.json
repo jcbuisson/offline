@@ -8,8 +8,8 @@
     "dev": "vite",
     "build": "vite build",
     "preview": "vite preview",
-    "test:sync": "node --test scripts/relational-sync.test.mjs",
-    "test:tabs": "npm run build && node --test scripts/multitab.test.mjs"
+    "test:sync": "node --test scripts/relational-sync.test.mjs scripts/pgcouch-storage.test.mjs",
+    "test:tabs": "VITE_COUCH_DATABASE_URL=/couchdb/offline npm run build && node --test scripts/multitab.test.mjs"
   },
   "dependencies": {
     "@electric-sql/pglite": "^0.5.8",
