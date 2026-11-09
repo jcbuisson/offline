@@ -85,6 +85,24 @@ test('migration preserves active Electric rows and prepares deferrable constrain
    assert.ok(constraints.every(row => row.condeferrable))
 })
 
+test('current snapshots without Electric metadata are visible in a fresh browser', async t => {
+   const db = new PGlite()
+   const couch = new PouchDB(crypto.randomUUID(), { adapter: 'memory' })
+   const app = {}
+   await db.exec(await readFile(new URL('../src/local-schema.sql', import.meta.url), 'utf8'))
+   await couch.put({ _id: 'result:bootstrap', type: 'result', status: 'accepted', sequence: '0', snapshot: {
+      user: [{ uid: 'active', email: 'active@example.com' }],
+      group: [{ uid: 'team', name: 'Team' }],
+      user_group_relation: [{ uid: 'membership', user_uid: 'active', group_uid: 'team' }],
+   } })
+   pgcouchClientPlugin(app, { models, localDb: db, couch, autoStart: false })
+   t.after(async () => { await app.disposePGCouchSync(); await db.close(); await couch.destroy() })
+   await app.pgcouchReady
+   for (const { name } of models) {
+      assert.equal((await app.createPGCouchModel(name).findMany({ deleted: false })).length, 1, name)
+   }
+})
+
 test('legacy snapshots with Electric metadata load into the browser schema', async t => {
    const db = new PGlite()
    const couch = new PouchDB(crypto.randomUUID(), { adapter: 'memory' })

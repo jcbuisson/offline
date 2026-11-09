@@ -15,3 +15,20 @@ ALTER TABLE "group" ADD COLUMN IF NOT EXISTS deleted BOOLEAN DEFAULT false;
 ALTER TABLE "group" ADD COLUMN IF NOT EXISTS version BIGINT DEFAULT 0;
 ALTER TABLE user_group_relation ADD COLUMN IF NOT EXISTS deleted BOOLEAN DEFAULT false;
 ALTER TABLE user_group_relation ADD COLUMN IF NOT EXISTS version BIGINT DEFAULT 0;
+
+-- jsonb_populate_record inserts NULL for metadata absent from current snapshots;
+-- column defaults only apply when the INSERT omits the column altogether.
+CREATE OR REPLACE FUNCTION pgcouch_normalize_deleted() RETURNS trigger LANGUAGE plpgsql AS $$
+BEGIN
+   NEW.deleted := COALESCE(NEW.deleted, false);
+   RETURN NEW;
+END $$;
+DO $$
+DECLARE model TEXT;
+BEGIN
+   FOREACH model IN ARRAY ARRAY['user', 'group', 'user_group_relation'] LOOP
+      EXECUTE format('UPDATE %I SET deleted = false WHERE deleted IS NULL', model);
+      EXECUTE format('DROP TRIGGER IF EXISTS pgcouch_normalize_deleted ON %I', model);
+      EXECUTE format('CREATE TRIGGER pgcouch_normalize_deleted BEFORE INSERT OR UPDATE ON %I FOR EACH ROW EXECUTE FUNCTION pgcouch_normalize_deleted()', model);
+   END LOOP;
+END $$;
