@@ -1,6 +1,6 @@
 # Offline — PGCouch
 
-Local-first users, groups and memberships using express-x-plugins 5.4.1 PGCouch.
+Local-first users, groups and memberships using express-x-plugins PGCouch.
 PostgreSQL is authoritative; PGlite serves local queries and durable offline
 transactions; PouchDB/CouchDB replicate proposals and server decisions.
 
@@ -19,6 +19,13 @@ Run these commands from the repository root:
 npm --prefix backend install
 npm --prefix frontend install
 ```
+
+The frontend currently uses the packaged plugin worker build in
+`vendor/jcbuisson-express-x-plugins-5.4.2.tgz`; keep that file when deploying or
+installing this checkout. It contains the new `/pgcouch-worker` and
+`/pgcouch-storage` exports and does not require an npm publication. Once this
+plugin version is published, the frontend dependency can use the registry
+version instead.
 
 ### PostgreSQL and environment
 
@@ -292,6 +299,12 @@ a remote database. Close all old app tabs when first deploying this version.
 The browser must support SharedWorker. Browser
 storage must be retained to preserve unsent edits. The disconnect control pauses
 Couch replication; local transactions still commit and queue.
+
+The worker implementation and storage helpers live in the plugin. The app's
+`frontend/src/pgcouch.worker.ts` is only a configuration entry calling
+`startPGCouchWorker` with its SQL schema, model names, remote URL and existing
+`offline` storage prefix. Keep this call synchronous to preserve WebKit's first
+connection. The app owns its UI activity state and startup retry messages.
 
 Run the sync checks and production build from the repository root:
 

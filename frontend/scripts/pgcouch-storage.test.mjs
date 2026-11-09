@@ -2,7 +2,7 @@ import assert from 'node:assert/strict'
 import test from 'node:test'
 import { storageForRemote } from '../src/pgcouchStorage.mjs'
 import { PGlite } from '@electric-sql/pglite'
-import { prepareLocalTransport } from '../src/prepareLocalTransport.mjs'
+import { prepareLocalTransport } from '@jcbuisson/express-x-plugins/pgcouch-storage'
 
 const names = ({ remote, ...storage }) => storage
 
