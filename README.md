@@ -202,3 +202,18 @@ through PGCouch; external SQL writes are not automatically captured. Do not prun
 Couch protocol documents or PostgreSQL receipts, which provide ordering and
 idempotency. Transactions rejected by the server are rolled back locally and
 remain counted in the status banner; users can submit a corrected edit.
+
+If old snapshots and decisions no longer reconstruct the current PostgreSQL
+dataset (for example, after direct SQL edits), publish a full recovery checkpoint
+from the production backend directory:
+
+```sh
+npm run pgcouch:checkpoint
+```
+
+This uses `DATABASE_URL` and `COUCH_DATABASE_URL` from the backend environment.
+It appends a snapshot of the current PostgreSQL rows at a new sequence and leaves
+the application tables and existing sync documents intact. Browsers can resume
+from that checkpoint and replay their pending local edits. Close and reopen app
+tabs afterward to clear old error banners. Normal writes should go through the
+PGCouch services so subsequent decisions describe all database changes.

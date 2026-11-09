@@ -9,7 +9,47 @@ import { pgcouchServerPlugin } from '@jcbuisson/express-x-plugins/pgcouch-server
 import models from '../../backend/src/syncModels.js'
 import { validateUserMutation } from '../../backend/src/validateUser.js'
 import { restoreMissingBootstrap } from '../../backend/src/restoreBootstrap.js'
+import { publishCheckpoint } from '../../backend/src/publishCheckpoint.js'
 PouchDB.plugin(memory)
+
+test('an authoritative checkpoint recovers a browser blocked by incompatible group history', async t => {
+   const server = new PGlite(), local = new PGlite()
+   const remote = new PouchDB(crypto.randomUUID(), { adapter: 'memory' })
+   const couch = new PouchDB(crypto.randomUUID(), { adapter: 'memory' })
+   const schema = await readFile(new URL('../src/local-schema.sql', import.meta.url), 'utf8')
+   await server.exec(schema); await local.exec(schema)
+   await server.query('INSERT INTO "group" (uid, name) VALUES ($1, $2)', ['old', 'Team'])
+   const services = new Map(), app = {}, errors = []
+   const sync = pgcouchServerPlugin({ createService: (name, methods) => services.set(name, methods) }, server, models, { couch: remote })
+   t.after(async () => {
+      await app.disposePGCouchSync(); await sync.dispose()
+      await Promise.all([server.close(), local.close(), remote.destroy(), couch.destroy()])
+   })
+   await sync.ready
+   // An out-of-band edit leaves an old bootstrap incompatible with later writes.
+   await server.query('DELETE FROM "group"')
+   await services.get('group').create({ uid: 'current', name: 'Team' })
+   pgcouchClientPlugin(app, { models, localDb: local, couch, autoStart: false, onError: error => errors.push(error) })
+   await app.pgcouchReady
+   await remote.replicate.to(couch)
+   const groups = app.createPGCouchModel('group')
+   await assert.rejects(groups.flushQueue(), error => error.code === '23505')
+   const users = app.createPGCouchModel('user')
+   await users.create({ uid: 'queued', email: 'queued@example.com' })
+   const before = await remote.allDocs()
+   const checkpoint = await publishCheckpoint(server, remote)
+   assert.equal(checkpoint.sequence, '2')
+   await remote.replicate.to(couch)
+   await groups.flushQueue()
+   assert.deepEqual((await groups.findMany()).map(row => row.uid), ['current'])
+   assert.equal((await users.findMany())[0].uid, 'queued')
+   assert.equal((await users.getStatus()).pending, 1)
+   assert.equal((await remote.allDocs()).total_rows, before.total_rows + 1)
+   // Later server decisions retain a contiguous sequence and continue syncing.
+   await services.get('group').update('current', { name: 'Updated' })
+   await remote.replicate.to(couch); await groups.flushQueue()
+   assert.equal((await groups.findMany())[0].name, 'Updated')
+})
 
 test('a replacement CouchDB database restores the original bootstrap for fresh browsers', async t => {
    const server = new PGlite(), local = new PGlite()

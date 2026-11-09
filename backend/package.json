@@ -29,7 +29,8 @@
     "dev": "node --watch --experimental-strip-types src/app.js",
     "couch:up": "docker compose up -d --wait",
     "couch:down": "docker compose down",
-    "pgcouch:setup": "node scripts/setup-pgcouch.mjs"
+    "pgcouch:setup": "node scripts/setup-pgcouch.mjs",
+    "pgcouch:checkpoint": "node scripts/publish-checkpoint.mjs"
   },
   "dependencies": {
     "@jcbuisson/express-x": "^4.0.5",
