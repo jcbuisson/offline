@@ -8,7 +8,53 @@ import { pgcouchClientPlugin } from '@jcbuisson/express-x-plugins/pgcouch-client
 import { pgcouchServerPlugin } from '@jcbuisson/express-x-plugins/pgcouch-server'
 import models from '../../backend/src/syncModels.js'
 import { validateUserMutation } from '../../backend/src/validateUser.js'
+import { restoreMissingBootstrap } from '../../backend/src/restoreBootstrap.js'
 PouchDB.plugin(memory)
+
+test('a replacement CouchDB database restores the original bootstrap for fresh browsers', async t => {
+   const server = new PGlite(), local = new PGlite()
+   const original = new PouchDB(crypto.randomUUID(), { adapter: 'memory' })
+   const replacement = new PouchDB(crypto.randomUUID(), { adapter: 'memory' })
+   const couch = new PouchDB(crypto.randomUUID(), { adapter: 'memory' })
+   const app = {}, services = new Map()
+   const schema = await readFile(new URL('../src/local-schema.sql', import.meta.url), 'utf8')
+   await server.exec(schema); await local.exec(schema)
+   await server.query('INSERT INTO "user" (uid, email) VALUES ($1, $2)', ['initial', 'initial@example.com'])
+   let sync = pgcouchServerPlugin({ createService: (name, methods) => services.set(name, methods) }, server, models, { couch: original })
+   let clientStarted = false
+   t.after(async () => {
+      if (clientStarted) await app.disposePGCouchSync()
+      await sync.dispose()
+      await Promise.all([server.close(), local.close(), original.destroy(), replacement.destroy(), couch.destroy()])
+   })
+   await sync.ready
+   const bootstrap = (await server.query("SELECT decision FROM pgcouch_receipts WHERE id = 'bootstrap'")).rows[0].decision
+   await services.get('group').create({ uid: 'team', name: 'After bootstrap' })
+   await sync.dispose()
+   sync = pgcouchServerPlugin({ createService() {} }, server, models, { couch: replacement })
+   await sync.ready
+   // Reproduce history copied without its already-published bootstrap.
+   const { rows } = await original.allDocs({ include_docs: true, startkey: 'result:', endkey: 'result:\uffff' })
+   for (const { doc } of rows) if (doc._id !== 'result:bootstrap') {
+      const { _rev, ...body } = doc
+      await replacement.put(body)
+   }
+   await replacement.replicate.to(couch)
+   pgcouchClientPlugin(app, { models, localDb: local, couch, autoStart: false })
+   clientStarted = true
+   await app.pgcouchReady
+   const users = app.createPGCouchModel('user'), groups = app.createPGCouchModel('group')
+   assert.deepEqual(await users.findMany(), [])
+   assert.deepEqual(await groups.findMany(), [])
+   assert.equal(await restoreMissingBootstrap(sync, server, replacement), true)
+   const { _rev, ...restored } = await replacement.get('result:bootstrap')
+   assert.deepEqual(restored, bootstrap)
+   await replacement.replicate.to(couch)
+   await users.flushQueue()
+   assert.equal((await users.findMany())[0].uid, 'initial')
+   assert.equal((await groups.findMany())[0].uid, 'team')
+   assert.equal(await restoreMissingBootstrap(sync, server, replacement), false)
+})
 
 test('offline replication, cascades, validation and atomic rollback', async t => {
    const server = new PGlite(), local = new PGlite()

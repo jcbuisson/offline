@@ -8,6 +8,7 @@ import { Pool } from 'pg'
 import channels from './channels.js'
 import syncModels from './syncModels.js'
 import { validateUserMutation } from './validateUser.js'
+import { restoreMissingBootstrap } from './restoreBootstrap.js'
 
 const app = expressX({
    WS_TRANSPORT: true,
@@ -30,6 +31,11 @@ const sync = pgcouchServerPlugin(app, db, syncModels, {
    onError: error => console.error('PGCouch sync failed', error),
 })
 await sync.ready
+try {
+   if (await restoreMissingBootstrap(sync, db, couch)) console.log('Restored missing PGCouch bootstrap from PostgreSQL receipt')
+} catch (error) {
+   console.error('PGCouch bootstrap recovery failed', error)
+}
 
 // allows socket data & room transfer on page reload
 app.configure(reloadPlugin)
