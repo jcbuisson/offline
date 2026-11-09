@@ -332,6 +332,22 @@ Deploy the complete
 `frontend/dist` output. Production builds precache PGlite assets; test offline
 reloads with a production build because development disables the service worker.
 
+Like Selommes, the app checks for a new service worker every ten seconds and
+automatically activates it and reloads open tabs. It also checks when coming back
+online or returning to the app. The update notice shows “Mise à jour en cours…”.
+Each tab defers its reload while a form field is focused or a local save is
+pending, allowing debounced saves a quiet second before reloading.
+Queued offline edits remain in local storage across the reload. Workers are
+named per build, while the stable database lock prevents overlapping ownership.
+Serve `/sw.js` without immutable caching:
+
+```nginx
+location = /sw.js {
+    add_header Cache-Control "no-cache";
+    etag on;
+}
+```
+
 PGCouch sends a complete snapshot of all configured tables with each decision,
 so this demo is intended for bounded datasets. All replicated writes must go
 through PGCouch; external SQL writes are not automatically captured. Do not prune

@@ -3,7 +3,10 @@ import { NavigationRoute, registerRoute } from 'workbox-routing'
 
 declare let self: ServiceWorkerGlobalScope
 
-// prompt for new content
+// Let an activated update control existing tabs so they reload automatically.
+self.addEventListener('activate', event => event.waitUntil(self.clients.claim()))
+
+// The app requests activation automatically after its current local saves.
 self.addEventListener('message', (event) => {
    if (event.data && event.data.type === 'SKIP_WAITING')
       self.skipWaiting()

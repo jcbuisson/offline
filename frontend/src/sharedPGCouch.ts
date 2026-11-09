@@ -3,7 +3,9 @@ import { pgcouchConfig } from './pgcouchConfig'
 import workerUrl from './pgcouch.worker.ts?sharedworker&url'
 
 export function configureSharedPGCouch(app: any, onError: (error: unknown) => void, activity: any) {
-   const worker = new SharedWorker(workerUrl, { type: 'module', name: pgcouchConfig.worker })
+   // New builds may overlap briefly with tabs using the previous worker script.
+   // Share within a build; the stable database lock serializes different builds.
+   const worker = new SharedWorker(workerUrl, { type: 'module', name: `${pgcouchConfig.worker}:${workerUrl}` })
    const port = worker.port
    const pending = new Map<string, { resolve(value: any): void, reject(error: unknown): void, finish(): void, method?: string }>()
    const observers = new Map<string, any>()

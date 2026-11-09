@@ -12,6 +12,8 @@ export default defineConfig({
       vue(),
    
       VitePWA({
+         // ReloadPrompt owns registration, activation and cross-tab reloads.
+         injectRegister: false,
          devOptions: {
             enabled: false
          },
