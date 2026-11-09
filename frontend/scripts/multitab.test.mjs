@@ -8,7 +8,18 @@ import { preview } from 'vite'
 // Use a fresh browser profile and disable proxies so no production data is touched.
 test('production tabs share offline data and survive closing the first tab', { timeout: 60000 }, async t => {
    let browser
-   const server = await preview({ preview: { host: '127.0.0.1', port: 0, proxy: {} } })
+   const server = await preview({
+      preview: { host: '127.0.0.1', port: 0, proxy: {} },
+      plugins: [{
+         name: 'test-couchdb-route',
+         configurePreviewServer(server) {
+            server.middlewares.use('/couchdb/', (_req, res) => {
+               res.setHeader('Content-Type', 'text/html')
+               res.end('<title>CouchDB test upstream</title><p>CouchDB route reached</p>')
+            })
+         },
+      }],
+   })
    t.after(async () => {
       await browser?.close()
       await server.close()
@@ -79,6 +90,11 @@ test('production tabs share offline data and survive closing the first tab', { t
    await second.getByText('Member Offline', { exact: true }).waitFor()
    await attach(second)
    assert.equal((await second.evaluate(() => window.modelCall('user', 'getStatus'))).pending, 4)
+   assert.equal(await second.evaluate(() => Boolean(navigator.serviceWorker.controller)), true)
+   await context.setOffline(false)
+   await second.goto(`${origin}/couchdb/_utils/`)
+   await second.getByText('CouchDB route reached', { exact: true }).waitFor()
+   assert.equal(new URL(second.url()).pathname, '/couchdb/_utils/')
    assert.deepEqual(errors, [])
    await context.close()
 })

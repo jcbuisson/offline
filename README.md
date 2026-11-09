@@ -115,6 +115,28 @@ Vite proxies `/couchdb/` to localhost:5984. Production needs the equivalent prox
 and the existing `/offline-socket-io/` WebSocket route. No Electric service or
 logical PostgreSQL replication configuration is needed.
 
+For the same CouchDB upstream used by `frontend/vite.config.js`, add this inside
+the production HTTPS Nginx server block (outside `location /`):
+
+```nginx
+location ^~ /couchdb/ {
+    proxy_pass https://couchdb.jcbuisson.dev/;
+    proxy_ssl_server_name on;
+    proxy_set_header Host couchdb.jcbuisson.dev;
+    proxy_http_version 1.1;
+    proxy_cookie_path / /couchdb/;
+    proxy_buffering off;
+    proxy_cache off;
+    proxy_read_timeout 120s;
+}
+```
+
+Use the actual CouchDB upstream if it differs. The trailing slash on `proxy_pass`
+strips `/couchdb/` before forwarding. Test with `sudo nginx -t`, then reload with
+`sudo systemctl reload nginx`. `/couchdb/_session` must return CouchDB JSON rather
+than the app's HTML. CouchDB navigation URLs must also bypass the service worker's
+app-shell fallback; rebuild and deploy the frontend after changing that rule.
+
 ### Run locally
 
 From the repository root, start each process in a separate terminal:
