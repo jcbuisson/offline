@@ -14,6 +14,12 @@ function summary(doc) {
    const { _rev, _conflicts, ...body } = doc
    return {
       id: body._id, sequence: body.sequence,
+      type: body.type, status: body.status, transactionId: body.transactionId,
+      fields: Object.keys(body).sort(),
+      fieldHashes: Object.fromEntries(Object.entries(body).map(([key, value]) => [key,
+         createHash('sha256').update(canonical(value)).digest('hex')])),
+      changeCounts: Object.fromEntries([...new Set((body.changes ?? []).map(change => change.table))]
+         .map(table => [table, body.changes.filter(change => change.table === table).length])),
       hash: createHash('sha256').update(canonical(body)).digest('hex'),
       snapshotRows: Object.fromEntries(Object.entries(body.snapshot ?? {}).map(([table, rows]) => [table, rows.length])),
    }
@@ -63,6 +69,8 @@ try {
    const couchBootstrap = summary(await get('result:bootstrap'))
    const sqlNext = summary(next?.decision)
    const couchNext = next ? summary(await get(next.decision._id)) : null
+   const differingFields = sqlNext && couchNext ? [...new Set([...sqlNext.fields, ...couchNext.fields])]
+      .filter(key => sqlNext.fieldHashes[key] !== couchNext.fieldHashes[key]) : null
    console.log(JSON.stringify({
       postgres: { database, rowCounts, state, receipts, bootstrapPublished: bootstrap?.published, bootstrap: sqlBootstrap },
       couch: { database: couchInfo.db_name, path: new URL(process.env.COUCH_DATABASE_URL).pathname, bootstrap: couchBootstrap },
@@ -78,6 +86,7 @@ try {
       },
       bootstrapMatches: sqlBootstrap && couchBootstrap ? sqlBootstrap.hash === couchBootstrap.hash : null,
       nextUnpublished: next ? { receiptId: next.id, postgres: sqlNext, couch: couchNext,
+         differingFields,
          matches: couchNext ? sqlNext.hash === couchNext.hash : null } : null,
    }, null, 2))
 } catch (error) {
