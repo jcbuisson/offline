@@ -10,6 +10,9 @@
          <v-btn v-if="syncError.code === 'startup-timeout'" class="ml-3" size="small" @click="retryStartup">Réessayer</v-btn>
       </template>
    </v-alert>
+   <v-alert v-if="pending > 0" type="info" class="ma-2" role="status" aria-live="polite">
+      {{ pending }} modification(s) enregistrée(s) sur cet appareil, en attente de validation par le serveur.
+   </v-alert>
    <v-alert v-if="failures.length" type="error" class="ma-2" role="alert">
       Certaines modifications ne sont pas synchronisées avec le serveur.
       <div v-for="failure in failures" :key="failure.name">
@@ -31,6 +34,7 @@ const authenticationRequired = computed(() => [401, 403].includes(syncError.valu
 const remoteUrl = new URL(pgcouchConfig.remote)
 const signInUrl = new URL('./_utils/', remoteUrl).href
 const failures = ref([])
+const pending = ref(0)
 const models = [{ name: 'pgcouch', label: 'Transactions', model: app.createPGCouchModel('user') }]
 let timer
 let disposed = false
@@ -39,6 +43,7 @@ async function refresh() {
    const results = await Promise.all(models.map(async ({ name, label, model }) => {
       try {
          const status = await model.getStatus()
+         if (!disposed) pending.value = status.pending
          return status.failed > 0
             ? { name, label, message: `${status.failed} modification(s) refusée(s). ${status.error ?? ''}` }
             : null

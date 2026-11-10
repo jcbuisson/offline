@@ -369,3 +369,14 @@ the application tables and existing sync documents intact. Browsers can resume
 from that checkpoint and replay their pending local edits. Close and reopen app
 tabs afterward to clear old error banners. Normal writes should go through the
 PGCouch services so subsequent decisions describe all database changes.
+
+If a locally visible change does not reach PostgreSQL, run `npm run
+pgcouch:diagnose` from the production backend directory using the backend's
+environment. This read-only command prints the configured CouchDB database,
+PostgreSQL row counts, and protocol receipt/status information without passwords
+or application records. It distinguishes proposals awaiting the server, committed
+decisions missing from CouchDB, and CouchDB decisions missing from PostgreSQL.
+The browser and backend must target the same CouchDB database. Check
+`pm2 logs offline --lines 50 --nostream` for processing/publication errors.
+The app's pending-change banner remains visible until the server returns a
+decision; the WebSocket “ON-LINE” indicator alone does not confirm replication.

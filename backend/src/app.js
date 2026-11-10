@@ -18,6 +18,12 @@ const app = expressX({
 const db = new Pool({ connectionString: process.env.DATABASE_URL })
 
 if (!process.env.COUCH_DATABASE_URL) throw new Error('Set COUCH_DATABASE_URL to the authenticated CouchDB database URL')
+const couchURL = new URL(process.env.COUCH_DATABASE_URL)
+console.log('PGCouch target', {
+   server: couchURL.origin,
+   database: couchURL.pathname,
+   username: decodeURIComponent(couchURL.username),
+})
 const couch = new PouchDB(process.env.COUCH_DATABASE_URL)
 const sync = pgcouchServerPlugin(app, db, syncModels, {
    couch,

@@ -30,11 +30,12 @@
     "couch:up": "docker compose up -d --wait",
     "couch:down": "docker compose down",
     "pgcouch:setup": "node scripts/setup-pgcouch.mjs",
-    "pgcouch:checkpoint": "node scripts/publish-checkpoint.mjs"
+    "pgcouch:checkpoint": "node scripts/publish-checkpoint.mjs",
+    "pgcouch:diagnose": "node scripts/diagnose-pgcouch.mjs"
   },
   "dependencies": {
     "@jcbuisson/express-x": "^4.0.5",
-    "@jcbuisson/express-x-plugins": "^5.4.2",
+    "@jcbuisson/express-x-plugins": "^5.4.3",
     "@prisma/adapter-pg": "^7.4.1",
     "@prisma/client": "^7.4.1",
     "bcryptjs": "^2.4.3",

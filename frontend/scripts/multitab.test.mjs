@@ -72,6 +72,7 @@ test('production tabs share offline data and survive closing the first tab', { t
    await first.evaluate(() => window.syncRequest({ type: 'network', args: [false] }))
    await first.evaluate(() => window.modelCall('group', 'create', [{ uid: 'team', name: 'Shared team' }]))
    await first.getByText('Shared team', { exact: true }).waitFor()
+   await first.getByRole('status').filter({ hasText: 'en attente de validation par le serveur' }).waitFor()
    await first.evaluate(() => navigator.serviceWorker.ready.then(() => true))
 
    const second = await context.newPage()
