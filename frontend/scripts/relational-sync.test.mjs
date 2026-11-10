@@ -10,7 +10,66 @@ import models from '../../backend/src/syncModels.js'
 import { validateUserMutation } from '../../backend/src/validateUser.js'
 import { restoreMissingBootstrap } from '../../backend/src/restoreBootstrap.js'
 import { publishCheckpoint } from '../../backend/src/publishCheckpoint.js'
+import { recoverSyncHistory } from '../../backend/src/recoverSyncHistory.js'
 PouchDB.plugin(memory)
+
+test('recovery keeps production rows, archives conflicting decisions and resumes pending edits', async t => {
+   const server = new PGlite(), local = new PGlite()
+   const remote = new PouchDB(crypto.randomUUID(), { adapter: 'memory' })
+   const couch = new PouchDB(crypto.randomUUID(), { adapter: 'memory' })
+   const schema = await readFile(new URL('../src/local-schema.sql', import.meta.url), 'utf8')
+   await server.exec(schema); await local.exec(schema)
+   await server.query('INSERT INTO "group" (uid, name) VALUES ($1, $2)', ['deleted', 'Delete me'])
+   let sync = pgcouchServerPlugin({ createService() {} }, server, models, { couch: remote })
+   const app = {}
+   t.after(async () => {
+      await app.disposePGCouchSync(); await sync.dispose()
+      await Promise.all([server.close(), local.close(), remote.destroy(), couch.destroy()])
+   })
+   await sync.ready
+   const id = `transaction:${crypto.randomUUID()}`
+   const rejected = { _id: `result:${id.slice(12)}`, type: 'result', transactionId: id,
+      status: 'rejected', sequence: '7', changes: [], error: { code: '23503', message: 'Rejected' } }
+   await remote.put(rejected)
+   await sync.submit([{ table: 'group', action: 'delete', id: 'deleted' }], {}, id)
+   await sync.dispose()
+   const original = (await server.query('SELECT decision FROM pgcouch_receipts WHERE id = $1', [id])).rows[0].decision
+   const foreignId = `transaction:${crypto.randomUUID()}`
+   const foreign = { _id: foreignId, type: 'transaction', status: 'pending',
+      operations: [{ table: 'group', action: 'insert', id: 'foreign', data: { name: 'Foreign only' } }] }
+   await remote.put(foreign)
+   await remote.put({ _id: `result:${foreignId.slice(12)}`, type: 'result', transactionId: foreignId,
+      status: 'accepted', sequence: '12', changes: [] })
+   pgcouchClientPlugin(app, { models, localDb: local, couch, autoStart: false })
+   await app.pgcouchReady
+   await remote.replicate.to(couch)
+   const groups = app.createPGCouchModel('group')
+   await groups.flushQueue()
+   await groups.create({ uid: 'pending', name: 'Offline pending' })
+   await assert.rejects(recoverSyncHistory(server, {
+      allDocs: options => remote.allDocs(options),
+      put: async () => { throw new Error('Publication unavailable') },
+   }), /Publication unavailable/)
+   assert.equal((await server.query('SELECT published FROM pgcouch_receipts WHERE id = $1', [id])).rows[0].published, false)
+   const result = await recoverSyncHistory(server, remote)
+   assert.equal(result.checkpoint.sequence, '14')
+   assert.equal(result.superseded, 1)
+   assert.equal(result.imported, 1)
+   assert.deepEqual((await server.query('SELECT decision FROM pgcouch_receipts WHERE id = $1', [id])).rows[0].decision, original)
+   assert.equal((await server.query('SELECT * FROM pgcouch_recovery_audit')).rows.length, 1)
+   const { _rev, ...unchanged } = await remote.get(rejected._id)
+   assert.deepEqual(unchanged, rejected)
+   await remote.replicate.to(couch); await groups.flushQueue()
+   assert.deepEqual((await groups.findMany()).map(row => row.uid), ['pending'])
+   await couch.replicate.to(remote)
+   const errors = []
+   sync = pgcouchServerPlugin({ createService() {} }, server, models, { couch: remote, onError: error => errors.push(error) })
+   await sync.ready; await sync.flushQueue()
+   await remote.replicate.to(couch); await groups.flushQueue()
+   assert.equal((await groups.getStatus()).pending, 0)
+   assert.deepEqual((await server.query('SELECT uid FROM "group" ORDER BY uid')).rows, [{ uid: 'pending' }])
+   assert.deepEqual(errors, [])
+})
 
 test('an offline group deletion and cascaded memberships publish idempotently after reconnect', async t => {
    const server = new PGlite(), local = new PGlite()

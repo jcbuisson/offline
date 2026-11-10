@@ -31,6 +31,7 @@
     "couch:down": "docker compose down",
     "pgcouch:setup": "node scripts/setup-pgcouch.mjs",
     "pgcouch:checkpoint": "node scripts/publish-checkpoint.mjs",
+    "pgcouch:recover": "node scripts/recover-sync-history.mjs",
     "pgcouch:diagnose": "node scripts/diagnose-pgcouch.mjs"
   },
   "dependencies": {

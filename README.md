@@ -380,3 +380,20 @@ The browser and backend must target the same CouchDB database. Check
 `pm2 logs offline --lines 50 --nostream` for processing/publication errors.
 The app's pending-change banner remains visible until the server returns a
 decision; the WebSocket “ON-LINE” indicator alone does not confirm replication.
+
+If independent PostgreSQL backends accidentally shared one CouchDB database,
+keep the current production PostgreSQL rows authoritative with this recovery:
+
+1. Stop **all** backends using that CouchDB database, including development instances.
+2. From the production backend directory run `npm run pgcouch:recover -- --backends-stopped`.
+3. Only after recovery succeeds, restart the production backend (`pm2 restart offline`).
+   Keep other instances stopped until they use a separate CouchDB database.
+
+Recovery publishes a snapshot beyond both histories, records conflicting decisions
+in `pgcouch_recovery_audit`, and marks their original SQL receipts as covered by
+that snapshot. Original receipts and CouchDB documents remain intact. Already
+decided foreign proposals are imported as receipts so they cannot execute again;
+undecided proposals remain available for normal processing after restart. A failed
+recovery can be rerun while backends remain stopped. Keep browser storage intact
+to retain pending edits. Previously rejected edits remain recorded as rejected;
+the recovery does not turn them into accepted edits.

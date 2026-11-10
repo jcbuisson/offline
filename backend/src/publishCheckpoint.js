@@ -19,7 +19,7 @@ async function transaction(db, run) {
 }
 
 // Append a full snapshot at a new sequence. Keep every older receipt/document.
-export async function publishCheckpoint(db, couch) {
+export async function publishCheckpoint(db, couch, { minimumSequence = '0' } = {}) {
    const receiptId = `checkpoint:${randomUUID()}`
    const decision = await transaction(db, async tx => {
       const { rows } = await tx.query('SELECT sequence FROM pgcouch_state WHERE id = 1 FOR UPDATE')
@@ -29,7 +29,8 @@ export async function publishCheckpoint(db, couch) {
       await tx.query(`LOCK TABLE ${models.map(model => `"${model.name}"`).join(', ')} IN SHARE MODE`)
       const snapshot = {}
       for (const model of models) snapshot[model.name] = (await tx.query(`SELECT * FROM "${model.name}" ORDER BY "${model.primaryKey}"`)).rows
-      const sequence = String(BigInt(rows[0].sequence) + 1n)
+      const sequence = String((BigInt(rows[0].sequence) > BigInt(minimumSequence)
+         ? BigInt(rows[0].sequence) : BigInt(minimumSequence)) + 1n)
       const doc = JSON.parse(json({ _id: `result:${receiptId}`, type: 'result', status: 'accepted', sequence, changes: [], snapshot }))
       await tx.query('UPDATE pgcouch_state SET sequence = $1 WHERE id = 1', [sequence])
       await tx.query('INSERT INTO pgcouch_receipts (id, decision) VALUES ($1, $2::jsonb)', [receiptId, json(doc)])
