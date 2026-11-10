@@ -6,6 +6,34 @@ transactions; PouchDB/CouchDB replicate proposals and server decisions.
 
 ## Setup
 
+### Node backend client
+
+From `backend`, use the JavaScript client to query or mutate users and groups
+through the running backend's services:
+
+```sh
+npm run client -- find groups
+npm run client -- find users '{"email":"alice@example.com"}'
+npm run client -- find group GROUP_UID
+npm run client -- create group '{"name":"Team"}'
+npm run client -- create user '{"email":"alice@example.com","firstname":"Alice","lastname":"Martin"}'
+npm run client -- update group GROUP_UID '{"name":"New name"}'
+npm run client -- update user USER_UID '{"lastname":"Updated"}'
+npm run client -- delete group GROUP_UID
+npm run client -- delete user USER_UID
+```
+
+The default target is `http://localhost:3000` (or the port in `PORT`). Set
+`BACKEND_URL`, or pass `--url https://YOUR_HOST`, to target another backend.
+`--path` overrides `/offline-socket-io/` and `--timeout` sets the request timeout
+in milliseconds. `npm run client -- --help` lists all options. You can also run
+`node scripts/client.mjs ...` directly. Creation generates a UID when omitted;
+updates and deletion use the UID returned by find/create. Deleting a group or
+user also deletes its memberships through the database cascade. Writes use
+PGCouch services, so browser clients receive their decisions through normal sync.
+If a write times out, query its UID before retrying: it may have committed.
+Supplying your own UID on create makes that check straightforward.
+
 ### Prerequisites and dependencies
 
 Use Node.js 22.18+ (or Node.js 24+) and npm. The backend runs TypeScript from
