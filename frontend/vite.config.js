@@ -1,12 +1,20 @@
-import { defineConfig } from 'vite'
+import { defineConfig, loadEnv } from 'vite'
 import vue from '@vitejs/plugin-vue'
 import { VitePWA } from 'vite-plugin-pwa'
 
 // https://vite.dev/config/
-export default defineConfig({
+export default defineConfig(({ mode }) => {
+   const env = loadEnv(mode, process.cwd(), '')
+   // Server-only setting: local development can use its own authenticated CouchDB.
+   const couchProxy = new URL(env.COUCH_PROXY_TARGET || 'https://couchdb.jcbuisson.dev')
+   return {
    // Local database initialization uses top-level await.
    build: { target: 'esnext' },
-   optimizeDeps: { exclude: ['@jcbuisson/express-x-plugins', '@electric-sql/pglite'] },
+   optimizeDeps: {
+      exclude: ['@jcbuisson/express-x-plugins', '@electric-sql/pglite'],
+      // Worker-only dependencies are missed by Vite's page dependency scan.
+      include: ['pouchdb-browser', 'pouchdb-adapter-indexeddb'],
+   },
    worker: { format: 'es' },
    plugins: [
       vue(),
@@ -62,7 +70,10 @@ export default defineConfig({
       host: true, // allows for external device connection on local network
       proxy: {
          '/couchdb/': {
-            target: 'https://couchdb.jcbuisson.dev',
+            target: couchProxy.origin,
+            auth: couchProxy.username
+               ? `${decodeURIComponent(couchProxy.username)}:${decodeURIComponent(couchProxy.password)}`
+               : undefined,
             changeOrigin: true,
             cookiePathRewrite: '/couchdb',
             rewrite: path => path.replace(/^\/couchdb/, ''),
@@ -75,4 +86,5 @@ export default defineConfig({
          },
       }
    },
+   }
 })

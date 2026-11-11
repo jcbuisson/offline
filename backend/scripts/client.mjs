@@ -12,8 +12,8 @@ Actions:
   delete MODEL UID                  Delete a row (memberships cascade)
 
 Examples:
-  npm run client -- find groups
-  npm run client -- find users '{"email":"alice@example.com"}'
+  npm run client -- find group
+  npm run client -- find user '{"email":"alice@example.com"}'
   npm run client -- create group '{"name":"Team"}'
   npm run client -- create user '{"email":"alice@example.com","firstname":"Alice"}'
   npm run client -- update group GROUP_UID '{"name":"Renamed"}'

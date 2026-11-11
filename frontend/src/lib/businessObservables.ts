@@ -1,4 +1,4 @@
-import { combineLatest, map } from 'rxjs'
+import { combineLatest, map, shareReplay } from 'rxjs'
 
 import useUser from '/src/use/useUser'
 import useGroup from '/src/use/useGroup'
@@ -11,11 +11,12 @@ const { getObservable: users$ } = useUser(app)
 const { getObservable: groups$ } = useGroup(app)
 const { getObservable: userGroupRelations$ } = useUserGroupRelation(app)
 
-// Keep one Shape per table and perform relational joins locally. Opening Shapes
-// per row quickly exhausts the browser's HTTP/1.1 connection limit.
-export const allUsers$ = users$({})
-export const allGroups$ = groups$({})
-export const allUserGroupRelations$ = userGroupRelations$({})
+// These application-wide lists outlive routed views. Keep their subscriptions
+// alive between mounts so tab switches replay current data synchronously rather
+// than starting another worker query. Worker disposal closes them with the app.
+export const allUsers$ = users$({}).pipe(shareReplay({ bufferSize: 1, refCount: false }))
+export const allGroups$ = groups$({}).pipe(shareReplay({ bufferSize: 1, refCount: false }))
+export const allUserGroupRelations$ = userGroupRelations$({}).pipe(shareReplay({ bufferSize: 1, refCount: false }))
 
 export function userGroups$(user_uid: string) {
    return combineLatest([allGroups$, allUserGroupRelations$]).pipe(

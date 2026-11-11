@@ -103,6 +103,26 @@ The plugin creates its own receipt/outbox tables at startup.
 
 ### CouchDB and replication accounts
 
+Use a separate CouchDB database for each independent PostgreSQL database. A dev
+backend must not share production's replication database: processing the same
+transaction against different PostgreSQL histories produces conflicting immutable
+results.
+
+For local development, start the CouchDB Compose service below and point
+`backend/.env`'s `COUCH_DATABASE_URL` at its authenticated
+`http://127.0.0.1:5984/offline-dev` database. In
+`frontend/.env.development.local`, configure:
+
+```dotenv
+VITE_COUCH_DATABASE_URL=/couchdb/offline-dev
+COUCH_PROXY_TARGET=http://YOUR_LOCAL_USER:YOUR_LOCAL_PASSWORD@127.0.0.1:5984
+```
+
+`COUCH_PROXY_TARGET` is used only by Vite's server; credentials are not included
+in browser assets. Restart the backend and Vite after changing these settings.
+When moving existing PostgreSQL data to a new replication database, preserve its
+sync receipts and publish a current checkpoint before using the new database.
+
 Start CouchDB from the repository root. Explicitly load the backend environment
 so Compose receives the administrator credentials:
 

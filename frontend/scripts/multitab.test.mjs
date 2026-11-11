@@ -54,6 +54,14 @@ test('production tabs share offline data and survive closing the first tab', { t
    })
    browser = await chromium.launch({ headless: true })
    const context = await browser.newContext()
+   await context.addInitScript(() => {
+      window.listSubscriptions = 0
+      const postMessage = MessagePort.prototype.postMessage
+      MessagePort.prototype.postMessage = function(message, ...args) {
+         if (message?.type === 'subscribe') window.listSubscriptions++
+         return postMessage.call(this, message, ...args)
+      }
+   })
    const origin = `http://127.0.0.1:${server.httpServer.address().port}`
    const storage = await storageForRemote('/couchdb/offline', origin)
    const html = await readFile(new URL('../dist/index.html', import.meta.url), 'utf8')
@@ -93,10 +101,19 @@ test('production tabs share offline data and survive closing the first tab', { t
    }]))
    await second.getByText('Utilisateurs', { exact: true }).first().click()
    await second.getByText('Member Offline', { exact: true }).waitFor()
+   const subscriptions = await second.evaluate(() => window.listSubscriptions)
+   await second.getByText('Groupes', { exact: true }).first().click()
+   await second.getByText('First tab closed', { exact: true }).waitFor()
+   // A cached list must stay live even while its routed view is unmounted.
+   await second.evaluate(() => window.modelCall('user', 'update', ['member', { firstname: 'Updated' }]))
+   await second.getByText('Utilisateurs', { exact: true }).first().click()
+   await second.getByText('Member Updated', { exact: true }).waitFor()
+   assert.equal(await second.evaluate(() => window.listSubscriptions), subscriptions,
+      'switching tabs should reuse live lists without querying the worker again')
    await second.reload()
-   await second.getByText('Member Offline', { exact: true }).waitFor()
+   await second.getByText('Member Updated', { exact: true }).waitFor()
    await attach(second)
-   assert.equal((await second.evaluate(() => window.modelCall('user', 'getStatus'))).pending, 4)
+   assert.equal((await second.evaluate(() => window.modelCall('user', 'getStatus'))).pending, 5)
    assert.equal(await second.evaluate(() => Boolean(navigator.serviceWorker.controller)), true)
    await context.setOffline(false)
    await second.goto(`${origin}/couchdb/_utils/`)
